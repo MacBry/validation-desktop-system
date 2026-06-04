@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" style="-fx-background-color: #f8fafc; -fx-background: #f8fafc;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mac.bry.desktop.controller.DashboardController">
+   <content>
+      <VBox spacing="20.0" style="-fx-background-color: #f8fafc;">
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+         <children>
+      <!-- NAGŁÓWEK POWITALNY -->
+      <HBox alignment="CENTER_LEFT" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #e2e8f0; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, 1);">
+         <padding>
+            <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
+         </padding>
+         <children>
+            <VBox HBox.hgrow="ALWAYS" spacing="5.0">
+               <children>
+                  <Label fx:id="welcomeLabel" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Witaj w systemie, Użytkowniku!" />
+                  <Label fx:id="roleLabel" style="-fx-font-size: 13px; -fx-text-fill: #64748b;" text="Rola: Administrator" />
+               </children>
+            </VBox>
+            <VBox alignment="CENTER_RIGHT" spacing="5.0">
+               <children>
+                  <Label fx:id="dateLabel" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="17 Maja 2026" />
+                  <Label fx:id="timeLabel" style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="09:30" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+
+      <!-- MODUŁ POWIADOMIEŃ GxP (Domyślnie ukryty) -->
+      <HBox fx:id="gxpAlertBox" alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #fee2e2; -fx-background-radius: 8px; -fx-border-color: #f87171; -fx-border-radius: 8px;" visible="false" managed="false">
+         <padding>
+            <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+         </padding>
+         <children>
+            <Label style="-fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-font-size: 16px;" text="⚠ UWAGA:" />
+            <Label fx:id="gxpAlertMessage" style="-fx-text-fill: #991b1b; -fx-font-size: 14px;" text="System GxP wykrył sprzęt wymagający rewalidacji!" wrapText="true" HBox.hgrow="ALWAYS" />
+         </children>
+      </HBox>
+
+      <!-- SEKCJA KART STATYSTYCZNYCH (GRID) -->
+      <GridPane fx:id="cardsGrid" hgap="15.0" vgap="15.0">
+        <columnConstraints>
+          <ColumnConstraints percentWidth="25.0" />
+          <ColumnConstraints percentWidth="25.0" />
+          <ColumnConstraints percentWidth="25.0" />
+          <ColumnConstraints percentWidth="25.0" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints minHeight="140.0" prefHeight="150.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="140.0" prefHeight="150.0" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            
+            <!-- KARTA 1: REJESTRATORY -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Urządzenia Pomiarowe" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="totalRecordersLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="rejestratorów" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 2 6; -fx-background-radius: 10;" text="Aktywne" />
+                              <Label fx:id="activeRecordersLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6; -fx-background-radius: 10;" text="W kalibracji" />
+                              <Label fx:id="calibRecordersLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+            
+            <!-- KARTA 2: STATUS METROLOGICZNY -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Status metrologiczny rejestratorów temperatury" wrapText="true" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="expiredCalibrationsLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #dc2626;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #dc2626;" text="przeterminowane" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #fef9c3; -fx-text-fill: #854d0e; -fx-padding: 2 6; -fx-background-radius: 10;" text="Wygasają do 30 dni" />
+                              <Label fx:id="expiringSoonLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 2 6; -fx-background-radius: 10;" text="Ważne" />
+                              <Label fx:id="validCalibrationsLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+
+            <!-- KARTA 3: URZĄDZENIA CHŁODNICZE (NOWA) -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="2" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Urządzenia Chłodnicze" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="totalDevicesLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="obiektów w spisie" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <Label style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="Monitorowane chłodziarki, zamrażarki i cieplarki." wrapText="true" />
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+
+            <!-- KARTA 4: KOMORY I WALIDACJA GxP (NOWA) -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="3" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Komory i Walidacja GxP" wrapText="true" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="totalChambersLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="komór" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="4.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 9px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 1 5; -fx-background-radius: 8;" text="Zatwierdzone GxP" />
+                              <Label fx:id="validChambersLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 9px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 1 5; -fx-background-radius: 8;" text="Ostrzeżenia GxP" />
+                              <Label fx:id="warningChambersLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 9px; -fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-padding: 1 5; -fx-background-radius: 8;" text="Brak kwalifikacji" />
+                              <Label fx:id="notValidatedChambersLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+            
+            <!-- KARTA 5: KONTA UŻYTKOWNIKÓW -->
+            <VBox fx:id="usersCard" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="0" GridPane.rowIndex="1">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Konta Użytkowników" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="totalUsersLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="aktywnych" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 2 6; -fx-background-radius: 10;" text="Zablokowane" />
+                              <Label fx:id="lockedUsersLabel" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #991b1b;" text="0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+ 
+            <!-- KARTA 6: STRUKTURA ORGANIZACYJNA -->
+            <VBox fx:id="structureCard" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="1" GridPane.rowIndex="1">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Struktura Organizacyjna" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="totalDepartmentsLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="działów" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #f3e8ff; -fx-text-fill: #6b21a8; -fx-padding: 2 6; -fx-background-radius: 10;" text="Pracownie i laboratoria" />
+                              <Label fx:id="totalLaboratoriesLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+            
+            <!-- KARTA 7: OPERACJE TESTO USB -->
+            <VBox fx:id="testoCard" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" styleClass="card" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.columnSpan="2">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Operacje Testo USB" />
+                  <HBox alignment="BASELINE_LEFT" spacing="10.0">
+                     <children>
+                        <Label fx:id="totalUsbOperationsLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="łącznych akcji" />
+                     </children>
+                  </HBox>
+                  <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #ecfdf5; -fx-text-fill: #047857; -fx-padding: 2 6; -fx-background-radius: 10;" text="Odczytane" />
+                              <Label fx:id="usbReadLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #f5f3ff; -fx-text-fill: #5b21b6; -fx-padding: 2 6; -fx-background-radius: 10;" text="Zaprogramowane" />
+                              <Label fx:id="usbProgramLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+            
+         </children>
+      </GridPane>
+
+      <!-- SEKCJA WYKRESÓW KOŁOWYCH -->
+      <GridPane fx:id="chartsGrid" hgap="15.0" vgap="15.0">
+         <columnConstraints>
+            <ColumnConstraints percentWidth="33.3" />
+            <ColumnConstraints percentWidth="33.3" />
+            <ColumnConstraints percentWidth="33.4" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="240.0" prefHeight="260.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="240.0" prefHeight="260.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+         <children>
+            <!-- WYKRES 1: REJESTRATORY -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" GridPane.columnIndex="0" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Stosunek Statusów Rejestratorów" />
+                  <javafx.scene.chart.PieChart fx:id="recordersPieChart" legendSide="BOTTOM" labelsVisible="true" VBox.vgrow="ALWAYS" />
+               </children>
+            </VBox>
+
+            <!-- WYKRES 2: STATUS METROLOGICZNY -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" GridPane.columnIndex="1" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Podział Metrologiczny Wzorcowań" />
+                  <javafx.scene.chart.PieChart fx:id="calibrationsPieChart" legendSide="BOTTOM" labelsVisible="true" VBox.vgrow="ALWAYS" />
+               </children>
+            </VBox>
+
+            <!-- WYKRES 3: STATUS UŻYTKOWNIKÓW -->
+            <VBox fx:id="usersChartBox" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" GridPane.columnIndex="2" GridPane.rowIndex="0">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Status Kont Użytkowników" />
+                  <javafx.scene.chart.PieChart fx:id="usersPieChart" legendSide="BOTTOM" labelsVisible="true" VBox.vgrow="ALWAYS" />
+               </children>
+            </VBox>
+
+            <!-- WYKRES 4: AKTYWNOŚĆ USB (BAR CHART) -->
+            <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="3">
+               <padding>
+                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Aktywność Rejestratorów Testo USB (7 dni)" />
+                  <javafx.scene.chart.BarChart fx:id="usbActivityChart" VBox.vgrow="ALWAYS" animated="false">
+                    <xAxis>
+                      <javafx.scene.chart.CategoryAxis fx:id="usbCategoryAxis" side="BOTTOM" />
+                    </xAxis>
+                    <yAxis>
+                      <javafx.scene.chart.NumberAxis side="LEFT" />
+                    </yAxis>
+                  </javafx.scene.chart.BarChart>
+               </children>
+            </VBox>
+         </children>
+      </GridPane>
+
+      <!-- TABELA OSTATNICH LOGÓW SYSTEMOWYCH -->
+      <VBox fx:id="logsBox" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 8, 0, 0, 2);" VBox.vgrow="ALWAYS">
+         <padding>
+            <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+         </padding>
+         <children>
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Ostatnie 5 zdarzeń w systemie" />
+            <TableView fx:id="accessLogsTable" styleClass="audit-table" VBox.vgrow="ALWAYS" prefHeight="190.0">
+              <columns>
+                <TableColumn fx:id="logTimestampColumn" prefWidth="150.0" text="Czas" />
+                <TableColumn fx:id="logUsernameColumn" prefWidth="120.0" text="Użytkownik" />
+                <TableColumn fx:id="logActionColumn" prefWidth="130.0" text="Akcja" />
+                <TableColumn fx:id="logDetailsColumn" prefWidth="320.0" text="Szczegóły" />
+              </columns>
+            </TableView>
+         </children>
+      </VBox>
+   </children>
+</VBox>
+   </content>
+</ScrollPane>

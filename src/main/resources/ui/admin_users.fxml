@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox spacing="25.0" xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mac.bry.desktop.controller.AdminUsersController"
+      stylesheets="@style.css">
+    <padding>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+    </padding>
+    <children>
+        <!-- SEKCJA TABELI I WYSZUKIWARKI -->
+        <VBox HBox.hgrow="ALWAYS" spacing="15.0">
+            <children>
+                <!-- NAGŁÓWEK -->
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <children>
+                        <Label text="Zarządzanie Użytkownikami"
+                               style="-fx-font-weight: bold; -fx-font-size: 22px; -fx-text-fill: #0f172a;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#handleCreateUser"
+                                text="+ Nowy Użytkownik" styleClass="accent"
+                                style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
+                    </children>
+                </HBox>
+
+                <!-- PANEL FILTROWANIA -->
+                <HBox spacing="15.0" alignment="CENTER_LEFT"
+                      style="-fx-background-color: white; -fx-background-radius: 8px;
+                             -fx-padding: 12px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
+                    <children>
+                        <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" spacing="8">
+                            <children>
+                                <Label text="Szukaj:"
+                                       style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                                <TextField fx:id="searchField"
+                                           promptText="Wpisz login, nazwisko, adres e-mail..."
+                                           HBox.hgrow="ALWAYS" style="-fx-pref-height: 36px;" />
+                            </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <children>
+                                <Label text="Status:"
+                                       style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                                <ComboBox fx:id="statusFilterCombo"
+                                          style="-fx-pref-height: 36px; -fx-pref-width: 160px;"
+                                          promptText="Status: Wszyscy" />
+                            </children>
+                        </HBox>
+                        <Button mnemonicParsing="false" onAction="#handleClearFilters"
+                                text="Wyczyść" style="-fx-pref-height: 36px; -fx-font-weight: bold;" />
+                    </children>
+                </HBox>
+
+                <!-- TABELA UŻYTKOWNIKÓW -->
+                <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
+                    <columns>
+                        <TableColumn fx:id="idColumn" prefWidth="60.0" text="ID" />
+                        <TableColumn fx:id="usernameColumn" prefWidth="130.0" text="Login" />
+                        <TableColumn fx:id="emailColumn" prefWidth="160.0" text="E-mail" />
+                        <TableColumn fx:id="deptCol" prefWidth="130.0" text="Dział" />
+                        <TableColumn fx:id="labCol" prefWidth="130.0" text="Pracownia" />
+                        <TableColumn fx:id="enabledColumn" prefWidth="100.0" text="Aktywny"
+                                     style="-fx-alignment: CENTER;" />
+                        <TableColumn fx:id="lockedColumn" prefWidth="100.0" text="Zablokowany"
+                                     style="-fx-alignment: CENTER;" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+
+                <!-- PRZYCISKI AKCJI GRUPOWYCH -->
+                <HBox spacing="10.0">
+                    <children>
+                        <Button mnemonicParsing="false" onAction="#handleBulkUnlock"
+                                text="Odblokuj zaznaczone" styleClass="button-sm"
+                                style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
+                        <Button mnemonicParsing="false" onAction="#handleBulkLock"
+                                text="Zablokuj zaznaczone" styleClass="button-sm"
+                                style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;" />
+                        <Button mnemonicParsing="false" onAction="#handleBulkNotify"
+                                text="Wyślij powiadomienie" styleClass="button-sm"
+                                style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold;" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+
+        <!-- PANEL SZCZEGÓŁÓW (SIDE CARD) -->
+        <VBox fx:id="detailsPanel" prefWidth="380.0" spacing="15.0"
+              style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
+                     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+            <children>
+                <Label text="Szczegóły Użytkownika"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                <Label fx:id="selectedUserLabel" text="Wybierz użytkownika z listy"
+                       style="-fx-font-size: 13px; -fx-text-fill: #64748b;" />
+
+                <Separator />
+
+                <Label text="USTAWIENIA KONTA"
+                       style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;" />
+                <VBox spacing="10.0"
+                      style="-fx-background-color: #f8fafc; -fx-padding: 12px; -fx-background-radius: 8px;">
+                    <children>
+                        <CheckBox fx:id="enabledCheckbox" text="Konto aktywne"
+                                  style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <CheckBox fx:id="lockedCheckbox" text="Konto zablokowane"
+                                  style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <CheckBox fx:id="mustChangePasswordCheckbox"
+                                  text="Wymuś zmianę hasła przy logowaniu"
+                                  style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                    </children>
+                </VBox>
+
+                <Separator />
+
+                <Label text="LOKALIZACJA W STRUKTURZE"
+                       style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;" />
+                <VBox spacing="8.0">
+                    <children>
+                        <Label text="Dział:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <ComboBox fx:id="deptComboBox" prefWidth="340.0"
+                                  promptText="Wybierz dział..." style="-fx-pref-height: 36px;" />
+                        <Label text="Pracownia:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <ComboBox fx:id="labComboBox" prefWidth="340.0"
+                                  promptText="Wybierz pracownię..." style="-fx-pref-height: 36px;" />
+                    </children>
+                </VBox>
+
+                <Separator />
+
+                <Label text="PRZYPISANE ROLE BEZPIECZEŃSTWA"
+                       style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;" />
+                <ScrollPane fitToWidth="true" prefHeight="100.0"
+                            style="-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-radius: 6px;">
+                    <content>
+                        <VBox fx:id="rolesContainer" spacing="6.0" style="-fx-padding: 8px;" />
+                    </content>
+                </ScrollPane>
+
+                <Separator />
+
+                <HBox alignment="CENTER_RIGHT" spacing="8.0">
+                    <children>
+                        <Button mnemonicParsing="false" onAction="#handleShowAudit"
+                                styleClass="button-sm"
+                                style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
+                                text="Audit" />
+                        <Button mnemonicParsing="false" onAction="#handleResetPassword"
+                                styleClass="button-sm" text="Reset Hasła" />
+                        <Button mnemonicParsing="false" onAction="#handleSaveUser"
+                                styleClass="button-sm"
+                                style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold;"
+                                text="Zapisz" />
+                    </children>
+                </HBox>
+                <Label fx:id="statusLabel" text="" wrapText="true"
+                       style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #10b981;" />
+            </children>
+        </VBox>
+    </children>
+</HBox>

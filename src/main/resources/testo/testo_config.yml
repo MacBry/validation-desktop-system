@@ -1,0 +1,36 @@
+# =====================================================================
+# Konfiguracja Modułu Odczytu Rejestratorów Testo 174T (VCC Desktop)
+# Zgodna ze standardem GxP / FDA 21 CFR Part 11
+# =====================================================================
+
+system:
+  # Ścieżki poszukiwania biblioteki sterownika FTDI D2XX
+  driver_paths:
+    - "C:\\Windows\\System32\\ftd2xx64.dll"
+    - "C:\\Program Files (x86)\\Testo\\Comfort Software Basic\\USBDriver\\FTDIBus\\AMD64\\ftd2xx64.dll"
+    - "ftd2xx64.dll"
+  log_level: "INFO"
+
+serial:
+  # Parametry transmisji szeregowej kołyski USB
+  baud_rate: 57600
+  data_bits: 8
+  stop_bits: 1
+  parity: "NONE"          # NONE, ODD, EVEN
+  timeout_ms: 2000        # Timeout dla odczytu i zapisu USB
+  device_index: 0         # Indeks kołyski FTDI (0 = pierwsza wykryta)
+
+protocol:
+  # Parametry czasowe protokołu szeregowego Testo
+  wait_ms_default: 50     # Czas oczekiwania na odpowiedź po poleceniu
+  stream_idle_timeout_s: 2.0 # Timeout bezczynności przy czytaniu flasha
+
+chart:
+  # Konfiguracja wizualna wykresu matplotlib
+  generate_png: true
+  theme: "seaborn-v0_8-whitegrid"
+  background_color: "#1E1E2F"
+  line_color: "#00F2FE"
+  glow_color: "#4FACFE"
+  output_filename: "testo_wykres.png"
+  auto_open: true

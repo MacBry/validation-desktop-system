@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<HBox spacing="25.0" style="-fx-background-color: #f1f5f9; -fx-padding: 30;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mac.bry.desktop.controller.UserProfileController" stylesheets="@style.css">
+   <children>
+      <!-- LEWA KARTA: PODGLĄD PROFILU & AVATAR -->
+      <VBox alignment="TOP_CENTER" prefWidth="300.0" spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 30px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+         <children>
+            <!-- DYNAMICZNY OKRĄGŁY AVATAR Z INICJAŁAMI -->
+            <StackPane alignment="CENTER" style="-fx-background-color: #0f172a; -fx-background-radius: 50px; -fx-min-width: 90px; -fx-min-height: 90px; -fx-max-width: 90px; -fx-max-height: 90px;">
+               <children>
+                  <Label fx:id="avatarInitialsLabel" text="MB" textFill="WHITE" style="-fx-font-size: 32px; -fx-font-weight: bold;" />
+               </children>
+            </StackPane>
+            
+            <!-- INFORMACJE PODSTAWOWE -->
+            <VBox alignment="CENTER" spacing="5.0">
+               <children>
+                  <Label fx:id="fullNameLabel" text="Maciej Bry" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                  <Label fx:id="emailLabel" text="maciej.bry@vcc.pl" style="-fx-font-size: 13px; -fx-text-fill: #64748b;" />
+               </children>
+            </VBox>
+            
+            <Separator />
+            
+            <!-- ROLA SYSTEMOWA (BADGE) -->
+            <VBox alignment="CENTER" spacing="8.0">
+               <children>
+                  <Label text="ROLA SYSTEMOWA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                  <Label fx:id="roleBadgeLabel" text="SUPER ADMIN" styleClass="tag" style="-fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-background-radius: 12px; -fx-padding: 4px 10px; -fx-font-weight: bold; -fx-font-size: 11px;" />
+               </children>
+            </VBox>
+            
+            <Separator />
+            
+            <VBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #f8fafc; -fx-padding: 15px; -fx-background-radius: 8px;">
+               <children>
+                  <Label text="Wskazówka bezpieczeństwa:" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #334155;" />
+                  <Label text="Pamiętaj, aby regularnie zmieniać hasło i nie udostępniać konta osobom trzecim. Zmiana hasła wymaga walidacji złożoności." wrapText="true" style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-line-spacing: 3px;" />
+               </children>
+            </VBox>
+         </children>
+      </VBox>
+      
+      <!-- PRAWA KARTA: FORMULARZE EDYCJI DANYCH -->
+      <VBox HBox.hgrow="ALWAYS" spacing="25.0">
+         <children>
+            <!-- DANE PODSTAWOWE -->
+            <VBox spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 25px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+               <children>
+                  <Label text="Dane Podstawowe Profilu" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                  
+                  <GridPane hgap="20.0" vgap="15.0">
+                     <columnConstraints>
+                        <ColumnConstraints percentWidth="50" />
+                        <ColumnConstraints percentWidth="50" />
+                     </columnConstraints>
+                     <children>
+                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                           <children>
+                              <Label text="Imię" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <TextField fx:id="firstNameField" promptText="Wpisz imię" style="-fx-pref-height: 38px;" />
+                           </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                           <children>
+                              <Label text="Nazwisko" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <TextField fx:id="lastNameField" promptText="Wpisz nazwisko" style="-fx-pref-height: 38px;" />
+                           </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                           <children>
+                              <Label text="Adres e-mail" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <TextField fx:id="emailField" promptText="np. jan.kowalski@vcc.pl" style="-fx-pref-height: 38px;" />
+                           </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                           <children>
+                              <Label text="Numer telefonu" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <TextField fx:id="phoneField" promptText="np. +48 123 456 789" style="-fx-pref-height: 38px;" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </GridPane>
+                  
+                  <HBox alignment="CENTER_LEFT" spacing="15.0">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#handleSaveProfile" styleClass="accent" text="Zapisz Zmiany Danych" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
+                        <Label fx:id="profileMessageLabel" style="-fx-font-weight: bold; -fx-font-size: 13px;" visible="false" />
+                     </children>
+                     <VBox.margin>
+                        <Insets top="10.0" />
+                     </VBox.margin>
+                  </HBox>
+               </children>
+            </VBox>
+            
+            <!-- ZMIANA HASŁA (Z REAKTYWNYM WSKAŹNIKIEM SIŁY) -->
+            <VBox spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 25px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+               <children>
+                  <Label text="Zabezpieczenia i Zmiana Hasła" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+                  
+                  <GridPane hgap="20.0" vgap="15.0">
+                     <columnConstraints>
+                        <ColumnConstraints percentWidth="33.3" />
+                        <ColumnConstraints percentWidth="33.3" />
+                        <ColumnConstraints percentWidth="33.3" />
+                     </columnConstraints>
+                     <children>
+                        <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                           <children>
+                              <Label text="Obecne hasło" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <PasswordField fx:id="oldPasswordField" promptText="Wpisz obecne hasło" style="-fx-pref-height: 38px;" />
+                           </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                           <children>
+                              <Label text="Nowe hasło" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <PasswordField fx:id="newPasswordField" promptText="Wpisz nowe hasło" style="-fx-pref-height: 38px;" />
+                              <!-- Pasek siły hasła z etykietą -->
+                              <HBox spacing="8" alignment="CENTER_LEFT">
+                                 <children>
+                                    <ProgressBar fx:id="passwordStrengthBar" prefWidth="100.0" progress="0.0" style="-fx-pref-height: 6px;" />
+                                    <Label fx:id="passwordStrengthLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                           <children>
+                              <Label text="Powtórz nowe hasło" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                              <PasswordField fx:id="confirmNewPasswordField" promptText="Powtórz nowe hasło" style="-fx-pref-height: 38px;" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </GridPane>
+                  
+                  <HBox alignment="CENTER_LEFT" spacing="15.0">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#handleChangePassword" style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-pref-height: 38px; -fx-font-weight: bold; -fx-cursor: hand;" text="Zmień Hasło" />
+                        <Label fx:id="passwordMessageLabel" style="-fx-font-weight: bold; -fx-font-size: 13px;" visible="false" />
+                     </children>
+                     <VBox.margin>
+                        <Insets top="10.0" />
+                     </VBox.margin>
+                  </HBox>
+               </children>
+            </VBox>
+         </children>
+      </VBox>
+   </children>
+</HBox>

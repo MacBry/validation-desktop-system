@@ -1,0 +1,38 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.next
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+
+# OS-specific
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local application directories & files
+.env
+backups/
+uploads/
+
+# Output reports and logs
+*.log
+*.pdf
+*.docx
+*.csv

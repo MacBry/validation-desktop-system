@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.mac.bry.desktop.controller.ThermoRecorderDialogController" prefWidth="450">
+    <padding>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+    </padding>
+
+    <Label styleClass="title-2" text="Dane Rejestratora" />
+    
+    <GridPane hgap="15" vgap="15">
+        <columnConstraints>
+            <ColumnConstraints prefWidth="120" />
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Numer Seryjny:" GridPane.rowIndex="0" />
+        <TextField fx:id="snField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+        <Label text="Model:" GridPane.rowIndex="1" />
+        <TextField fx:id="modelField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+        <Label text="Status:" GridPane.rowIndex="2" />
+        <ComboBox fx:id="statusComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+        <Label text="Rozdzielczość [°C]:" GridPane.rowIndex="3" />
+        <TextField fx:id="resolutionField" promptText="np. 0.1" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+        <Label text="Dział:" GridPane.rowIndex="4" />
+        <ComboBox fx:id="deptComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+        <Label text="Pracownia:" GridPane.rowIndex="5" />
+        <ComboBox fx:id="labComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+    </GridPane>
+
+    <Separator />
+
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button onAction="#handleCancel" text="Anuluj" />
+        <Button onAction="#handleSave" styleClass="accent" text="Zapisz" />
+    </HBox>
+</VBox>

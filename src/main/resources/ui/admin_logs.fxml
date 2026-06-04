@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15.0" xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mac.bry.desktop.controller.AdminLogsController"
+      stylesheets="@style.css">
+    <padding>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+    </padding>
+    <children>
+        <HBox alignment="CENTER_LEFT" spacing="20">
+            <VBox HBox.hgrow="ALWAYS">
+                <Label text="Dziennik Zdarzeń Systemowych"
+                       style="-fx-font-weight: bold; -fx-font-size: 22px; -fx-text-fill: #0f172a;" />
+                <Label styleClass="text-muted"
+                       text="Historia logowań, zmian uprawnień oraz krytycznych zdarzeń bezpieczeństwa." />
+            </VBox>
+            <Button mnemonicParsing="false" onAction="#refreshAccessLogs"
+                    text="Odśwież Dziennik"
+                    style="-fx-pref-height: 38px; -fx-font-weight: bold;"
+                    styleClass="accent" />
+        </HBox>
+
+        <TableView fx:id="accessLogsTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
+            <columns>
+                <TableColumn fx:id="logTimestampColumn" prefWidth="180.0" text="Czas zdarzenia" />
+                <TableColumn fx:id="logUsernameColumn" prefWidth="130.0" text="Użytkownik" />
+                <TableColumn fx:id="logActionColumn" prefWidth="160.0" text="Zdarzenie" />
+                <TableColumn fx:id="logDetailsColumn" prefWidth="500.0" text="Szczegółowe dane zdarzenia" />
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+        </TableView>
+    </children>
+</VBox>

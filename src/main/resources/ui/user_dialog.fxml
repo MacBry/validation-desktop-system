@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.mac.bry.desktop.controller.UserDialogController" prefWidth="650" prefHeight="640" styleClass="content-area" stylesheets="@style.css">
+    <padding>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+    </padding>
+
+    <!-- NAGŁÓWEK DIALOGU -->
+    <Label fx:id="titleLabel" styleClass="title-2" text="Nowy Użytkownik Systemu" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+    
+    <!-- PANEL GŁÓWNY (GRID FORM) -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
+        <content>
+            <VBox spacing="15">
+                <!-- DANE LOGOWANIA -->
+                <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
+                    <children>
+                        <Label text="DANE LOGOWANIA I BEZPIECZEŃSTWA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                        <GridPane hgap="15" vgap="12">
+                            <columnConstraints>
+                                <ColumnConstraints prefWidth="140" />
+                                <ColumnConstraints hgrow="ALWAYS" />
+                            </columnConstraints>
+                            <children>
+                                <Label text="Login (nazwa użytkownika):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+                                <TextField fx:id="usernameField" promptText="np. j.kowalski" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                                <Label text="Tymczasowe hasło:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+                                <PasswordField fx:id="passwordField" promptText="Wpisz hasło startowe" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                                <Label text="E-mail:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+                                <TextField fx:id="emailField" promptText="np. jan.kowalski@vcc.pl" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                            </children>
+                        </GridPane>
+                        
+                        <Separator />
+                        
+                        <VBox spacing="8">
+                            <children>
+                                <CheckBox fx:id="enabledCheckbox" text="Konto aktywne (zezwól na logowanie)" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                                <CheckBox fx:id="mustChangePasswordCheckbox" text="Wymuś zmianę hasła przy pierwszym logowaniu" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+
+                <!-- DANE OSOBOWE -->
+                <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
+                    <children>
+                        <Label text="DANE OSOBOWE I JEDNOSTKA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                        <GridPane hgap="15" vgap="12">
+                            <columnConstraints>
+                                <ColumnConstraints prefWidth="140" />
+                                <ColumnConstraints hgrow="ALWAYS" />
+                            </columnConstraints>
+                            <children>
+                                <Label text="Imię:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+                                <TextField fx:id="firstNameField" promptText="Imię" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                                <Label text="Nazwisko:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+                                <TextField fx:id="lastNameField" promptText="Nazwisko" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                                <Label text="Dział:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+                                <ComboBox fx:id="deptComboBox" prefWidth="450.0" promptText="Wybierz dział..." style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                                <Label text="Pracownia:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
+                                <ComboBox fx:id="labComboBox" prefWidth="450.0" promptText="Wybierz pracownię..." style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                            </children>
+                        </GridPane>
+                    </children>
+                </VBox>
+
+                <!-- ROLE ZABEZPIECZEŃ -->
+                <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
+                    <children>
+                        <Label text="ROLE I UPRAWNIENIA BEZPIECZEŃSTWA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                        <ScrollPane fitToWidth="true" prefHeight="100.0" style="-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-radius: 6px;">
+                           <content>
+                              <VBox fx:id="rolesContainer" spacing="6.0" style="-fx-padding: 8px;" />
+                           </content>
+                        </ScrollPane>
+                    </children>
+                </VBox>
+            </VBox>
+        </content>
+    </ScrollPane>
+
+    <Label fx:id="errorLabel" style="-fx-text-fill: #dc2626; -fx-font-weight: bold;" wrapText="true" visible="false" />
+
+    <Separator />
+
+    <!-- STOPKA PRZYCISKÓW -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button onAction="#handleCancel" text="Anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
+        <Button onAction="#handleSave" styleClass="accent" text="Utwórz Użytkownika" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
+    </HBox>
+</VBox>

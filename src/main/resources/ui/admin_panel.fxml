@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  Główny kontener panelu administracyjnego.
+  Logika poszczególnych zakładek jest wydzielona do dedykowanych sub-kontrolerów:
+    - admin_users.fxml      -> AdminUsersController
+    - admin_structure.fxml  -> AdminStructureController
+    - admin_logs.fxml       -> AdminLogsController
+    - admin_materials.fxml  -> AdminMaterialsController
+-->
+<TabPane styleClass="hide-headers"
+         style="-fx-background-color: #f1f5f9;"
+         tabClosingPolicy="UNAVAILABLE"
+         xmlns="http://javafx.com/javafx/17"
+         xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="com.mac.bry.desktop.controller.AdminPanelController"
+         stylesheets="@style.css">
+    <tabs>
+        <Tab text="Użytkownicy">
+            <content>
+                <fx:include source="admin_users.fxml" />
+            </content>
+        </Tab>
+
+        <Tab fx:id="structureTab" text="Struktura">
+            <content>
+                <fx:include source="admin_structure.fxml" />
+            </content>
+        </Tab>
+
+        <Tab text="Logi Dostępu (Access Logs)">
+            <content>
+                <fx:include source="admin_logs.fxml" />
+            </content>
+        </Tab>
+
+        <Tab text="Słownik Materiałów">
+            <content>
+                <fx:include source="admin_materials.fxml" />
+            </content>
+        </Tab>
+    </tabs>
+</TabPane>

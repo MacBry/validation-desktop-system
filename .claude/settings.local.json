@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn test *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\macie\\\\Desktop\\\\VCC Desktop APP\\\\validation-desktop\" -Name -Force | Where-Object { $_ -match '\\\\.env$|\\\\.env\\\\.local$|secrets|credentials' })"
+    ]
+  }
+}

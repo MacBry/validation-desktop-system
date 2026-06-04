@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.mac.bry.desktop.controller.CalibrationDialogController" prefWidth="650" prefHeight="580" styleClass="content-area" stylesheets="@style.css">
+    <padding>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+    </padding>
+
+    <!-- NAGŁÓWEK DIALOGU -->
+    <Label styleClass="title-2" text="Nowe Świadectwo Wzorcowania" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+    
+    <!-- SEKRO DOSTAWY DANYCH (CARD-STYLE GRID) -->
+    <GridPane hgap="15" vgap="15" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
+        <columnConstraints>
+            <ColumnConstraints prefWidth="160" />
+            <ColumnConstraints hgrow="ALWAYS" />
+        </columnConstraints>
+
+        <Label text="Numer Świadectwa:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+        <TextField fx:id="certNumberField" promptText="np. ŚW/2026/041" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+        <Label text="Data Wzorcowania:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+        <DatePicker fx:id="calibrationDatePicker" maxWidth="Infinity" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+        <Label text="Ważne do:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+        <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="2">
+            <DatePicker fx:id="validUntilPicker" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-pref-height: 36px;" />
+            <CheckBox fx:id="autoDateCheckBox" text="Automatycznie (1 rok)" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+        </HBox>
+
+        <Label text="Skan Świadectwa:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
+        <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <TextField fx:id="certFilePathField" editable="false" HBox.hgrow="ALWAYS" promptText="Nie wybrano pliku..." style="-fx-pref-height: 36px;" />
+            <Button onAction="#handleBrowseFile" text="Przeglądaj..." style="-fx-pref-height: 36px; -fx-font-weight: bold;" styleClass="accent" />
+        </HBox>
+    </GridPane>
+
+    <!-- TABELA PUNKTÓW WZORCOWANIA -->
+    <VBox spacing="10" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label styleClass="text-bold" text="Punkty Wzorcowania" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button onAction="#handleAddPoint" text="Dodaj Punkt" styleClass="button-sm" style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
+        </HBox>
+        
+        <TableView fx:id="pointsTable" VBox.vgrow="ALWAYS" editable="true" styleClass="audit-table">
+            <columns>
+                <TableColumn fx:id="tempColumn" prefWidth="160" text="Temp. wzorcowa [°C]" style="-fx-alignment: CENTER-LEFT;" />
+                <TableColumn fx:id="errorColumn" prefWidth="160" text="Błąd systematyczny [°C]" style="-fx-alignment: CENTER-LEFT;" />
+                <TableColumn fx:id="uncertaintyColumn" prefWidth="160" text="Niepewność U [°C]" style="-fx-alignment: CENTER-LEFT;" />
+                <TableColumn fx:id="deletePointColumn" prefWidth="90" text="Usuń" style="-fx-alignment: CENTER;" />
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+        </TableView>
+    </VBox>
+
+    <Separator />
+
+    <!-- STOPKA PRZYCISKÓW -->
+    <HBox alignment="CENTER_RIGHT" spacing="12">
+        <Button onAction="#handleCancel" text="Anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
+        <Button onAction="#handleSave" styleClass="accent" text="Zatwierdź Świadectwo" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
+    </HBox>
+</VBox>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox spacing="25.0" xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mac.bry.desktop.controller.AdminStructureController"
+      stylesheets="@style.css">
+    <padding>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+    </padding>
+    <children>
+        <!-- LISTA DZIAŁÓW -->
+        <VBox spacing="15.0" prefWidth="420.0"
+              style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
+                     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+            <children>
+                <Label text="Działy Organizacyjne"
+                       style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #0f172a;" />
+                <TableView fx:id="deptTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
+                    <columns>
+                        <TableColumn fx:id="deptNameColumn" prefWidth="250.0" text="Nazwa Działu" />
+                        <TableColumn fx:id="deptAbbrColumn" prefWidth="110.0" text="Skrót"
+                                     style="-fx-alignment: CENTER;" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+                <HBox spacing="6.0">
+                    <Button onAction="#handleAddDept" styleClass="button-sm"
+                            style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;"
+                            text="+ Dodaj" />
+                    <Button onAction="#handleEditDept" styleClass="button-sm"
+                            style="-fx-pref-height: 30px;" text="Edytuj" />
+                    <Button onAction="#handleShowDeptAudit" styleClass="button-sm"
+                            style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
+                            text="Audit" />
+                    <Button onAction="#handleDeleteDept" styleClass="button-sm"
+                            style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;"
+                            text="Usuń" />
+                </HBox>
+            </children>
+        </VBox>
+
+        <!-- LISTA PRACOWNI DLA DZIAŁU -->
+        <VBox spacing="15.0" HBox.hgrow="ALWAYS"
+              style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
+                     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+            <children>
+                <Label fx:id="labsTitleLabel" text="Pracownie Organizacyjne"
+                       style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #0f172a;" />
+                <TableView fx:id="labsTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
+                    <columns>
+                        <TableColumn fx:id="labNameColumn" prefWidth="280.0" text="Nazwa Pracowni" />
+                        <TableColumn fx:id="labAbbrColumn" prefWidth="110.0" text="Skrót"
+                                     style="-fx-alignment: CENTER;" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+                <HBox spacing="6.0">
+                    <Button fx:id="addLabButton" disable="true" onAction="#handleAddLab"
+                            styleClass="button-sm"
+                            style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;"
+                            text="+ Dodaj Pracownię" />
+                    <Button fx:id="editLabButton" disable="true" onAction="#handleEditLab"
+                            styleClass="button-sm" style="-fx-pref-height: 30px;" text="Edytuj" />
+                    <Button onAction="#handleShowLabAudit" styleClass="button-sm"
+                            style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
+                            text="Audit" />
+                    <Button onAction="#handleDeleteLab" styleClass="button-sm"
+                            style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;"
+                            text="Usuń" />
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</HBox>
