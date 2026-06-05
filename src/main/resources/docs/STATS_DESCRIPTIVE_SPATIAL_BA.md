@@ -1,7 +1,7 @@
 # Analiza Biznesowa (BA) - Moduł Statystyki Opisowej i Przestrzennej
 
 ## 1. Cel Biznesowy
-Celem jest dostarczenie zaawansowanych wskaźników statystycznych opisujących rozkład temperatur i wilgotności w przestrzeni oraz czasie. Pozwala to na naukowe udowodnienie jednorodności środowiska przechowywania (np. komora zimna, magazyn) zgodnie z wymaganiami GxP.
+Celem jest dostarczenie zaawansowanych wskaźników statystycznych opisujących rozkład temperatur w przestrzeni oraz czasie. Pozwala to na naukowe udowodnienie jednorodności środowiska przechowywania (np. komora zimna, magazyn) zgodnie z wymaganiami GxP.
 
 ## 2. Kontekst Regulacyjny (FDA, WHO, ISPE)
 Zgodnie z wytycznymi **WHO Technical Report Series 961 (Appendix 9)** oraz **ISPE Cold Chain Management**:
