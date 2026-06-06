@@ -353,6 +353,31 @@
                                                             </VBox>
                                                         </content>
                                                     </Tab>
+                                                     <Tab text="Analiza Statystyczna i SPC">
+                                                         <content>
+                                                             <VBox spacing="10.0" style="-fx-padding: 10 0 0 0;">
+                                                                 <children>
+                                                                     <TableView fx:id="statsTableView" VBox.vgrow="ALWAYS" styleClass="audit-table">
+                                                                         <columns>
+                                                                             <TableColumn fx:id="colStatsPos" prefWidth="120.0" text="Pozycja" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsMedian" prefWidth="85.0" text="Mediana [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsStdDev" prefWidth="90.0" text="Odchylenie [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsRsd" prefWidth="85.0" text="RSD [%]" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsSkewness" prefWidth="80.0" text="Skośność" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsKurtosis" prefWidth="80.0" text="Kurtoza" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsCp" prefWidth="70.0" text="Cp" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsCpk" prefWidth="70.0" text="Cpk" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsJbPVal" prefWidth="100.0" text="Normalność (p)" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsAction" prefWidth="120.0" text="Diagnostyka" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                         </columns>
+                                                                         <columnResizePolicy>
+                                                                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                                                         </columnResizePolicy>
+                                                                     </TableView>
+                                                                 </children>
+                                                             </VBox>
+                                                         </content>
+                                                     </Tab>
                                                 </tabs>
                                             </TabPane>
                                         </children>
