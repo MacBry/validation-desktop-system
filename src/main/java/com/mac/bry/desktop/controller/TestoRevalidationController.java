@@ -1,15 +1,10 @@
 package com.mac.bry.desktop.controller;
 
 import com.mac.bry.desktop.model.*;
-import com.mac.bry.desktop.repository.CoolingChamberRepository;
-import com.mac.bry.desktop.repository.CoolingDeviceRepository;
-import com.mac.bry.desktop.service.JavaFxChartRenderer;
-import com.mac.bry.desktop.service.RevalidationZipCompiler;
-import com.mac.bry.desktop.service.Testo184UsbImportService;
-import com.mac.bry.desktop.service.TestoRevalidationService;
+import com.mac.bry.desktop.service.TestoRevalidationFacade;
+import com.mac.bry.desktop.controller.helper.TestoRevalidationTableHelper;
 import com.mac.bry.desktop.service.stats.SensorStatsEngine;
 import com.mac.bry.desktop.service.stats.SpcEngine;
-import com.mac.bry.desktop.service.stats.HypothesisTestingService;
 import org.springframework.context.ApplicationContext;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
@@ -63,14 +58,8 @@ import java.util.Map;
 @Slf4j
 public class TestoRevalidationController {
 
-    private final TestoRevalidationService revalidationService;
-    private final CoolingDeviceRepository coolingDeviceRepository;
-    private final CoolingChamberRepository coolingChamberRepository;
-    private final JavaFxChartRenderer chartRenderer;
-    private final RevalidationZipCompiler zipCompiler;
-    private final Testo184UsbImportService testo184UsbImportService;
+    private final TestoRevalidationFacade facade;
     private final ApplicationContext applicationContext;
-    private final HypothesisTestingService hypothesisTestingService;
 
     private RevalidationSession session;
     private RevalidationSession.GridPosition selectedPosition;
@@ -218,9 +207,10 @@ public class TestoRevalidationController {
         gridButtons.put(RevalidationSession.GridPosition.BOTTOM_BACK_RIGHT, btnBottomBackRight);
 
         setupStep1();
-        setupStep3Table();
-        setupStep3MetrologicalTable();
-        setupStep3StatsTable();
+        
+        TestoRevalidationTableHelper.setupSummaryTable(summaryTableView, colPosName, colPosSn, colPosModel, colPosCert, colPosCertValid, colPosCount, colPosStatus);
+        TestoRevalidationTableHelper.setupMetrologicalTable(metrologicalTableView, colMetroPos, colMetroSn, colMetroMin, colMetroMax, colMetroAvg, colMetroMkt, colMetroUnc, colMetroSpikes, colMetroDrift);
+        TestoRevalidationTableHelper.setupStatsTable(statsTableView, colStatsPos, colStatsMedian, colStatsStdDev, colStatsRsd, colStatsSkewness, colStatsKurtosis, colStatsCp, colStatsCpk, colStatsJbPVal, colStatsAction, this::handleShowDiagnostics);
         resetGridButtons();
         // Domyślnie: Rewalidacja Okresowa
         applyProcedureTypeUI(GxPProcedureType.PERIODIC_REVALIDATION);
@@ -276,14 +266,14 @@ public class TestoRevalidationController {
         });
         procedureTypeComboBox.setItems(FXCollections.observableArrayList(GxPProcedureType.values()));
 
-        deviceComboBox.setItems(FXCollections.observableArrayList(coolingDeviceRepository.findAll()));
+        deviceComboBox.setItems(FXCollections.observableArrayList(facade.findAllDevices()));
 
         deviceComboBox.getSelectionModel().selectedItemProperty().addListener((obs, old, nv) -> {
             chamberComboBox.getSelectionModel().clearSelection();
             clearChamberDetails();
             if (nv != null) {
                 chamberComboBox.setItems(FXCollections.observableArrayList(
-                        coolingChamberRepository.findByCoolingDeviceId(nv.getId())));
+                        facade.findChambersByDeviceId(nv.getId())));
                 chamberComboBox.setDisable(false);
             } else {
                 chamberComboBox.setDisable(true);
@@ -383,7 +373,7 @@ public class TestoRevalidationController {
         CoolingChamber chamber = chamberComboBox.getSelectionModel().getSelectedItem();
         GxPProcedureType procedureType = procedureTypeComboBox.getSelectionModel().getSelectedItem();
         if (device != null && chamber != null && procedureType != null) {
-            session = revalidationService.initSession(device, chamber, procedureType);
+            session = facade.initSession(device, chamber, procedureType);
             resetGridButtons();
             refreshGridHighlight();
             selectedPosition = null;
@@ -523,7 +513,7 @@ public class TestoRevalidationController {
 
         Task<RevalidationSession.PositionData> task = new Task<>() {
             @Override protected RevalidationSession.PositionData call() throws Exception {
-                return revalidationService.readPositionData(session, selectedPosition, false);
+                return facade.readPositionData(session, selectedPosition, false);
             }
         };
         progressBar.progressProperty().bind(task.progressProperty());
@@ -559,7 +549,7 @@ public class TestoRevalidationController {
 
         Task<RevalidationSession.PositionData> task = new Task<>() {
             @Override protected RevalidationSession.PositionData call() throws Exception {
-                return revalidationService.readPositionDataFromPdf(session, selectedPosition, pdfFile);
+                return facade.readPositionDataFromPdf(session, selectedPosition, pdfFile);
             }
         };
         progressBar.progressProperty().bind(task.progressProperty());
@@ -606,7 +596,7 @@ public class TestoRevalidationController {
         Task<RevalidationSession.PositionData> task = new Task<>() {
             @Override protected RevalidationSession.PositionData call() throws Exception {
                 Thread.sleep(1200);
-                return revalidationService.readPositionData(session, selectedPosition, true);
+                return facade.readPositionData(session, selectedPosition, true);
             }
         };
         progressBar.progressProperty().bind(task.progressProperty());
@@ -677,154 +667,7 @@ public class TestoRevalidationController {
     // KROK 3 – PODSUMOWANIE I WALIDACJA SPÓJNOŚCI
     // ============================================================
 
-    private void setupStep3Table() {
-        colPosName.setCellValueFactory(new PropertyValueFactory<>("positionName"));
-        colPosSn.setCellValueFactory(new PropertyValueFactory<>("serialNumber"));
-        colPosModel.setCellValueFactory(new PropertyValueFactory<>("model"));
-        colPosCert.setCellValueFactory(new PropertyValueFactory<>("certificateNumber"));
-        colPosCertValid.setCellValueFactory(new PropertyValueFactory<>("validityDate"));
-        colPosCount.setCellValueFactory(new PropertyValueFactory<>("pointCount"));
-        colPosStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
-        summaryTableView.setItems(summaryRows);
-    }
 
-    private void setupStep3MetrologicalTable() {
-        colMetroPos.setCellValueFactory(new PropertyValueFactory<>("positionName"));
-        colMetroSn.setCellValueFactory(new PropertyValueFactory<>("serialNumber"));
-        colMetroMin.setCellValueFactory(new PropertyValueFactory<>("minTemp"));
-        colMetroMax.setCellValueFactory(new PropertyValueFactory<>("maxTemp"));
-        colMetroAvg.setCellValueFactory(new PropertyValueFactory<>("avgTemp"));
-        colMetroMkt.setCellValueFactory(new PropertyValueFactory<>("mktTemp"));
-        colMetroUnc.setCellValueFactory(new PropertyValueFactory<>("uncertainty"));
-        colMetroSpikes.setCellValueFactory(new PropertyValueFactory<>("spikes"));
-        colMetroDrift.setCellValueFactory(new PropertyValueFactory<>("driftClassification"));
-        colMetroDrift.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); setText(null); return; }
-                Label tag = new Label(item);
-                tag.getStyleClass().add("tag");
-                tag.getStyleClass().add(switch (item) {
-                    case "STABLE" -> atlantafx.base.theme.Styles.SUCCESS;
-                    case "SPIKE"  -> atlantafx.base.theme.Styles.ACCENT;
-                    case "DRIFT"  -> atlantafx.base.theme.Styles.DANGER;
-                    default       -> atlantafx.base.theme.Styles.WARNING;
-                });
-                setGraphic(tag); setText(null);
-            }
-        });
-        metrologicalTableView.setItems(metrologicalRows);
-    }
-
-    private void setupStep3StatsTable() {
-        colStatsPos.setCellValueFactory(new PropertyValueFactory<>("positionName"));
-        colStatsMedian.setCellValueFactory(new PropertyValueFactory<>("median"));
-        colStatsStdDev.setCellValueFactory(new PropertyValueFactory<>("stdDev"));
-        colStatsRsd.setCellValueFactory(new PropertyValueFactory<>("rsd"));
-        colStatsSkewness.setCellValueFactory(new PropertyValueFactory<>("skewness"));
-        colStatsKurtosis.setCellValueFactory(new PropertyValueFactory<>("kurtosis"));
-        colStatsCp.setCellValueFactory(new PropertyValueFactory<>("cp"));
-        colStatsCpk.setCellValueFactory(new PropertyValueFactory<>("cpk"));
-        colStatsJbPVal.setCellValueFactory(new PropertyValueFactory<>("jbPVal"));
-
-        colStatsMedian.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else { setText(String.format("%.2f °C", item)); }
-            }
-        });
-        colStatsStdDev.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else { setText(String.format("%.3f °C", item)); }
-            }
-        });
-        colStatsRsd.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else { setText(String.format("%.2f%%", item)); }
-            }
-        });
-        colStatsSkewness.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else { setText(String.format("%.3f", item)); }
-            }
-        });
-        colStatsKurtosis.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else { setText(String.format("%.3f", item)); }
-            }
-        });
-        colStatsCp.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); setText(null); return; }
-                setText(String.format("%.3f", item));
-                if (item < 1.0) {
-                    setStyle("-fx-text-fill: -color-danger-emphasis;");
-                } else if (item < 1.33) {
-                    setStyle("-fx-text-fill: -color-warning-emphasis;");
-                } else {
-                    setStyle("-fx-text-fill: -color-success-emphasis;");
-                }
-            }
-        });
-        colStatsCpk.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); setText(null); return; }
-                setText(String.format("%.3f", item));
-                if (item < 1.0) {
-                    setStyle("-fx-text-fill: -color-danger-emphasis; -fx-font-weight: bold;");
-                } else if (item < 1.33) {
-                    setStyle("-fx-text-fill: -color-warning-emphasis; -fx-font-weight: bold;");
-                } else {
-                    setStyle("-fx-text-fill: -color-success-emphasis;");
-                }
-            }
-        });
-        colStatsJbPVal.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); setText(null); return; }
-                setText(String.format("%.4f", item));
-                if (item < 0.05) {
-                    setStyle("-fx-text-fill: -color-warning-emphasis;");
-                    setTooltip(new Tooltip("Rozkład odbiega od normalnego (p < 0.05)"));
-                } else {
-                    setStyle("-fx-text-fill: -color-success-emphasis;");
-                }
-            }
-        });
-
-        colStatsAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Diagnozuj 📊");
-            {
-                btn.getStyleClass().add(atlantafx.base.theme.Styles.ACCENT);
-                btn.setOnAction(e -> {
-                    StatsRow row = getTableView().getItems().get(getIndex());
-                    handleShowDiagnostics(row);
-                });
-            }
-            @Override protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(btn);
-                }
-            }
-        });
-
-        statsTableView.setItems(statsRows);
-    }
 
     private void handleShowDiagnostics(StatsRow row) {
         if (session == null || row == null) return;
@@ -901,7 +744,7 @@ public class TestoRevalidationController {
             double kurtosis = SensorStatsEngine.calculateKurtosis(rawData);
 
             com.mac.bry.desktop.dto.stats.CapabilityIndexes cpIndex = SpcEngine.calculateCapability(rawData, lsl, usl);
-            double jbPVal = hypothesisTestingService.performJarqueBera(rawData);
+            double jbPVal = facade.performJarqueBera(rawData);
 
             statsRows.add(new StatsRow(
                     pos.getLabel(),
@@ -1111,14 +954,14 @@ public class TestoRevalidationController {
         File tempChartPng = null;
         try {
             // 1. Zrzut wielokanałowego wykresu z UI
-            tempChartPng = chartRenderer.snapshotExistingChart(multiChannelChart);
+            tempChartPng = facade.snapshotExistingChart(multiChannelChart);
 
             // 2. Zapis sesji w bazie danych
-            revalidationService.saveRevalidationSession(session);
+            facade.saveSession(session);
             log.info("Sesja zarchiwizowana w bazie danych.");
 
             // 3. Kompilacja pakietu ZIP
-            zipCompiler.compile(session, tempChartPng, outputZip);
+            facade.compileZip(session, tempChartPng, outputZip);
 
             new Alert(Alert.AlertType.INFORMATION, "Dane zostały zapisane, a pakiet ZIP skompilowany:\n" + outputZip.getAbsolutePath(),
                     ButtonType.OK).showAndWait();
@@ -1203,7 +1046,7 @@ public class TestoRevalidationController {
             return;
         }
 
-        TostResult result = hypothesisTestingService.performTostEquivalence(sample1, sample2, theta);
+        TostResult result = facade.performTostEquivalence(sample1, sample2, theta);
 
         lblTostDifference.setText(String.format("Średnia różnica: %.3f°C w granicach ±%.2f°C", result.getMeanDifference(), result.getTheta()));
         lblTostDetails.setText(String.format("p1 (H0: diff <= -θ) = %.4f, p2 (H0: diff >= θ) = %.4f", result.getPValue1(), result.getPValue2()));
@@ -1234,7 +1077,7 @@ public class TestoRevalidationController {
             return;
         }
 
-        double pValue = hypothesisTestingService.performFTest(sample1, sample2);
+        double pValue = facade.performFTest(sample1, sample2);
         double var1 = SensorStatsEngine.calculateVariance(sample1);
         double var2 = SensorStatsEngine.calculateVariance(sample2);
         double ratio = var2 == 0.0 ? 0.0 : var1 / var2;
@@ -1267,7 +1110,7 @@ public class TestoRevalidationController {
                     .toArray();
             if (rawData.length >= 2) {
                 samples.add(rawData);
-                double jbPVal = hypothesisTestingService.performJarqueBera(rawData);
+                double jbPVal = facade.performJarqueBera(rawData);
                 if (jbPVal < 0.05) {
                     normal = false;
                 }
@@ -1284,12 +1127,12 @@ public class TestoRevalidationController {
         boolean significantDifference;
         if (normal) {
             testName = "Jednoczynnikowa ANOVA (Rozkład normalny)";
-            AnovaResult anovaResult = hypothesisTestingService.performAnova(samples);
+            AnovaResult anovaResult = facade.performAnova(samples);
             pValue = anovaResult.getPValue();
             significantDifference = anovaResult.isSignificantDifference();
         } else {
             testName = "Test Kruskala-Wallisa (Brak normalności rozkładu)";
-            pValue = hypothesisTestingService.performKruskalWallis(samples);
+            pValue = facade.performKruskalWallis(samples);
             significantDifference = pValue < 0.05;
         }
 
