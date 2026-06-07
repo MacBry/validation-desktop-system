@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**GxP-Compliant Temperature & Humidity Validation Platform for Pharmaceutical Cold-Chain Storage**
+**GxP-Compliant Temperature Validation Platform for Pharmaceutical Cold-Chain Storage**
 
 [![Java 21](https://img.shields.io/badge/Java-21_LTS-ED8B00?style=flat&logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.2-green?style=flat&logo=spring)](https://spring.io/projects/spring-boot)
@@ -19,7 +19,7 @@
 
 ## 🎯 Overview
 
-**Validation System** is a comprehensive pharmaceutical validation platform designed for qualifying cold-chain storage environments (refrigerators, freezers, warehouses) with temperature/humidity mapping and advanced statistical analysis.
+**Validation System** is a comprehensive pharmaceutical validation platform designed for qualifying cold-chain storage environments (refrigerators, freezers, warehouses) with temperature mapping and advanced statistical analysis.
 
 ### Why This Matters
 
@@ -40,7 +40,7 @@ Pharmaceutical companies must validate that storage environments maintain specif
 
 ## ✨ Key Features
 
-### 🌡️ Temperature & Humidity Mapping
+### 🌡️ Temperature Mapping
 - **Multi-point temperature mapping** with spatial uniformity analysis
 - **Testo 184 recorder integration** via USB (automated data import)
 - **Real-time chamber monitoring** with threshold alerts
@@ -653,7 +653,7 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ### Domain Expertise
 - GxP (Good Manufacturing Practice) compliance
 - Pharmaceutical cold-chain validation
-- Temperature/humidity mapping standards
+- Temperature mapping standards
 - Statistical process control (SPC)
 - System validation methodologies
 
@@ -669,6 +669,7 @@ If this project helped you understand pharmaceutical validation systems or GxP-c
 ---
 
 **Version:** 1.0.0-beta | **Last Updated:** 2026-06-07  
-**Repository:** https://github.com/MacBry/validation-desktop-system  
-**Issues:** https://github.com/MacBry/validation-desktop-system/issues
+**Repository:** [github.com/MacBry/validation-desktop-system](https://github.com/MacBry/validation-desktop-system)  
+**Issues:** [github.com/MacBry/validation-desktop-system/issues](https://github.com/MacBry/validation-desktop-system/issues)
+
 
