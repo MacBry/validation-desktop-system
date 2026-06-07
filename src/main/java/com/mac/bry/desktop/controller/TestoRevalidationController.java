@@ -211,6 +211,11 @@ public class TestoRevalidationController {
         TestoRevalidationTableHelper.setupSummaryTable(summaryTableView, colPosName, colPosSn, colPosModel, colPosCert, colPosCertValid, colPosCount, colPosStatus);
         TestoRevalidationTableHelper.setupMetrologicalTable(metrologicalTableView, colMetroPos, colMetroSn, colMetroMin, colMetroMax, colMetroAvg, colMetroMkt, colMetroUnc, colMetroSpikes, colMetroDrift);
         TestoRevalidationTableHelper.setupStatsTable(statsTableView, colStatsPos, colStatsMedian, colStatsStdDev, colStatsRsd, colStatsSkewness, colStatsKurtosis, colStatsCp, colStatsCpk, colStatsJbPVal, colStatsAction, this::handleShowDiagnostics);
+        
+        summaryTableView.setItems(summaryRows);
+        metrologicalTableView.setItems(metrologicalRows);
+        statsTableView.setItems(statsRows);
+        
         resetGridButtons();
         // Domyślnie: Rewalidacja Okresowa
         applyProcedureTypeUI(GxPProcedureType.PERIODIC_REVALIDATION);
