@@ -129,7 +129,7 @@ public class StatsDiagnosticsDialogController {
                     } else {
                         setText(item);
                         // Ciemnoczerwony/koralowy odcień tekstu, pogrubiony, wysoki kontrast w jasnym motywie
-                        setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+                        setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
                     }
                 }
             });
