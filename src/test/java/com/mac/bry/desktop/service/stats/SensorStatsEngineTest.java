@@ -49,4 +49,37 @@ class SensorStatsEngineTest {
         // excess kurtosis for uniform-like distribution is negative
         assertThat(kurt).isLessThan(0.0);
     }
+
+    @Test
+    @DisplayName("should compute exact skewness and kurtosis for GxP reference dataset")
+    void shouldComputeExactSkewnessAndKurtosisForGxpReference() {
+        double[] skewedData = { 2.0, 2.0, 2.0, 3.0, 8.0 };
+        double skew = SensorStatsEngine.calculateSkewness(skewedData);
+        double kurt = SensorStatsEngine.calculateKurtosis(skewedData);
+
+        // Expected Fisher-Pearson values:
+        // g1 ≈ 2.0922
+        // g2 ≈ 4.4161
+        assertThat(skew).isCloseTo(2.092235, within(0.0001));
+        assertThat(kurt).isCloseTo(4.416090, within(0.0001));
+    }
+
+    @Test
+    @DisplayName("should return NaN for undefined skewness and kurtosis on small samples")
+    void shouldReturnNaNForSmallSamples() {
+        double[] size1 = { 1.0 };
+        double[] size2 = { 1.0, 2.0 };
+        double[] size3 = { 1.0, 2.0, 3.0 };
+
+        assertThat(SensorStatsEngine.calculateSkewness(size1)).isNaN();
+        assertThat(SensorStatsEngine.calculateSkewness(size2)).isNaN();
+        assertThat(SensorStatsEngine.calculateSkewness(size3)).isNotNaN(); // N = 3 is defined
+
+        assertThat(SensorStatsEngine.calculateKurtosis(size1)).isNaN();
+        assertThat(SensorStatsEngine.calculateKurtosis(size2)).isNaN();
+        assertThat(SensorStatsEngine.calculateKurtosis(size3)).isNaN();
+        
+        double[] size4 = { 1.0, 2.0, 3.0, 4.0 };
+        assertThat(SensorStatsEngine.calculateKurtosis(size4)).isNotNaN(); // N = 4 is defined
+    }
 }

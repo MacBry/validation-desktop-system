@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SpatialStatsResult {
-    private double meanSpatialSpread;
-    private double maxSpatialSpread;
-    private Map<LocalDateTime, Double> spatialSpreadsOverTime;
+    private double meanSpatialRange;
+    private double maxSpatialRange;
+    private Map<LocalDateTime, Double> spatialRangesOverTime;
 }

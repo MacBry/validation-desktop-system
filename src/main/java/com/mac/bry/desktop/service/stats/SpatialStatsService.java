@@ -32,9 +32,9 @@ public class SpatialStatsService {
             return new SpatialStatsResult(0.0, 0.0, Collections.emptyMap());
         }
 
-        Map<LocalDateTime, Double> spreadsOverTime = new TreeMap<>();
-        double maxSpread = Double.NEGATIVE_INFINITY;
-        double sumSpread = 0.0;
+        Map<LocalDateTime, Double> rangesOverTime = new TreeMap<>();
+        double maxRange = Double.NEGATIVE_INFINITY;
+        double sumRange = 0.0;
         int count = 0;
 
         for (Map.Entry<LocalDateTime, List<Double>> entry : tempsByTimestamp.entrySet()) {
@@ -42,22 +42,22 @@ public class SpatialStatsService {
             if (temps.size() >= 2) {
                 double min = temps.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
                 double max = temps.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
-                double spread = max - min;
-                spreadsOverTime.put(entry.getKey(), spread);
+                double range = max - min;
+                rangesOverTime.put(entry.getKey(), range);
 
-                if (spread > maxSpread) {
-                    maxSpread = spread;
+                if (range > maxRange) {
+                    maxRange = range;
                 }
-                sumSpread += spread;
+                sumRange += range;
                 count++;
             }
         }
 
-        double meanSpread = count > 0 ? sumSpread / count : 0.0;
-        if (maxSpread == Double.NEGATIVE_INFINITY) {
-            maxSpread = 0.0;
+        double meanRange = count > 0 ? sumRange / count : 0.0;
+        if (maxRange == Double.NEGATIVE_INFINITY) {
+            maxRange = 0.0;
         }
 
-        return new SpatialStatsResult(meanSpread, maxSpread, spreadsOverTime);
+        return new SpatialStatsResult(meanRange, maxRange, rangesOverTime);
     }
 }

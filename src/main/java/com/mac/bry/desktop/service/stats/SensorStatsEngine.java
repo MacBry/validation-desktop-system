@@ -1,7 +1,9 @@
 package com.mac.bry.desktop.service.stats;
 
+import lombok.extern.slf4j.Slf4j;
 import java.util.Arrays;
 
+@Slf4j
 public class SensorStatsEngine {
 
     public static double calculateMean(double[] values) {
@@ -56,7 +58,8 @@ public class SensorStatsEngine {
 
     public static double calculateSkewness(double[] values) {
         if (values == null || values.length < 3) {
-            return 0.0; // requires at least 3 values
+            log.warn("Cannot calculate skewness: sample size must be at least 3 (received {})", values == null ? "null" : values.length);
+            return Double.NaN;
         }
         double mean = calculateMean(values);
         double stdDev = calculateStdDev(values);
@@ -74,7 +77,8 @@ public class SensorStatsEngine {
 
     public static double calculateKurtosis(double[] values) {
         if (values == null || values.length < 4) {
-            return 0.0; // requires at least 4 values
+            log.warn("Cannot calculate excess kurtosis: sample size must be at least 4 (received {})", values == null ? "null" : values.length);
+            return Double.NaN;
         }
         double mean = calculateMean(values);
         double stdDev = calculateStdDev(values);
