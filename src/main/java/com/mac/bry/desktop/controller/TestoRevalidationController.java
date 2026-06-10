@@ -710,66 +710,87 @@ public class TestoRevalidationController {
     }
 
     private void buildSummaryAndValidation() {
-        summaryRows.clear(); metrologicalRows.clear(); statsRows.clear(); multiChannelChart.getData().clear();
-        if (session == null || session.getAssignedPositions().isEmpty()) return;
+        try {
+            summaryRows.clear(); metrologicalRows.clear(); statsRows.clear(); multiChannelChart.getData().clear();
+            if (session == null || session.getAssignedPositions().isEmpty()) return;
 
-        double lsl = session.getCoolingChamber() != null && session.getCoolingChamber().getMinOperatingTemp() != null
-                ? session.getCoolingChamber().getMinOperatingTemp() : 2.0;
-        double usl = session.getCoolingChamber() != null && session.getCoolingChamber().getMaxOperatingTemp() != null
-                ? session.getCoolingChamber().getMaxOperatingTemp() : 8.0;
+            double lsl = session.getCoolingChamber() != null && session.getCoolingChamber().getMinOperatingTemp() != null
+                    ? session.getCoolingChamber().getMinOperatingTemp() : 2.0;
+            double usl = session.getCoolingChamber() != null && session.getCoolingChamber().getMaxOperatingTemp() != null
+                    ? session.getCoolingChamber().getMaxOperatingTemp() : 8.0;
 
-        session.getAssignedPositions().forEach((pos, data) -> {
-            String certNo   = data.getLatestCalibration() != null ? data.getLatestCalibration().getCertificateNumber() : "Brak";
-            String validity = data.getLatestCalibration() != null ? data.getLatestCalibration().getValidUntil().toString() : "–";
-            boolean certValid = data.getLatestCalibration() != null && data.getLatestCalibration().isValid();
-            String status = certValid ? "Wzorcowany" : (data.getLatestCalibration() == null ? "⚠️ Brak Świadectwa" : "⚠️ Błąd GxP");
+            session.getAssignedPositions().forEach((pos, data) -> {
+                if (data == null) return;
 
-            summaryRows.add(new SummaryRow(pos.getLabel(), data.getSerialNumber(), data.getModel(),
-                    certNo, validity, data.getSeries().getMeasurements().size(), status));
+                String certNo   = data.getLatestCalibration() != null ? data.getLatestCalibration().getCertificateNumber() : "Brak";
+                String validity = (data.getLatestCalibration() != null && data.getLatestCalibration().getValidUntil() != null)
+                        ? data.getLatestCalibration().getValidUntil().toString() : "–";
+                boolean certValid = data.getLatestCalibration() != null && data.getLatestCalibration().isValid();
+                String status = certValid ? "Wzorcowany" : (data.getLatestCalibration() == null ? "⚠️ Brak Świadectwa" : "⚠️ Błąd GxP");
 
-            metrologicalRows.add(new MetrologicalRow(
-                    pos.getLabel(), data.getSerialNumber(),
-                    String.format("%.1f°C", orZero(data.getSeries().getMinTemperature())),
-                    String.format("%.1f°C", orZero(data.getSeries().getMaxTemperature())),
-                    String.format("%.1f°C", orZero(data.getSeries().getAvgTemperature())),
-                    String.format("%.1f°C", orZero(data.getSeries().getMktTemperature())),
-                    String.format("±%.3f°C", orZero(data.getSeries().getExpandedUncertainty())),
-                    String.valueOf(data.getSeries().getSpikeCount() != null ? data.getSeries().getSpikeCount() : 0),
-                    data.getSeries().getDriftClassification() != null ? data.getSeries().getDriftClassification() : "STABLE"
-            ));
+                int pointCount = 0;
+                if (data.getSeries() != null && data.getSeries().getMeasurements() != null) {
+                    pointCount = data.getSeries().getMeasurements().size();
+                }
 
-            double[] rawData = data.getSeries().getMeasurements().stream()
-                    .mapToDouble(ThermoMeasurementPoint::getRawCelsius)
-                    .toArray();
+                summaryRows.add(new SummaryRow(pos.getLabel(), data.getSerialNumber(), data.getModel(),
+                        certNo, validity, pointCount, status));
 
-            double median = SensorStatsEngine.calculateMedian(rawData);
-            double stdDev = SensorStatsEngine.calculateStdDev(rawData);
-            double rsd = SensorStatsEngine.calculateRsd(rawData);
-            double skewness = SensorStatsEngine.calculateSkewness(rawData);
-            double kurtosis = SensorStatsEngine.calculateKurtosis(rawData);
+                if (data.getSeries() != null) {
+                    metrologicalRows.add(new MetrologicalRow(
+                            pos.getLabel(), data.getSerialNumber(),
+                            String.format("%.1f°C", orZero(data.getSeries().getMinTemperature())),
+                            String.format("%.1f°C", orZero(data.getSeries().getMaxTemperature())),
+                            String.format("%.1f°C", orZero(data.getSeries().getAvgTemperature())),
+                            String.format("%.1f°C", orZero(data.getSeries().getMktTemperature())),
+                            String.format("±%.3f°C", orZero(data.getSeries().getExpandedUncertainty())),
+                            String.valueOf(data.getSeries().getSpikeCount() != null ? data.getSeries().getSpikeCount() : 0),
+                            data.getSeries().getDriftClassification() != null ? data.getSeries().getDriftClassification() : "STABLE"
+                    ));
 
-            com.mac.bry.desktop.dto.stats.CapabilityIndexes cpIndex = SpcEngine.calculateCapability(rawData, lsl, usl);
-            double jbPVal = facade.performJarqueBera(rawData);
+                    double[] rawData = data.getSeries().getMeasurements() != null
+                            ? data.getSeries().getMeasurements().stream()
+                                    .mapToDouble(ThermoMeasurementPoint::getRawCelsius)
+                                    .toArray()
+                            : new double[0];
 
-            statsRows.add(new StatsRow(
-                    pos.getLabel(),
-                    data.getSerialNumber(),
-                    median,
-                    stdDev,
-                    rsd,
-                    skewness,
-                    kurtosis,
-                    cpIndex.getCp(),
-                    cpIndex.getCpk(),
-                    jbPVal,
-                    pos
-            ));
-        });
+                    double median = rawData.length > 0 ? SensorStatsEngine.calculateMedian(rawData) : 0.0;
+                    double stdDev = rawData.length >= 2 ? SensorStatsEngine.calculateStdDev(rawData) : 0.0;
+                    double rsd = rawData.length > 0 ? SensorStatsEngine.calculateRsd(rawData) : 0.0;
+                    double skewness = rawData.length >= 3 ? SensorStatsEngine.calculateSkewness(rawData) : 0.0;
+                    double kurtosis = rawData.length >= 4 ? SensorStatsEngine.calculateKurtosis(rawData) : 0.0;
 
-        runValidationTests();
-        updateMappingResultPanel();
-        renderMultiChannelChart();
-        setupHypothesisTestingComboBoxes();
+                    com.mac.bry.desktop.dto.stats.CapabilityIndexes cpIndex = SpcEngine.calculateCapability(rawData, lsl, usl);
+                    double jbPVal = rawData.length >= 4 ? facade.performJarqueBera(rawData) : 1.0;
+
+                    statsRows.add(new StatsRow(
+                            pos.getLabel(),
+                            data.getSerialNumber(),
+                            median,
+                            stdDev,
+                            rsd,
+                            skewness,
+                            kurtosis,
+                            cpIndex.getCp(),
+                            cpIndex.getCpk(),
+                            jbPVal,
+                            pos
+                    ));
+                }
+            });
+
+            runValidationTests();
+            updateMappingResultPanel();
+            renderMultiChannelChart();
+            setupHypothesisTestingComboBoxes();
+        } catch (Throwable t) {
+            log.error("Krytyczny błąd podczas budowania podsumowania rewalidacji GxP", t);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Błąd Walidacji / Analizy GxP");
+            alert.setHeaderText("Wystąpił nieoczekiwany wyjątek podczas przetwarzania danych");
+            alert.setContentText(t.toString() + "\n" + java.util.Arrays.toString(t.getStackTrace()));
+            alert.showAndWait();
+        }
     }
 
     /**

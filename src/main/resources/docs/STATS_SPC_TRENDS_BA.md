@@ -22,14 +22,23 @@ System musi obliczać wskaźniki na podstawie zadanych Limitów Specyfikacji (Lo
 *   $1.00 \le C_{pk} < 1.33$: Proces akceptowalny, ale wymagający stałego nadzoru.
 *   $C_{pk} < 1.00$: Proces niewydajny. Istnieje wysokie ryzyko wyjścia temperatury poza limity (OOS - Out of Specification).
 
-### REQ-02: Karta Kontrolna Shewharta (X-bar / S)
-*   Wizualizacja średnich podgrup czasowych (X-bar) oraz ich odchyleń standardowych (S) na wykresie kontrolnym.
-*   Automatyczne wyliczanie Linii Centralnej (CL) oraz Górnej i Dolnej Granicy Kontrolnej (UCL, LCL) jako $\pm 3\sigma$.
-*   **Detekcja OOC (Out of Control):** Oznaczanie punktów i trendów naruszających reguły stabilności (np. nagłe przesunięcie średniej, pojedynczy punkt poza granicami $3\sigma$).
+### REQ-02: Karta Kontrolna Shewharta (X-bar / S) oraz Reguły Nelsona (Nelson Rules)
+*   **Wizualizacja:** Średnie podgrup czasowych ($X\text{-bar}$, dla rozmiaru podgrupy $n=5$) oraz ich odchylenia standardowe ($S$) muszą być prezentowane na wykresach kontrolnych.
+*   **Wyznaczanie granic:** Automatyczne wyliczanie Linii Centralnej ($CL$) oraz Górnej i Dolnej Granicy Kontrolnej ($UCL, LCL$) w oparciu o statystyczne stałe pomocnicze dla podgrup:
+    - Dla karty $X\text{-bar}$: $CL = \overline{\overline{X}}$, $UCL = \overline{\overline{X}} + A_3 \bar{S}$, $LCL = \overline{\overline{X}} - A_3 \bar{S}$ (gdzie $A_3 = 1.427$ dla $n=5$).
+    - Dla karty $S$: $CL = \bar{S}$, $UCL = B_4 \bar{S}$, $LCL = B_3 \bar{S}$ (gdzie $B_4 = 2.089, B_3 = 0.0$ dla $n=5$).
+*   **Detekcja OOC (Out of Control) za pomocą Reguł Nelsona:** W celu wykrycia niestabilności procesu (zakłóceń o charakterze systemowym), system automatycznie weryfikuje następujące reguły:
+    - **Reguła 1:** Jeden punkt poza granicami $\pm 3\sigma$ (poza $UCL$/$LCL$) – świadczy o nagłej, dużej zmianie/szpilce.
+    - **Reguła 2:** Dziewięć kolejnych punktów po tej samej stronie linii centralnej ($CL$) – świadczy o przesunięciu poziomu średniej procesu.
+    - **Reguła 3:** Sześć kolejnych punktów stale rosnących lub stale malejących – świadczy o powolnym trendzie/dryfcie.
+    - **Reguła 4:** Czternaście kolejnych punktów naprzemiennie rosnących i malejących – świadczy o periodycznych oscylacjach (np. cykle defrostów, wadliwy układ regulacji).
 
 ### REQ-03: Detekcja Trendów i Dryfu
-*   Regresja liniowa wyliczająca współczynnik kierunkowy ($a$) w celu wykrycia powolnego wzrostu średniej temperatury (np. zatykanie filtrów powietrza w magazynie).
+*   Regresja liniowa wyliczająca współczynnik kierunkowy ($a$) w celu wykrycia powolnego wzrostu średniej temperatury (np. ubytek czynnika chłodniczego, zatykanie filtrów powietrza).
 
-## 4. Raportowanie i Alarmowanie (Alarming)
-*   System generuje raport z kartami SPC w formacie PDF jako załącznik do raportu z mapowania.
-*   W przypadku $C_{pk} < 1.0$ system generuje krytyczne ostrzeżenie sugerujące podjęcie działań korygujących (CAPA).
+---
+
+## 4. Raportowanie, Prezentacja UI i Alarmowanie (GxP Compliance)
+*   **Szczegółowa Diagnostyka UI:** Użytkownik w widoku rewalidacji ma możliwość wejścia w zaawansowaną diagnostykę SPC każdego czujnika. System prezentuje tam interaktywne karty kontrolne oraz listuje wszystkie wykryte naruszenia reguł Nelsona. Komunikaty o naruszeniach muszą być kontrastowe i wyraźne (czerwone), a w przypadku ich braku wyświetlane jest zielone potwierdzenie stabilności.
+*   **Raport PDF GxP:** Główny raport PDF z rewalidacji komory chłodniczej musi zawierać dedykowaną **Sekcję 4.3 (Weryfikacja Stabilności Procesu)** z tabelą statystyczną przedstawiającą wyznaczone granice i listę naruszeń dla każdego czujnika.
+*   **Dynamiczne Wnioskowanie (Sekcja 4.2):** W przypadku wykrycia jakichkolwiek naruszeń reguł Nelsona na kartach Shewharta, system automatycznie umieszcza ostrzeżenie w podsumowaniu raportu sugerując wdrożenie działań korygujących (CAPA).

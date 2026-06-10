@@ -4,7 +4,8 @@ import com.mac.bry.desktop.controller.TestoRevalidationController.SummaryRow;
 import com.mac.bry.desktop.controller.TestoRevalidationController.MetrologicalRow;
 import com.mac.bry.desktop.controller.TestoRevalidationController.StatsRow;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import atlantafx.base.theme.Styles;
 import java.util.function.Consumer;
 
@@ -20,13 +21,13 @@ public class TestoRevalidationTableHelper {
             TableColumn<SummaryRow, Integer> colPosCount,
             TableColumn<SummaryRow, String> colPosStatus) {
 
-        colPosName.setCellValueFactory(new PropertyValueFactory<>("positionName"));
-        colPosSn.setCellValueFactory(new PropertyValueFactory<>("serialNumber"));
-        colPosModel.setCellValueFactory(new PropertyValueFactory<>("model"));
-        colPosCert.setCellValueFactory(new PropertyValueFactory<>("certificateNumber"));
-        colPosCertValid.setCellValueFactory(new PropertyValueFactory<>("validityDate"));
-        colPosCount.setCellValueFactory(new PropertyValueFactory<>("pointCount"));
-        colPosStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+        colPosName.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getPositionName()));
+        colPosSn.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getSerialNumber()));
+        colPosModel.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getModel()));
+        colPosCert.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getCertificateNumber()));
+        colPosCertValid.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getValidityDate()));
+        colPosCount.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getPointCount()));
+        colPosStatus.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getStatus()));
     }
 
     public static void setupMetrologicalTable(
@@ -41,15 +42,15 @@ public class TestoRevalidationTableHelper {
             TableColumn<MetrologicalRow, String> colMetroSpikes,
             TableColumn<MetrologicalRow, String> colMetroDrift) {
 
-        colMetroPos.setCellValueFactory(new PropertyValueFactory<>("positionName"));
-        colMetroSn.setCellValueFactory(new PropertyValueFactory<>("serialNumber"));
-        colMetroMin.setCellValueFactory(new PropertyValueFactory<>("minTemp"));
-        colMetroMax.setCellValueFactory(new PropertyValueFactory<>("maxTemp"));
-        colMetroAvg.setCellValueFactory(new PropertyValueFactory<>("avgTemp"));
-        colMetroMkt.setCellValueFactory(new PropertyValueFactory<>("mktTemp"));
-        colMetroUnc.setCellValueFactory(new PropertyValueFactory<>("uncertainty"));
-        colMetroSpikes.setCellValueFactory(new PropertyValueFactory<>("spikes"));
-        colMetroDrift.setCellValueFactory(new PropertyValueFactory<>("driftClassification"));
+        colMetroPos.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getPositionName()));
+        colMetroSn.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getSerialNumber()));
+        colMetroMin.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getMinTemp()));
+        colMetroMax.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getMaxTemp()));
+        colMetroAvg.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getAvgTemp()));
+        colMetroMkt.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getMktTemp()));
+        colMetroUnc.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getUncertainty()));
+        colMetroSpikes.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getSpikes()));
+        colMetroDrift.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getDriftClassification()));
 
         colMetroDrift.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -83,15 +84,15 @@ public class TestoRevalidationTableHelper {
             TableColumn<StatsRow, Void> colStatsAction,
             Consumer<StatsRow> diagnosticsTrigger) {
 
-        colStatsPos.setCellValueFactory(new PropertyValueFactory<>("positionName"));
-        colStatsMedian.setCellValueFactory(new PropertyValueFactory<>("median"));
-        colStatsStdDev.setCellValueFactory(new PropertyValueFactory<>("stdDev"));
-        colStatsRsd.setCellValueFactory(new PropertyValueFactory<>("rsd"));
-        colStatsSkewness.setCellValueFactory(new PropertyValueFactory<>("skewness"));
-        colStatsKurtosis.setCellValueFactory(new PropertyValueFactory<>("kurtosis"));
-        colStatsCp.setCellValueFactory(new PropertyValueFactory<>("cp"));
-        colStatsCpk.setCellValueFactory(new PropertyValueFactory<>("cpk"));
-        colStatsJbPVal.setCellValueFactory(new PropertyValueFactory<>("jbPVal"));
+        colStatsPos.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleStringProperty(cellData.getValue().getPositionName()));
+        colStatsMedian.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getMedian()));
+        colStatsStdDev.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getStdDev()));
+        colStatsRsd.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getRsd()));
+        colStatsSkewness.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getSkewness()));
+        colStatsKurtosis.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getKurtosis()));
+        colStatsCp.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getCp()));
+        colStatsCpk.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getCpk()));
+        colStatsJbPVal.setCellValueFactory(cellData -> cellData.getValue() == null ? null : new SimpleObjectProperty<>(cellData.getValue().getJbPVal()));
 
         colStatsMedian.setCellFactory(col -> new TableCell<>() {
             @Override protected void updateItem(Double item, boolean empty) {

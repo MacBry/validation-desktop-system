@@ -66,6 +66,16 @@
                                     
                                 </children>
                             </HBox>
+                            <VBox spacing="5.0" VBox.vgrow="NEVER" style="-fx-padding: 5 0 0 0;">
+                                <children>
+                                    <Label text="Weryfikacja reguł stabilności Nelsona (Nelson Rules):" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                    <ListView fx:id="lstNelsonViolations" prefHeight="100.0" styleClass="audit-table">
+                                        <placeholder>
+                                            <Label text="✓ Wszystkie reguły stabilności Nelsona są spełnione (brak naruszeń)." style="-fx-text-fill: #16a34a; -fx-font-weight: bold;" />
+                                        </placeholder>
+                                    </ListView>
+                                </children>
+                            </VBox>
                         </children>
                     </VBox>
                 </content>

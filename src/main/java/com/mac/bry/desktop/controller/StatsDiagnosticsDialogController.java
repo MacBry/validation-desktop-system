@@ -18,16 +18,21 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
 import javafx.stage.Stage;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import com.mac.bry.desktop.service.stats.NelsonRulesDetector;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@Slf4j
 public class StatsDiagnosticsDialogController {
 
     @FXML private Label lblSensorTitle;
@@ -36,6 +41,9 @@ public class StatsDiagnosticsDialogController {
     // Wykresy SPC
     @FXML private LineChart<Number, Number> xBarChart;
     @FXML private LineChart<Number, Number> sChart;
+
+    // Nelson Rules
+    @FXML private ListView<String> lstNelsonViolations;
 
     // Tabela Defrost
     @FXML private TableView<DefrostCycle> defrostTable;
@@ -90,7 +98,47 @@ public class StatsDiagnosticsDialogController {
         renderXBarChart(spcData);
         renderSChart(spcData);
 
-        // 3. Detekcja cykli defrostu
+        // 3. Weryfikacja reguł stabilności Nelsona
+        log.info("Rozpoczęcie detekcji reguł Nelsona dla: {}", positionLabel);
+        List<NelsonRulesDetector.Violation> xbarViolations = NelsonRulesDetector.detectXBarViolations(spcData);
+        List<NelsonRulesDetector.Violation> sViolations = NelsonRulesDetector.detectSViolations(spcData);
+        log.info("Wykryto naruszeń X-bar: {}, S: {}", xbarViolations.size(), sViolations.size());
+
+        ObservableList<String> nelsonItems = FXCollections.observableArrayList();
+        for (NelsonRulesDetector.Violation v : xbarViolations) {
+            String msg = String.format("[Karta X-Bar] Podgrupa %d: %s", v.getSubgroupIndex(), v.getDescription());
+            log.info("Dodawanie naruszenia X-bar: {}", msg);
+            nelsonItems.add(msg);
+        }
+        for (NelsonRulesDetector.Violation v : sViolations) {
+            String msg = String.format("[Karta S] Podgrupa %d: %s", v.getSubgroupIndex(), v.getDescription());
+            log.info("Dodawanie naruszenia S: {}", msg);
+            nelsonItems.add(msg);
+        }
+
+        if (lstNelsonViolations != null) {
+            log.info("Ustawianie elementów w lstNelsonViolations (rozmiar listview: {})", nelsonItems.size());
+            lstNelsonViolations.setCellFactory(lv -> new ListCell<String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setGraphic(null);
+                        setStyle(null);
+                    } else {
+                        setText(item);
+                        // Ciemnoczerwony/koralowy odcień tekstu, pogrubiony, wysoki kontrast w jasnym motywie
+                        setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+                    }
+                }
+            });
+            lstNelsonViolations.setItems(nelsonItems);
+        } else {
+            log.error("UWAGA: lstNelsonViolations jest NULL!");
+        }
+
+        // 4. Detekcja cykli defrostu
         // rateThreshold = 0.25°C/min, amplitudeThreshold = 1.5°C
         List<DefrostCycle> defrostCycles = DefrostCycleDetector.detectCycles(measurements, positionLabel, 0.25, 1.5);
         defrostTable.setItems(FXCollections.observableArrayList(defrostCycles));
