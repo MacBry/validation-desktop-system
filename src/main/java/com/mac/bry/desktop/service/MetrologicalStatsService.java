@@ -131,22 +131,28 @@ public class MetrologicalStatsService {
             series.setMktTemperature(mktValue);
         }
 
-        // Odchylenie standardowe i wariancja
+        // Odchylenie standardowe i wariancja (próbkowa, korekcja Bessela: n-1)
+        // Spójne z SensorStatsEngine.calculateVariance() oraz oznaczeniem 's' w artykule.
         double varianceSum = 0.0;
         for (ThermoMeasurementPoint point : points) {
             double diff = point.getRawCelsius() - series.getAvgTemperature();
             varianceSum += diff * diff;
         }
-        double var = varianceSum / n;
+        double var = n > 1 ? varianceSum / (n - 1) : 0.0;
         series.setVariance(var);
         double stdDev = Math.sqrt(var);
         series.setStdDeviation(stdDev);
 
-        // Współczynnik zmienności CV% = (StdDev / |Avg|) * 100
-        if (series.getAvgTemperature() != 0) {
-            series.setCvPercentage((stdDev / Math.abs(series.getAvgTemperature())) * 100.0);
+        // Współczynnik zmienności CV% = (s / x̄) × 100%
+        // RSD jest matematycznie niestabilny dla średnich ujemnych lub bliskich zeru.
+        // Zgodnie z WHO TRS 961 Annex 9 Supplement 8: dla temp. ujemnych (zamrażarki)
+        // należy oceniać wyłącznie bezwzględne odchylenie standardowe (σ w °C),
+        // a nie RSD. Pole cvPercentage ustawiamy na null jako sygnał "nie dotyczy".
+        double avgTemp = series.getAvgTemperature();
+        if (avgTemp > 0.0) {
+            series.setCvPercentage((stdDev / avgTemp) * 100.0);
         } else {
-            series.setCvPercentage(0.0);
+            series.setCvPercentage(null); // N/A – użyj stdDev jako kryterium oceny
         }
 
         // Mediana i percentyle (potrzebują posortowanej listy temperatur)
@@ -381,7 +387,8 @@ public class MetrologicalStatsService {
     private double calculateStdDev(List<Double> values) {
         if (values == null || values.size() < 2) return 0.0;
         double avg = values.stream().mapToDouble(d -> d).average().orElse(0.0);
-        double variance = values.stream().mapToDouble(d -> (d - avg) * (d - avg)).sum() / values.size();
+        // Próbkowa wariancja (n-1) – spójna z SensorStatsEngine i standardem GxP
+        double variance = values.stream().mapToDouble(d -> (d - avg) * (d - avg)).sum() / (values.size() - 1);
         return Math.sqrt(variance);
     }
 

@@ -5,9 +5,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="15" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
-      fx:controller="com.mac.bry.desktop.controller.StatsDiagnosticsDialogController" 
-      prefWidth="900" prefHeight="650" styleClass="content-area" stylesheets="@style.css">
+<VBox spacing="15" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mac.bry.desktop.controller.StatsDiagnosticsDialogController"
+      prefWidth="960" prefHeight="740" styleClass="content-area" stylesheets="@style.css">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -15,8 +15,10 @@
     <!-- NAGŁÓWEK DIALOGU -->
     <VBox spacing="5.0">
         <children>
-            <Label fx:id="lblSensorTitle" styleClass="title-2" text="Zaawansowana Diagnostyka SPC &amp; Defrost" style="-fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
-            <Label fx:id="lblSpcStats" text="Wskaźniki SPC: Cp = — | Cpk = —" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -color-fg-muted;" />
+            <Label fx:id="lblSensorTitle" styleClass="title-2" text="Zaawansowana Diagnostyka SPC &amp; Defrost"
+                   style="-fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
+            <Label fx:id="lblSpcStats" text="Wskaźniki SPC: Cp = — | Cpk = —"
+                   style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -color-fg-muted;" />
         </children>
     </VBox>
 
@@ -25,7 +27,7 @@
     <!-- GŁÓWNA ZAWARTOŚĆ (TABPANE) -->
     <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
         <tabs>
-            
+
             <!-- ZAKŁADKA 1: KARTY KONTROLNE SHEWHARTA -->
             <Tab text="Karty Kontrolne Shewharta (SPC)">
                 <content>
@@ -33,45 +35,40 @@
                         <children>
                             <HBox spacing="15.0" VBox.vgrow="ALWAYS">
                                 <children>
-                                    
-                                    <!-- Wykres X-bar (Średnie podgrup) -->
-                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                                    <!-- Wykres X-bar -->
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS"
+                                          style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
                                         <children>
-                                            <Label text="Karta X-Bar (Średnie podgrup, n=5)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                            <Label text="Karta X-Bar (Średnie podgrup, n=5)"
+                                                   style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
                                             <LineChart fx:id="xBarChart" createSymbols="true" legendVisible="false" VBox.vgrow="ALWAYS">
-                                                <xAxis>
-                                                    <NumberAxis side="BOTTOM" forceZeroInRange="false" label="Podgrupa" />
-                                                </xAxis>
-                                                <yAxis>
-                                                    <NumberAxis side="LEFT" forceZeroInRange="false" label="Temperatura [°C]" />
-                                                </yAxis>
+                                                <xAxis><NumberAxis side="BOTTOM" forceZeroInRange="false" label="Podgrupa" /></xAxis>
+                                                <yAxis><NumberAxis side="LEFT" forceZeroInRange="false" label="Temperatura [°C]" /></yAxis>
                                             </LineChart>
                                         </children>
                                     </VBox>
-
-                                    <!-- Wykres S (Odchylenia standardowe podgrup) -->
-                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                                    <!-- Wykres S -->
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS"
+                                          style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
                                         <children>
-                                            <Label text="Karta S (Odchylenia standardowe podgrup, n=5)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-success-emphasis;" />
+                                            <Label text="Karta S (Odchylenia standardowe podgrup, n=5)"
+                                                   style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-success-emphasis;" />
                                             <LineChart fx:id="sChart" createSymbols="true" legendVisible="false" VBox.vgrow="ALWAYS">
-                                                <xAxis>
-                                                    <NumberAxis side="BOTTOM" forceZeroInRange="false" label="Podgrupa" />
-                                                </xAxis>
-                                                <yAxis>
-                                                    <NumberAxis side="LEFT" forceZeroInRange="false" label="Odchylenie S [°C]" />
-                                                </yAxis>
+                                                <xAxis><NumberAxis side="BOTTOM" forceZeroInRange="false" label="Podgrupa" /></xAxis>
+                                                <yAxis><NumberAxis side="LEFT" forceZeroInRange="false" label="Odchylenie S [°C]" /></yAxis>
                                             </LineChart>
                                         </children>
                                     </VBox>
-                                    
                                 </children>
                             </HBox>
                             <VBox spacing="5.0" VBox.vgrow="NEVER" style="-fx-padding: 5 0 0 0;">
                                 <children>
-                                    <Label text="Weryfikacja reguł stabilności Nelsona (Nelson Rules):" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                    <Label text="Weryfikacja reguł stabilności Nelsona (Nelson Rules):"
+                                           style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
                                     <ListView fx:id="lstNelsonViolations" prefHeight="120.0" minHeight="120.0" styleClass="audit-table">
                                         <placeholder>
-                                            <Label text="✓ Wszystkie reguły stabilności Nelsona są spełnione (brak naruszeń)." style="-fx-text-fill: #16a34a; -fx-font-weight: bold;" />
+                                            <Label text="✓ Wszystkie reguły stabilności Nelsona są spełnione (brak naruszeń)."
+                                                   style="-fx-text-fill: #16a34a; -fx-font-weight: bold;" />
                                         </placeholder>
                                     </ListView>
                                 </children>
@@ -86,18 +83,17 @@
                 <content>
                     <VBox spacing="10.0" style="-fx-padding: 15 0 0 0;">
                         <children>
-                            <Label text="Zidentyfikowane cykle odszraniania (metoda detekcji nachylenia gradientu dT/dt)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-fg-muted;" />
+                            <Label text="Zidentyfikowane cykle odszraniania (metoda detekcji nachylenia gradientu dT/dt)"
+                                   style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-fg-muted;" />
                             <TableView fx:id="defrostTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
                                 <columns>
-                                    <TableColumn fx:id="colDefrostStart" prefWidth="180.0" text="Czas rozpoczęcia" reorderable="false" />
-                                    <TableColumn fx:id="colDefrostEnd" prefWidth="180.0" text="Czas zakończenia" reorderable="false" />
-                                    <TableColumn fx:id="colDefrostDuration" prefWidth="120.0" text="Czas trwania [min]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                    <TableColumn fx:id="colDefrostMax" prefWidth="120.0" text="T max piku [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                    <TableColumn fx:id="colDefrostAmp" prefWidth="120.0" text="Amplituda skoku [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
+                                    <TableColumn fx:id="colDefrostStart"    prefWidth="180.0" text="Czas rozpoczęcia"    reorderable="false" />
+                                    <TableColumn fx:id="colDefrostEnd"      prefWidth="180.0" text="Czas zakończenia"     reorderable="false" />
+                                    <TableColumn fx:id="colDefrostDuration" prefWidth="120.0" text="Czas trwania [min]"   style="-fx-alignment: CENTER;" reorderable="false" />
+                                    <TableColumn fx:id="colDefrostMax"      prefWidth="120.0" text="T max piku [°C]"      style="-fx-alignment: CENTER;" reorderable="false" />
+                                    <TableColumn fx:id="colDefrostAmp"      prefWidth="120.0" text="Amplituda skoku [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
                                 </columns>
-                                <columnResizePolicy>
-                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                </columnResizePolicy>
+                                <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY" /></columnResizePolicy>
                                 <placeholder>
                                     <Label text="Nie wykryto cykli odszraniania w analizowanej serii danych." />
                                 </placeholder>
@@ -106,7 +102,107 @@
                     </VBox>
                 </content>
             </Tab>
-            
+
+            <!-- ZAKŁADKA 3: JEDNORODNOŚĆ PRZESTRZENNA (ΔT) -->
+            <Tab text="Jednorodność Przestrzenna (ΔT)">
+                <content>
+                    <VBox spacing="12.0" style="-fx-padding: 15 0 0 0;">
+                        <children>
+
+                            <!-- KPI CARDS: 4 wskaźniki w poziomie -->
+                            <HBox spacing="10.0" VBox.vgrow="NEVER">
+                                <children>
+                                    <!-- KPI 1: Maks. ΔT globalny -->
+                                    <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4"
+                                          style="-fx-background-color: #f0f9ff; -fx-background-radius: 8px; -fx-border-color: #0ea5e9; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
+                                        <children>
+                                            <Label text="Maks. ΔT globalny"
+                                                   style="-fx-font-size: 11px; -fx-text-fill: #0369a1; -fx-font-weight: bold;" />
+                                            <Label fx:id="lblMaxDeltaGlobal" text="—"
+                                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0c4a6e;" />
+                                            <Label text="°C" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                                        </children>
+                                    </VBox>
+                                    <!-- KPI 2: Śr. ΔT globalny -->
+                                    <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4"
+                                          style="-fx-background-color: #f0fdf4; -fx-background-radius: 8px; -fx-border-color: #22c55e; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
+                                        <children>
+                                            <Label text="Śr. ΔT globalny"
+                                                   style="-fx-font-size: 11px; -fx-text-fill: #15803d; -fx-font-weight: bold;" />
+                                            <Label fx:id="lblMeanDeltaGlobal" text="—"
+                                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #14532d;" />
+                                            <Label text="°C" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                                        </children>
+                                    </VBox>
+                                    <!-- KPI 3: Maks. gradient pionowy |GÓRA − DÓŁ| -->
+                                    <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4"
+                                          style="-fx-background-color: #fff7ed; -fx-background-radius: 8px; -fx-border-color: #f97316; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
+                                        <children>
+                                            <Label text="Maks. gradient pionowy"
+                                                   style="-fx-font-size: 11px; -fx-text-fill: #c2410c; -fx-font-weight: bold;" />
+                                            <Label fx:id="lblMaxVerticalGradient" text="—"
+                                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #7c2d12;" />
+                                            <Label text="°C  |GÓRA − DÓŁ|" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                                        </children>
+                                    </VBox>
+                                    <!-- KPI 4: Śr. gradient pionowy |GÓRA − DÓŁ| -->
+                                    <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4"
+                                          style="-fx-background-color: #fdf4ff; -fx-background-radius: 8px; -fx-border-color: #a855f7; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
+                                        <children>
+                                            <Label text="Śr. gradient pionowy"
+                                                   style="-fx-font-size: 11px; -fx-text-fill: #7e22ce; -fx-font-weight: bold;" />
+                                            <Label fx:id="lblMeanVerticalGradient" text="—"
+                                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #581c87;" />
+                                            <Label text="°C  |GÓRA − DÓŁ|" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                                        </children>
+                                    </VBox>
+                                </children>
+                            </HBox>
+
+                            <!-- WYKRES ΔT w czasie (3 serie: globalny / GÓRA / DÓŁ) -->
+                            <VBox VBox.vgrow="ALWAYS" spacing="4"
+                                  style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                                <children>
+                                    <Label text="Rozstęp Przestrzenny ΔT w czasie — serie: Globalny · Poziom GÓRA · Poziom DÓŁ"
+                                           style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                    <LineChart fx:id="deltaTimeChart" createSymbols="false" legendVisible="true"
+                                               VBox.vgrow="ALWAYS" animated="false">
+                                        <xAxis>
+                                            <NumberAxis fx:id="deltaTimeAxis" side="BOTTOM" forceZeroInRange="false" label="Pomiar nr" />
+                                        </xAxis>
+                                        <yAxis>
+                                            <NumberAxis side="LEFT" forceZeroInRange="true" lowerBound="0"
+                                                        label="ΔT przestrzenny [°C]" />
+                                        </yAxis>
+                                    </LineChart>
+                                </children>
+                            </VBox>
+
+                            <!-- TABELA PODSUMOWANIA POZIOMÓW (2 wiersze: GÓRA / DÓŁ) -->
+                            <VBox VBox.vgrow="NEVER" spacing="4">
+                                <children>
+                                    <Label text="Podsumowanie statystyk jednorodności wg poziomów fizycznych:"
+                                           style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-fg-default;" />
+                                    <TableView fx:id="levelSummaryTable" prefHeight="95" minHeight="95" styleClass="audit-table">
+                                        <columns>
+                                            <TableColumn fx:id="colLevelName"      text="Poziom"        prefWidth="160" reorderable="false" />
+                                            <TableColumn fx:id="colLevelMeanDelta" text="Śr. ΔT [°C]"   prefWidth="180" style="-fx-alignment: CENTER;" reorderable="false" />
+                                            <TableColumn fx:id="colLevelMaxDelta"  text="Maks. ΔT [°C]" prefWidth="180" style="-fx-alignment: CENTER;" reorderable="false" />
+                                        </columns>
+                                        <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY" /></columnResizePolicy>
+                                        <placeholder>
+                                            <Label text="Brak danych poziomowych — wymagane serie z obu poziomów (GÓRA i DÓŁ)."
+                                                   style="-fx-text-fill: -color-fg-muted;" />
+                                        </placeholder>
+                                    </TableView>
+                                </children>
+                            </VBox>
+
+                        </children>
+                    </VBox>
+                </content>
+            </Tab>
+
         </tabs>
     </TabPane>
 
@@ -114,6 +210,7 @@
 
     <!-- STOPKA PRZYCISKÓW -->
     <HBox alignment="CENTER_RIGHT" spacing="12">
-        <Button onAction="#handleClose" text="Zamknij" style="-fx-pref-height: 38px; -fx-pref-width: 120px;" styleClass="accent" />
+        <Button onAction="#handleClose" text="Zamknij"
+                style="-fx-pref-height: 38px; -fx-pref-width: 120px;" styleClass="accent" />
     </HBox>
 </VBox>
