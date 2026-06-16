@@ -179,6 +179,21 @@ public class TestoRevalidationController {
     @FXML private Label lblFRatio;
     @FXML private Label lblFDetails;
 
+    // ---- KROK 3 — Jednorodność Przestrzenna (ΔT) ----
+    @FXML private Label lblMaxDeltaGlobal;
+    @FXML private Label lblMeanDeltaGlobal;
+    @FXML private Label lblMaxVerticalGradient;
+    @FXML private Label lblMeanVerticalGradient;
+    @FXML private LineChart<Number, Number> deltaTimeChart;
+    @FXML private NumberAxis deltaTimeAxis;
+
+    @FXML private TableView<LevelRow> levelSummaryTable;
+    @FXML private TableColumn<LevelRow, String> colLevelName;
+    @FXML private TableColumn<LevelRow, String> colLevelMeanDelta;
+    @FXML private TableColumn<LevelRow, String> colLevelMaxDelta;
+
+    public record LevelRow(String name, double meanDelta, double maxDelta) {}
+
     @FXML private VBox homogeneityResultBox;
     @FXML private Label lblHomogeneityBadge;
     @FXML private Label lblHomogeneityTestName;
@@ -212,6 +227,10 @@ public class TestoRevalidationController {
         TestoRevalidationTableHelper.setupMetrologicalTable(metrologicalTableView, colMetroPos, colMetroSn, colMetroMin, colMetroMax, colMetroAvg, colMetroMkt, colMetroUnc, colMetroSpikes, colMetroDrift);
         TestoRevalidationTableHelper.setupStatsTable(statsTableView, colStatsPos, colStatsMedian, colStatsStdDev, colStatsRsd, colStatsSkewness, colStatsKurtosis, colStatsCp, colStatsCpk, colStatsJbPVal, colStatsAction, this::handleShowDiagnostics);
         
+
+
+        setupLevelSummaryTable();
+
         summaryTableView.setItems(summaryRows);
         metrologicalTableView.setItems(metrologicalRows);
         statsTableView.setItems(statsRows);
@@ -675,38 +694,7 @@ public class TestoRevalidationController {
 
 
     private void handleShowDiagnostics(StatsRow row) {
-        if (session == null || row == null) return;
-
-        RevalidationSession.GridPosition pos = row.getGridPosition();
-        RevalidationSession.PositionData posData = session.getAssignedPositions().get(pos);
-        if (posData == null) return;
-
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/stats_diagnostics_dialog.fxml"));
-            loader.setControllerFactory(applicationContext::getBean);
-            Parent view = loader.load();
-
-            StatsDiagnosticsDialogController controller = loader.getController();
-
-            Double minLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMinOperatingTemp() : 2.0;
-            Double maxLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMaxOperatingTemp() : 8.0;
-
-            controller.setSensorData(posData.getSeries(), row.getPositionName(), minLimit, maxLimit);
-
-            Stage stage = new Stage();
-            stage.setTitle("Zaawansowana Diagnostyka SPC & Defrost - " + row.getPositionName());
-            stage.setScene(new Scene(view));
-            stage.initOwner(statsTableView.getScene().getWindow());
-            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
-            stage.show();
-        } catch (Exception e) {
-            log.error("Failed to load stats diagnostics dialog", e);
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Błąd ładowania widoku");
-            alert.setHeaderText("Nie udało się załadować okna diagnostyki SPC.");
-            alert.setContentText(e.getMessage() != null ? e.getMessage() : e.toString());
-            alert.showAndWait();
-        }
+        com.mac.bry.desktop.controller.helper.TestoRevalidationDialogHelper.showDiagnosticsDialog(row, session, applicationContext, statsTableView.getScene().getWindow());
     }
 
     private void buildSummaryAndValidation() {
@@ -781,8 +769,15 @@ public class TestoRevalidationController {
 
             runValidationTests();
             updateMappingResultPanel();
-            renderMultiChannelChart();
+            com.mac.bry.desktop.controller.helper.TestoRevalidationChartHelper.renderMultiChannelChart(multiChannelChart, xAxisTime, session);
             setupHypothesisTestingComboBoxes();
+
+            com.mac.bry.desktop.service.stats.SpatialStatsService spatialService = applicationContext.getBean(com.mac.bry.desktop.service.stats.SpatialStatsService.class);
+            java.util.List<com.mac.bry.desktop.model.ThermoMeasurementSeries> allSeries = session.getAssignedPositions().values().stream()
+                    .map(RevalidationSession.PositionData::getSeries)
+                    .collect(java.util.stream.Collectors.toList());
+            com.mac.bry.desktop.dto.stats.SpatialStatsResult spatialResult = spatialService.calculateSpatialStats(allSeries);
+            setSpatialData(spatialResult);
         } catch (Throwable t) {
             log.error("Krytyczny błąd podczas budowania podsumowania rewalidacji GxP", t);
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -894,74 +889,41 @@ public class TestoRevalidationController {
         lbl.setStyle(ok ? "-fx-text-fill: -color-success-emphasis;" : "-fx-text-fill: -color-danger-emphasis;");
     }
 
-    private void renderMultiChannelChart() {
-        xAxisTime.setForceZeroInRange(false);
-        xAxisTime.setMinorTickVisible(false);
-        xAxisTime.setTickLabelFormatter(new StringConverter<>() {
-            @Override public String toString(Number n) {
-                int idx = n.intValue();
-                var vals = session.getAssignedPositions().values().iterator();
-                if (vals.hasNext()) {
-                    var s = vals.next().getSeries();
-                    if (idx >= 1 && idx <= s.getMeasurements().size())
-                        return s.getMeasurements().get(idx - 1).getTimestampLocal()
-                                .format(DateTimeFormatter.ofPattern("HH:mm"));
-                }
-                return "";
-            }
-            @Override public Number fromString(String s) { return 0; }
-        });
 
-        DateTimeFormatter tooltipTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        session.getAssignedPositions().forEach((pos, data) -> {
-            XYChart.Series<Number, Number> s = new XYChart.Series<>();
-            s.setName(pos.getLabel());
-            List<ThermoMeasurementPoint> pts = data.getSeries().getMeasurements();
-            for (int i = 0; i < pts.size(); i++) {
-                ThermoMeasurementPoint pt = pts.get(i);
-                XYChart.Data<Number, Number> dataPoint = new XYChart.Data<>(i + 1, pt.getRawCelsius());
-                
-                dataPoint.nodeProperty().addListener((obs, oldNode, newNode) -> {
-                    if (newNode != null) {
-                        String timeStr = pt.getTimestampLocal().format(tooltipTimeFormatter);
-                        Tooltip tooltip = new Tooltip(String.format(
-                                "Pozycja: %s\nCzas: %s\nTemperatura: %.1f °C", 
-                                pos.getLabel(), timeStr, pt.getRawCelsius()
-                        ));
-                        tooltip.setShowDelay(javafx.util.Duration.millis(50));
-                        tooltip.setHideDelay(javafx.util.Duration.millis(50));
-                        tooltip.setShowDuration(javafx.util.Duration.INDEFINITE);
-                        tooltip.setStyle(
-                            "-fx-font-size: 12px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-background-color: rgba(30, 41, 59, 0.9); " +
-                            "-fx-text-fill: white; " +
-                            "-fx-padding: 8px; " +
-                            "-fx-background-radius: 6px; " +
-                            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 5, 0.0, 0, 2);"
-                        );
-                        Tooltip.install(newNode, tooltip);
-
-                        newNode.setOnMouseEntered(e -> {
-                            newNode.setScaleX(1.8);
-                            newNode.setScaleY(1.8);
-                            newNode.setCursor(javafx.scene.Cursor.HAND);
-                            newNode.setStyle("-fx-background-color: -color-accent-emphasis;");
-                        });
-                        newNode.setOnMouseExited(e -> {
-                            newNode.setScaleX(1.0);
-                            newNode.setScaleY(1.0);
-                            newNode.setCursor(javafx.scene.Cursor.DEFAULT);
-                            newNode.setStyle("");
-                        });
-                    }
-                });
-                s.getData().add(dataPoint);
-            }
-            multiChannelChart.getData().add(s);
-        });
+    private void setupLevelSummaryTable() {
+        if (colLevelName == null) return;
+        colLevelName.setCellValueFactory(cell -> new javafx.beans.property.SimpleStringProperty(cell.getValue().name()));
+        colLevelMeanDelta.setCellValueFactory(cell ->
+                new javafx.beans.property.SimpleStringProperty(String.format("%.3f", cell.getValue().meanDelta())));
+        colLevelMaxDelta.setCellValueFactory(cell ->
+                new javafx.beans.property.SimpleStringProperty(String.format("%.3f", cell.getValue().maxDelta())));
     }
+
+    public void setSpatialData(com.mac.bry.desktop.dto.stats.SpatialStatsResult result) {
+        if (result == null || lblMaxDeltaGlobal == null) return;
+
+        lblMaxDeltaGlobal.setText(String.format("%.3f", result.getMaxSpatialRange()));
+        lblMeanDeltaGlobal.setText(String.format("%.3f", result.getMeanSpatialRange()));
+        lblMaxVerticalGradient.setText(String.format("%.3f", result.getMaxVerticalGradient()));
+        lblMeanVerticalGradient.setText(String.format("%.3f", result.getMeanVerticalGradient()));
+
+        deltaTimeChart.getData().clear();
+        XYChart.Series<Number, Number> globalSeries = com.mac.bry.desktop.controller.helper.TestoRevalidationChartHelper.buildDeltaSeries("ΔT globalny", result.getSpatialRangesOverTime());
+        XYChart.Series<Number, Number> topSeries    = com.mac.bry.desktop.controller.helper.TestoRevalidationChartHelper.buildDeltaSeries("ΔT GÓRA",    result.getSpatialRangesOverTimeTop());
+        XYChart.Series<Number, Number> bottomSeries = com.mac.bry.desktop.controller.helper.TestoRevalidationChartHelper.buildDeltaSeries("ΔT DÓŁ",     result.getSpatialRangesOverTimeBottom());
+        deltaTimeChart.getData().addAll(java.util.List.of(globalSeries, topSeries, bottomSeries));
+
+        if (result.hasLevelData()) {
+            javafx.collections.ObservableList<LevelRow> rows = javafx.collections.FXCollections.observableArrayList(
+                new LevelRow("🔼 GÓRA (TOP)",    result.getMeanRangeTop(),    result.getMaxRangeTop()),
+                new LevelRow("🔽 DÓŁ (BOTTOM)",  result.getMeanRangeBottom(), result.getMaxRangeBottom())
+            );
+            levelSummaryTable.setItems(rows);
+        }
+    }
+
+
 
     // ============================================================
     // GENEROWANIE PAKIETU ZIP (delegacja do RevalidationZipCompiler)

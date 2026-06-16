@@ -57,29 +57,12 @@ public class StatsDiagnosticsDialogController {
     @FXML private TableColumn<DefrostCycle, Double> colDefrostAmp;
 
     // ---- Zakładka 3: Jednorodność Przestrzenna ----
-    /** KPI: maksymalny globalny rozstęp przestrzenny. */
-    @FXML private Label lblMaxDeltaGlobal;
-    /** KPI: średni globalny rozstęp przestrzenny. */
-    @FXML private Label lblMeanDeltaGlobal;
-    /** KPI: maksymalny bezwzględny gradient pionowy |GÓRA − DÓŁ|. */
-    @FXML private Label lblMaxVerticalGradient;
-    /** KPI: średni bezwzględny gradient pionowy |GÓRA − DÓŁ|. */
-    @FXML private Label lblMeanVerticalGradient;
-    /** Wykres ΔT w czasie z 3 seriami: globalny / poziom GÓRA / poziom DÓŁ. */
-    @FXML private LineChart<Number, Number> deltaTimeChart;
-    /** Tabela podsumowania 2-poziomowego. */
-    @FXML private TableView<LevelRow> levelSummaryTable;
-    @FXML private TableColumn<LevelRow, String> colLevelName;
-    @FXML private TableColumn<LevelRow, String> colLevelMeanDelta;
-    @FXML private TableColumn<LevelRow, String> colLevelMaxDelta;
-
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final String FMT_DELTA = "%.3f";
 
     @FXML
     public void initialize() {
         setupDefrostTable();
-        setupLevelSummaryTable();
     }
 
     // -----------------------------------------------------------------------
@@ -97,14 +80,6 @@ public class StatsDiagnosticsDialogController {
                 Math.round(cellData.getValue().getMaxTemperature() * 100.0) / 100.0));
         colDefrostAmp.setCellValueFactory(cellData -> new SimpleObjectProperty<>(
                 Math.round(cellData.getValue().getAmplitude() * 100.0) / 100.0));
-    }
-
-    private void setupLevelSummaryTable() {
-        colLevelName.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().name()));
-        colLevelMeanDelta.setCellValueFactory(cell ->
-                new SimpleStringProperty(String.format(FMT_DELTA, cell.getValue().meanDelta())));
-        colLevelMaxDelta.setCellValueFactory(cell ->
-                new SimpleStringProperty(String.format(FMT_DELTA, cell.getValue().maxDelta())));
     }
 
     // -----------------------------------------------------------------------
@@ -181,68 +156,6 @@ public class StatsDiagnosticsDialogController {
     }
 
     // -----------------------------------------------------------------------
-    // Dane dla zakładki Jednorodności Przestrzennej
-    // -----------------------------------------------------------------------
-
-    /**
-     * Wypełnia zakładkę "Jednorodność Przestrzenna (ΔT)" danymi przestrzennymi.
-     * Wywołaj tę metodę po {@link #setSensorData} gdy dostępny jest wynik
-     * {@link com.mac.bry.desktop.service.stats.SpatialStatsService#calculateSpatialStats}.
-     *
-     * @param result wynik obliczeń przestrzennych dla całej sesji rewalidacji
-     */
-    public void setSpatialData(SpatialStatsResult result) {
-        if (result == null) {
-            log.warn("setSpatialData: result jest null — zakładka przestrzenna pozostanie pusta.");
-            return;
-        }
-
-        // 1. KPI — wartości globalne
-        lblMaxDeltaGlobal.setText(String.format(FMT_DELTA, result.getMaxSpatialRange()));
-        lblMeanDeltaGlobal.setText(String.format(FMT_DELTA, result.getMeanSpatialRange()));
-        lblMaxVerticalGradient.setText(String.format(FMT_DELTA, result.getMaxVerticalGradient()));
-        lblMeanVerticalGradient.setText(String.format(FMT_DELTA, result.getMeanVerticalGradient()));
-
-        // 2. Wykres ΔT w czasie — 3 serie
-        renderDeltaTimeChart(result);
-
-        // 3. Tabela podsumowania poziomów
-        if (result.hasLevelData()) {
-            ObservableList<LevelRow> rows = FXCollections.observableArrayList(
-                new LevelRow("🔼 GÓRA (TOP)",    result.getMeanRangeTop(),    result.getMaxRangeTop()),
-                new LevelRow("🔽 DÓŁ (BOTTOM)",  result.getMeanRangeBottom(), result.getMaxRangeBottom())
-            );
-            levelSummaryTable.setItems(rows);
-        }
-    }
-
-    private void renderDeltaTimeChart(SpatialStatsResult result) {
-        deltaTimeChart.getData().clear();
-
-        XYChart.Series<Number, Number> globalSeries = buildDeltaSeries("ΔT globalny", result.getSpatialRangesOverTime());
-        XYChart.Series<Number, Number> topSeries    = buildDeltaSeries("ΔT GÓRA",    result.getSpatialRangesOverTimeTop());
-        XYChart.Series<Number, Number> bottomSeries = buildDeltaSeries("ΔT DÓŁ",     result.getSpatialRangesOverTimeBottom());
-
-        deltaTimeChart.getData().addAll(List.of(globalSeries, topSeries, bottomSeries));
-    }
-
-    /**
-     * Buduje serię wykresu z mapy timestamp → wartość ΔT.
-     * Oś X = kolejny numer pomiaru (1, 2, 3…) — równomierny rozkład
-     * niezależnie od rzeczywistego interwału rejestracji.
-     */
-    private XYChart.Series<Number, Number> buildDeltaSeries(String name, Map<LocalDateTime, Double> data) {
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName(name);
-        if (data == null || data.isEmpty()) return series;
-        int idx = 1;
-        for (Map.Entry<LocalDateTime, Double> entry : data.entrySet()) {
-            series.getData().add(new XYChart.Data<>(idx++, entry.getValue()));
-        }
-        return series;
-    }
-
-    // -----------------------------------------------------------------------
     // Renderowanie kart SPC (niezmienione)
     // -----------------------------------------------------------------------
 
@@ -298,11 +211,4 @@ public class StatsDiagnosticsDialogController {
     public void handleClose() {
         ((Stage) lblSensorTitle.getScene().getWindow()).close();
     }
-
-    // -----------------------------------------------------------------------
-    // Wewnętrzny model wiersza tabeli poziomów
-    // -----------------------------------------------------------------------
-
-    /** Wiersz tabeli podsumowania jednorodności dla jednego poziomu fizycznego. */
-    private record LevelRow(String name, double meanDelta, double maxDelta) {}
 }
