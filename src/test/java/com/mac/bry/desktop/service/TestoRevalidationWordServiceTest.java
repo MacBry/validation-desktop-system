@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestoRevalidationWordServiceTest {
 
-    private final TestoRevalidationWordService wordService = new TestoRevalidationWordService();
+    private TestoRevalidationWordService wordService = new TestoRevalidationWordService(org.mockito.Mockito.mock(ValidationPlanNumberRepository.class));
 
     @Test
     @DisplayName("Powinien wygenerować Załącznik nr 8 podmieniając aktywne znaczniki i czyszcząc nieaktywne")
@@ -287,7 +287,7 @@ public class TestoRevalidationWordServiceTest {
     void shouldGenerateAppendix3WithCorrectRpwFromRepository() throws Exception {
         // Given
         ValidationPlanNumberRepository mockRepo = org.mockito.Mockito.mock(ValidationPlanNumberRepository.class);
-        wordService.setValidationPlanNumberRepository(mockRepo);
+        wordService = new TestoRevalidationWordService(mockRepo);
         try {
             Department department = new Department();
             department.setName("Dzial Testow Metrologicznych");
@@ -367,7 +367,7 @@ public class TestoRevalidationWordServiceTest {
                 assertThat(fullText).doesNotContain("$rokRPW$");
             }
         } finally {
-            wordService.setValidationPlanNumberRepository(null);
+            wordService = new TestoRevalidationWordService(org.mockito.Mockito.mock(ValidationPlanNumberRepository.class));
         }
     }
 

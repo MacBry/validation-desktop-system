@@ -42,7 +42,7 @@ public class RevalidationZipCompilerTest {
 
     @BeforeEach
     void setUp() {
-        wordService = new TestoRevalidationWordService();
+        wordService = new TestoRevalidationWordService(org.mockito.Mockito.mock(com.mac.bry.desktop.repository.ValidationPlanNumberRepository.class));
         zipCompiler = new RevalidationZipCompiler(pdfService, wordService, pdfReportService, chartRenderer);
     }
 

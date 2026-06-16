@@ -119,31 +119,45 @@ public class StatsDiagnosticsDialogController {
 
         ObservableList<String> nelsonItems = FXCollections.observableArrayList();
         for (NelsonRulesDetector.Violation v : xbarViolations) {
-            String msg = String.format("[Karta X-Bar] Podgrupa %d: %s", v.getSubgroupIndex(), v.getDescription());
+            String interpretation = com.mac.bry.desktop.service.stats.NelsonRulesInterpreter.getXBarInterpretation(v.getRuleNumber());
+            String msg = String.format("[Karta X-Bar] Podgrupa %d: %s\n> Interpretacja: %s\n", v.getSubgroupIndex(), v.getDescription(), interpretation);
             log.info("Dodawanie naruszenia X-bar: {}", msg);
             nelsonItems.add(msg);
         }
         for (NelsonRulesDetector.Violation v : sViolations) {
-            String msg = String.format("[Karta S] Podgrupa %d: %s", v.getSubgroupIndex(), v.getDescription());
+            String interpretation = com.mac.bry.desktop.service.stats.NelsonRulesInterpreter.getSChartInterpretation(v.getRuleNumber());
+            String msg = String.format("[Karta S] Podgrupa %d: %s\n> Interpretacja: %s\n", v.getSubgroupIndex(), v.getDescription(), interpretation);
             log.info("Dodawanie naruszenia S: {}", msg);
             nelsonItems.add(msg);
         }
 
         if (lstNelsonViolations != null) {
             log.info("Ustawianie elementów w lstNelsonViolations (rozmiar: {})", nelsonItems.size());
-            lstNelsonViolations.setCellFactory(lv -> new ListCell<String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                        setGraphic(null);
-                        setStyle(null);
-                    } else {
-                        setText(item);
-                        setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
+            lstNelsonViolations.setCellFactory(lv -> {
+                ListCell<String> cell = new ListCell<String>() {
+                    private final javafx.scene.text.Text textNode = new javafx.scene.text.Text();
+
+                    {
+                        textNode.wrappingWidthProperty().bind(lv.widthProperty().subtract(40));
                     }
-                }
+
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setGraphic(null);
+                            setText(null);
+                            setStyle(null);
+                        } else {
+                            textNode.setText(item);
+                            textNode.setStyle("-fx-fill: #b91c1c; -fx-font-weight: bold;");
+                            setGraphic(textNode);
+                            setText(null);
+                            setStyle("-fx-padding: 10px; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0;");
+                        }
+                    }
+                };
+                return cell;
             });
             lstNelsonViolations.setItems(nelsonItems);
         } else {

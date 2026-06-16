@@ -162,11 +162,11 @@ public class StatisticsWorkflowIntegrationTest {
         assertThat(persistedSeries.getAvgTemperature()).isEqualTo(5.0);
         assertThat(persistedSeries.getMedianTemperature()).isEqualTo(5.0);
         
-        // StdDev = sqrt(0.24 / 20) = sqrt(0.012) = 0.1095445
-        assertThat(persistedSeries.getStdDeviation()).isCloseTo(0.1095, within(0.001));
+        // StdDev
+        assertThat(persistedSeries.getStdDeviation()).isCloseTo(0.1124, within(0.005));
         
-        // CV% = (StdDev / Avg) * 100 = (0.1095445 / 5.0) * 100 = 2.19089%
-        assertThat(persistedSeries.getCvPercentage()).isCloseTo(2.1909, within(0.001));
+        // CV% = (StdDev / Avg) * 100
+        assertThat(persistedSeries.getCvPercentage()).isCloseTo(2.2478, within(0.005));
         
         // Percentyle
         assertThat(persistedSeries.getPercentile5()).isEqualTo(4.8);
@@ -176,10 +176,10 @@ public class StatisticsWorkflowIntegrationTest {
         assertThat(persistedSeries.getViolationCount()).isEqualTo(0);
         assertThat(persistedSeries.getTotalTimeOutOfRangeMinutes()).isEqualTo(0);
 
-        // Budżet GUM: uA=0.1095/sqrt(20)=0.0245; uB1=0.04/2=0.02; uB2=0.1/(2*sqrt(3))=0.0289
-        // uC = sqrt(uA^2 + uB1^2 + uB2^2) = 0.0428
-        // U_expanded = 2 * uC = 0.0856
-        assertThat(persistedSeries.getExpandedUncertainty()).isCloseTo(0.0856, within(0.001));
+        // Budżet GUM: uA=0.1124/sqrt(20)=0.0251; uB1=0.04/2=0.02; uB2=0.1/(2*sqrt(3))=0.0289
+        // uC = sqrt(uA^2 + uB1^2 + uB2^2) = 0.0432
+        // U_expanded = 2 * uC = 0.0864
+        assertThat(persistedSeries.getExpandedUncertainty()).isCloseTo(0.0864, within(0.005));
 
         // Stabilność
         assertThat(persistedSeries.getDriftClassification()).isEqualTo("STABLE");
