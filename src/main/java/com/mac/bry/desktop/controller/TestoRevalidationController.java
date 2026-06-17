@@ -516,7 +516,7 @@ public class TestoRevalidationController {
     }
 
     private void fillSensorFields(RevalidationSession.PositionData d) {
-        txtSensorModel.setText(d.getModel());
+        txtSensorModel.setText(d.getModel() != null ? d.getModel().getName() : "");
         txtSensorSn.setText(d.getSerialNumber());
         int battery = d.getSeries().getBatteryLevelPercent();
         txtSensorBattery.setText(battery >= 0 ? battery + "%" : "N/D (import PDF)");
@@ -721,7 +721,8 @@ public class TestoRevalidationController {
                     pointCount = data.getSeries().getMeasurements().size();
                 }
 
-                summaryRows.add(new SummaryRow(pos.getLabel(), data.getSerialNumber(), data.getModel(),
+                String modelName = data.getModel() != null ? data.getModel().getName() : "Nieznany";
+                summaryRows.add(new SummaryRow(pos.getLabel(), data.getSerialNumber(), modelName,
                         certNo, validity, pointCount, status));
 
                 if (data.getSeries() != null) {

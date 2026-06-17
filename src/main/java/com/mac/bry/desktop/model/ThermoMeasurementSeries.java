@@ -63,6 +63,11 @@ public class ThermoMeasurementSeries {
     @Column(name = "first_measurement_time_local", nullable = false)
     private LocalDateTime firstMeasurementTimeLocal; // Wyliczony czas pierwszego pomiaru (Czas lokalny hosta z uwzględnieniem DST)
 
+    @Column(name = "channel_number", nullable = false)
+    @NotNull(message = "Numer kanału jest wymagany")
+    @Builder.Default
+    private Integer channelNumber = 1;
+
     // Metadane GxP (Audit Trail)
     @Column(name = "imported_at", nullable = false)
     private LocalDateTime importedAt; // Data i godzina bezpośredniego odczytu USB

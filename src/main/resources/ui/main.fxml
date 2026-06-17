@@ -29,6 +29,7 @@
                      <children>
                         <Button mnemonicParsing="false" onAction="#showDashboard" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="  Strona Główna" />
                         <Button mnemonicParsing="false" onAction="#showThermoRecorders" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="  Rejestratory" />
+                        <Button mnemonicParsing="false" onAction="#showThermoRecorderModels" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="  Modele Rejestratorów" />
                         <Button mnemonicParsing="false" onAction="#showCoolingDevices" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="  Komory chłodnicze" />
                      </children>
                   </VBox>

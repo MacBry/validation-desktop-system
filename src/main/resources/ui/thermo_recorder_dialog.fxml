@@ -22,7 +22,7 @@
         <TextField fx:id="snField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
         <Label text="Model:" GridPane.rowIndex="1" />
-        <TextField fx:id="modelField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+        <ComboBox fx:id="modelComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
         <Label text="Status:" GridPane.rowIndex="2" />
         <ComboBox fx:id="statusComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />

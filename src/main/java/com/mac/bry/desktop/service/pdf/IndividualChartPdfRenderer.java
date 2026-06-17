@@ -53,9 +53,13 @@ public class IndividualChartPdfRenderer {
             double unc = s.getExpandedUncertainty() != null ? s.getExpandedUncertainty() : 0.0;
             
             metaTable.addCell(PdfStyleHelper.createMetaCell("Model rejestratora:", labelFont, true));
-            metaTable.addCell(PdfStyleHelper.createMetaCell(data.getModel(), valueFont, false));
+            metaTable.addCell(PdfStyleHelper.createMetaCell(data.getModel() != null ? data.getModel().getName() : "Nieznany", valueFont, false));
             metaTable.addCell(PdfStyleHelper.createMetaCell("Numer seryjny:", labelFont, true));
-            metaTable.addCell(PdfStyleHelper.createMetaCell(data.getSerialNumber(), valueFont, false));
+            String sn = data.getSerialNumber();
+            if (data.getModel() != null && data.getModel().getChannelCount() != null && data.getModel().getChannelCount() > 1 && data.getChannelNumber() != null) {
+                sn += " (Kanał " + data.getChannelNumber() + ")";
+            }
+            metaTable.addCell(PdfStyleHelper.createMetaCell(sn, valueFont, false));
             
             metaTable.addCell(PdfStyleHelper.createMetaCell("T min:", labelFont, true));
             metaTable.addCell(PdfStyleHelper.createMetaCell(String.format("%.1f°C", min), valueFont, false));

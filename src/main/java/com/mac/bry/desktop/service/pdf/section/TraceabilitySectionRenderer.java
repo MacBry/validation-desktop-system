@@ -46,8 +46,15 @@ public class TraceabilitySectionRenderer implements PdfSectionRenderer {
             String validity = d.getLatestCalibration() != null ? d.getLatestCalibration().getValidUntil().toString() : "–";
 
             traceabilityTable.addCell(PdfStyleHelper.createCell(pos.getLabel(), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_LEFT));
-            traceabilityTable.addCell(PdfStyleHelper.createCell(d.getModel(), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
-            traceabilityTable.addCell(PdfStyleHelper.createCell(d.getSerialNumber(), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            String modelName = d.getModel() != null ? d.getModel().getName() : "";
+            traceabilityTable.addCell(PdfStyleHelper.createCell(modelName, PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            
+            String snDisplay = d.getSerialNumber();
+            if (d.getModel() != null && d.getModel().getChannelCount() != null && d.getModel().getChannelCount() > 1 && d.getChannelNumber() != null) {
+                snDisplay += " (Ch " + d.getChannelNumber() + ")";
+            }
+            traceabilityTable.addCell(PdfStyleHelper.createCell(snDisplay, PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            
             traceabilityTable.addCell(PdfStyleHelper.createCell(certNo, PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
             traceabilityTable.addCell(PdfStyleHelper.createCell(validity, PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
         }

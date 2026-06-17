@@ -13,9 +13,9 @@ public interface ThermoRecorderRepository extends JpaRepository<ThermoRecorder, 
     Optional<ThermoRecorder> findBySerialNumber(String serialNumber);
 
     @Override
-    @EntityGraph(attributePaths = {"calibrations", "department", "laboratory"})
+    @EntityGraph(attributePaths = {"calibrations", "department", "laboratory", "model"})
     List<ThermoRecorder> findAll();
 
-    @EntityGraph(attributePaths = {"calibrations", "department", "laboratory"})
-    List<ThermoRecorder> findBySerialNumberContainingIgnoreCaseOrModelContainingIgnoreCase(String serialNumber, String model);
+    @EntityGraph(attributePaths = {"calibrations", "department", "laboratory", "model"})
+    List<ThermoRecorder> findBySerialNumberContainingIgnoreCaseOrModelNameContainingIgnoreCase(String serialNumber, String modelName);
 }

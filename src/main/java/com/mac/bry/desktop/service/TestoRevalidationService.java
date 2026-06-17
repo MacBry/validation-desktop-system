@@ -32,6 +32,7 @@ public class TestoRevalidationService {
     private final CalibrationRepository calibrationRepository;
     private final CalibrationPointRepository calibrationPointRepository;
     private final ThermoMeasurementSeriesRepository thermoMeasurementSeriesRepository;
+    private final ThermoRecorderModelRepository thermoRecorderModelRepository;
     private final DepartmentRepository departmentRepository;
     private final TestoUsbImportService testoUsbImportService;
     private final Testo184UsbImportService testo184UsbImportService;
@@ -89,7 +90,11 @@ public class TestoRevalidationService {
                         + " (Testo 184T) nie figuruje w systemie VCC!"
                         + " Zarejestruj go przed rozpoczęciem procedury."));
 
-        Calibration latestCal = recorder.getLatestCalibration();
+        if (session.isDeviceChannelUsed(serialNumber, 1)) {
+            throw new IllegalArgumentException("BLOKADA GxP: Rejestrator " + serialNumber + " (Kanał 1) jest już użyty w tej sesji rewalidacyjnej na innej pozycji!");
+        }
+
+        Calibration latestCal = recorder.getLatestCalibrationForChannel(1);
         if (latestCal == null) {
             log.warn("Rejestrator 184T {} nie posiada zarejestrowanego świadectwa wzorcowania!", serialNumber);
         } else if (!latestCal.isValid()) {
@@ -147,7 +152,7 @@ public class TestoRevalidationService {
 
         return RevalidationSession.PositionData.builder()
                 .serialNumber(serialNumber)
-                .model(result.device.model)
+                .model(recorder.getModel())
                 .recorder(recorder)
                 .latestCalibration(latestCal)
                 .series(series)
@@ -194,7 +199,11 @@ public class TestoRevalidationService {
                         "BLOKADA GxP: Rejestrator o numerze seryjnym " + serialNumber 
                         + " nie figuruje w systemie VCC! Zarejestruj go przed rozpoczęciem rewalidacji."));
 
-        Calibration latestCal = recorder.getLatestCalibration();
+        if (session.isDeviceChannelUsed(serialNumber, 1)) {
+            throw new IllegalArgumentException("BLOKADA GxP: Rejestrator " + serialNumber + " (Kanał 1) jest już użyty w tej sesji rewalidacyjnej na innej pozycji!");
+        }
+
+        Calibration latestCal = recorder.getLatestCalibrationForChannel(1);
         if (latestCal == null) {
             log.warn("Rejestrator {} nie posiada zarejestrowanego świadectwa wzorcowania!", serialNumber);
         } else if (!latestCal.isValid()) {
@@ -249,7 +258,7 @@ public class TestoRevalidationService {
 
         return RevalidationSession.PositionData.builder()
                 .serialNumber(serialNumber)
-                .model(usbResult.device.model)
+                .model(recorder.getModel())
                 .recorder(recorder)
                 .latestCalibration(latestCal)
                 .series(series)
@@ -283,9 +292,18 @@ public class TestoRevalidationService {
             }
             Department defaultDept = depts.get(0);
 
+            ThermoRecorderModel simModel = thermoRecorderModelRepository.findByName("Testo 174T (Symulacja)")
+                .orElseGet(() -> {
+                    return thermoRecorderModelRepository.save(ThermoRecorderModel.builder()
+                        .name("Testo 174T (Symulacja)")
+                        .channelCount(1)
+                        .defaultResolution(new BigDecimal("0.100"))
+                        .build());
+                });
+
             recorder = ThermoRecorder.builder()
                     .serialNumber(serialNumber)
-                    .model("Testo 174T (Symulacja)")
+                    .model(simModel)
                     .status(RecorderStatus.ACTIVE)
                     .resolution(new BigDecimal("0.100"))
                     .department(defaultDept)
@@ -316,7 +334,11 @@ public class TestoRevalidationService {
             recorder = recorderOpt.get();
         }
 
-        Calibration latestCal = recorder.getLatestCalibration();
+        if (session.isDeviceChannelUsed(serialNumber, 1)) {
+            throw new IllegalArgumentException("BLOKADA GxP: Rejestrator " + serialNumber + " (Kanał 1) jest już użyty w tej sesji rewalidacyjnej na innej pozycji!");
+        }
+
+        Calibration latestCal = recorder.getLatestCalibrationForChannel(1);
 
         // 8-kanałowy symulator temperatury z przesunięciami baseline komory
         // Cechuje się precyzyjną, GxP-zgodną synchronizacją (40 punktów, start 2026-05-18T00:00, interwał 3h = 180min)

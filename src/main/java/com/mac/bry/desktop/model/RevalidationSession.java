@@ -54,6 +54,13 @@ public class RevalidationSession {
         }
     }
 
+    public boolean isDeviceChannelUsed(String serialNumber, int channelNumber) {
+        return assignedPositions.values().stream()
+                .anyMatch(pd -> serialNumber.equals(pd.getSerialNumber()) && 
+                                pd.getChannelNumber() != null && 
+                                pd.getChannelNumber() == channelNumber);
+    }
+
     /**
      * Kontener na dane przypisane do konkretnej pozycji (narożnika) na siatce komory.
      */
@@ -63,7 +70,9 @@ public class RevalidationSession {
     @AllArgsConstructor
     public static class PositionData {
         private String serialNumber;
-        private String model;
+        private ThermoRecorderModel model;
+        @Builder.Default
+        private Integer channelNumber = 1;
         private ThermoRecorder recorder; // Rekord z ewidencji w bazie danych
         private Calibration latestCalibration; // Świadectwo wzorcowania z bazy (najnowsze, aktywne)
         private ThermoMeasurementSeries series; // Pełna seria pomiarowa zawierająca punkty (np. 40 próbek)

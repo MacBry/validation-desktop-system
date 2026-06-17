@@ -190,7 +190,9 @@ public class AuditService {
             addEntry(history, revId, ts, modBy, "Numer Seryjny", oldR.getSerialNumber(), newR.getSerialNumber());
         }
         if (!java.util.Objects.equals(oldR.getModel(), newR.getModel())) {
-            addEntry(history, revId, ts, modBy, "Model", oldR.getModel(), newR.getModel());
+            addEntry(history, revId, ts, modBy, "Model", 
+                oldR.getModel() != null ? oldR.getModel().getName() : "-", 
+                newR.getModel() != null ? newR.getModel().getName() : "-");
         }
         if (oldR.getStatus() != newR.getStatus()) {
             addEntry(history, revId, ts, modBy, "Status", oldR.getStatus().getDisplayName(), newR.getStatus().getDisplayName());

@@ -162,6 +162,11 @@ public class MainController {
     }
 
     @FXML
+    public void showThermoRecorderModels(ActionEvent event) {
+        loadView("/ui/thermo_recorder_model_manager.fxml");
+    }
+
+    @FXML
     public void showCoolingDevices(ActionEvent event) {
         loadView("/ui/cooling_devices.fxml");
     }

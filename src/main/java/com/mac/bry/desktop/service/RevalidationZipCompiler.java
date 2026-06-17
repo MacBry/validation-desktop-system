@@ -142,7 +142,7 @@ public class RevalidationZipCompiler {
     private TestoPdfReportService.TestoReportData buildReportData(
             RevalidationSession.GridPosition pos, RevalidationSession.PositionData data) {
         TestoPdfReportService.TestoReportData rd = new TestoPdfReportService.TestoReportData();
-        rd.model = data.getModel();
+        rd.model = data.getModel() != null ? data.getModel().getName() : "Nieznany";
         rd.serialNumber = data.getSerialNumber();
         rd.batteryLevel = data.getSeries().getBatteryLevelPercent() + "%";
         rd.interval = data.getSeries().getLoggingIntervalMinutes() + " minut";

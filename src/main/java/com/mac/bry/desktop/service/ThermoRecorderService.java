@@ -29,7 +29,7 @@ public class ThermoRecorderService {
         if (query == null || query.isBlank()) {
             return getAllRecorders();
         }
-        return recorderRepository.findBySerialNumberContainingIgnoreCaseOrModelContainingIgnoreCase(query, query);
+        return recorderRepository.findBySerialNumberContainingIgnoreCaseOrModelNameContainingIgnoreCase(query, query);
     }
 
     @Transactional
@@ -45,7 +45,32 @@ public class ThermoRecorderService {
     }
 
     public String getCalibrationStatus(ThermoRecorder recorder) {
-        Calibration latest = recorder.getLatestCalibration();
+        int channels = (recorder.getModel() != null && recorder.getModel().getChannelCount() != null) ? recorder.getModel().getChannelCount() : 1;
+        if (channels == 1) {
+            return getCalibrationStatusForChannel(recorder, 1);
+        }
+
+        boolean allValid = true;
+        boolean anyInvalid = false;
+        boolean anyExpiring = false;
+
+        for (int i = 1; i <= channels; i++) {
+            String status = getCalibrationStatusForChannel(recorder, i);
+            if (status.contains("BRAK") || status.contains("NIEWAŻNE")) {
+                anyInvalid = true;
+                allValid = false;
+            } else if (status.contains("WYGASA")) {
+                anyExpiring = true;
+            }
+        }
+
+        if (anyInvalid) return "NIEWAŻNE (Braki w kanałach)";
+        if (anyExpiring) return "WYGASA WKRÓTCE (Częściowo)";
+        return "WAŻNE (Wielokanałowy)";
+    }
+
+    public String getCalibrationStatusForChannel(ThermoRecorder recorder, int channelNumber) {
+        Calibration latest = recorder.getLatestCalibrationForChannel(channelNumber);
         if (latest == null) {
             return "BRAK WZORCOWANIA";
         }

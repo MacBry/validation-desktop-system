@@ -13,6 +13,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import com.mac.bry.desktop.model.ThermoRecorderModel;
+import com.mac.bry.desktop.repository.ThermoRecorderModelRepository;
+import javafx.util.StringConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -30,9 +33,10 @@ public class ThermoRecorderDialogController {
     private final ThermoRecorderService recorderService;
     private final DepartmentRepository departmentRepository;
     private final LaboratoryRepository laboratoryRepository;
+    private final ThermoRecorderModelRepository modelRepository;
 
     @FXML private TextField snField;
-    @FXML private TextField modelField;
+    @FXML private ComboBox<ThermoRecorderModel> modelComboBox;
     @FXML private ComboBox<RecorderStatus> statusComboBox;
     @FXML private TextField resolutionField;
     @FXML private ComboBox<Department> deptComboBox;
@@ -47,6 +51,12 @@ public class ThermoRecorderDialogController {
     }
 
     private void setupComboBoxes() {
+        modelComboBox.setItems(FXCollections.observableArrayList(modelRepository.findByActiveTrueOrderByNameAsc()));
+        modelComboBox.setConverter(new StringConverter<>() {
+            @Override public String toString(ThermoRecorderModel m) { return m == null ? "" : m.getName(); }
+            @Override public ThermoRecorderModel fromString(String s) { return null; }
+        });
+
         statusComboBox.setItems(FXCollections.observableArrayList(RecorderStatus.values()));
         statusComboBox.setConverter(new StringConverter<>() {
             @Override public String toString(RecorderStatus status) { return status == null ? "" : status.getDisplayName(); }
@@ -77,7 +87,7 @@ public class ThermoRecorderDialogController {
         this.recorder = recorder;
         if (isEdit) {
             snField.setText(recorder.getSerialNumber());
-            modelField.setText(recorder.getModel());
+            modelComboBox.getSelectionModel().select(recorder.getModel());
             statusComboBox.getSelectionModel().select(recorder.getStatus());
             resolutionField.setText(recorder.getResolution().toString());
             deptComboBox.getSelectionModel().select(recorder.getDepartment());
@@ -92,7 +102,7 @@ public class ThermoRecorderDialogController {
     public void handleSave() {
         try {
             recorder.setSerialNumber(snField.getText());
-            recorder.setModel(modelField.getText());
+            recorder.setModel(modelComboBox.getValue());
             recorder.setStatus(statusComboBox.getValue());
             recorder.setResolution(new BigDecimal(resolutionField.getText()));
             recorder.setDepartment(deptComboBox.getValue());

@@ -70,10 +70,15 @@ public class CalibrationCertificatePdfRenderer {
             detailsTable.addCell(PdfStyleHelper.createMetaCell(calibration.getValidUntil() != null ? calibration.getValidUntil().toString() : "–", valueFont, false));
             
             detailsTable.addCell(PdfStyleHelper.createMetaCell("Obiekt wzorcowania (Rejestrator):", labelFont, true));
-            detailsTable.addCell(PdfStyleHelper.createMetaCell(calibration.getThermoRecorder().getModel(), valueFont, false));
+            detailsTable.addCell(PdfStyleHelper.createMetaCell(calibration.getThermoRecorder().getModel() != null ? calibration.getThermoRecorder().getModel().getName() : "Nieznany", valueFont, false));
             
             detailsTable.addCell(PdfStyleHelper.createMetaCell("Numer seryjny rejestratora:", labelFont, true));
-            detailsTable.addCell(PdfStyleHelper.createMetaCell(calibration.getThermoRecorder().getSerialNumber(), valueFont, false));
+            
+            String sn = calibration.getThermoRecorder().getSerialNumber();
+            if (calibration.getChannelNumber() != null && calibration.getThermoRecorder().getModel() != null && calibration.getThermoRecorder().getModel().getChannelCount() != null && calibration.getThermoRecorder().getModel().getChannelCount() > 1) {
+                sn += " (Kanał " + calibration.getChannelNumber() + ")";
+            }
+            detailsTable.addCell(PdfStyleHelper.createMetaCell(sn, valueFont, false));
             
             detailsTable.addCell(PdfStyleHelper.createMetaCell("Metoda wzorcowania:", labelFont, true));
             detailsTable.addCell(PdfStyleHelper.createMetaCell("Porównanie z wzorcem platynowym metodą bezpośrednią w komorze termostatycznej.", valueFont, false));

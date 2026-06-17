@@ -32,9 +32,10 @@ public class ThermoRecorder {
     @NotBlank(message = "Numer seryjny jest wymagany")
     private String serialNumber;
 
-    @Column(name = "model", nullable = false, length = 100)
-    @NotBlank(message = "Model jest wymagany")
-    private String model;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "model_id", nullable = false)
+    @NotNull(message = "Model jest wymagany")
+    private ThermoRecorderModel model;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
@@ -73,18 +74,21 @@ public class ThermoRecorder {
         return calibrations.isEmpty() ? null : calibrations.get(0);
     }
 
+    public Calibration getLatestCalibrationForChannel(int channelNumber) {
+        return calibrations.stream()
+                .filter(c -> c.getChannelNumber() != null && c.getChannelNumber() == channelNumber)
+                .findFirst()
+                .orElse(null);
+    }
+
     public BigDecimal getResolution() {
         if (resolution != null) {
             return resolution;
         }
-        String modelLower = model != null ? model.toLowerCase() : "";
-        if (modelLower.contains("testo")) {
-            return new BigDecimal("0.100");
-        } else if (modelLower.contains("precision") || modelLower.contains("pt100")) {
-            return new BigDecimal("0.010");
-        } else {
-            return new BigDecimal("0.100");
+        if (model != null && model.getDefaultResolution() != null) {
+            return model.getDefaultResolution();
         }
+        return new BigDecimal("0.100");
     }
 
     @Override

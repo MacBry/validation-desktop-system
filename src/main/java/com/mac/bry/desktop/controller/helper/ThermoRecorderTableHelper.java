@@ -20,7 +20,7 @@ public class ThermoRecorderTableHelper {
             TableColumn<ThermoRecorder, String> deptColumn) {
 
         snColumn.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getSerialNumber()));
-        modelColumn.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getModel()));
+        modelColumn.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getModel() != null ? d.getValue().getModel().getName() : ""));
         deptColumn.setCellValueFactory(d -> {
             String deptName = d.getValue().getDepartment() != null ? d.getValue().getDepartment().getName() : "-";
             String labName = d.getValue().getLaboratory() != null ? " / " + d.getValue().getLaboratory().getName() : "";
@@ -52,7 +52,7 @@ public class ThermoRecorderTableHelper {
         filteredData.setPredicate(r -> {
             boolean matchesSearch = query.isEmpty() ||
                                     r.getSerialNumber().toLowerCase().contains(query) ||
-                                    r.getModel().toLowerCase().contains(query);
+                                    (r.getModel() != null && r.getModel().getName().toLowerCase().contains(query));
 
             boolean matchesStatus = status == null || "Wszystkie".equals(status) ||
                                     ("Aktywne".equals(status) && r.getStatus() == RecorderStatus.ACTIVE) ||

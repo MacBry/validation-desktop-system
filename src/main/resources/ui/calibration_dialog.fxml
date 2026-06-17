@@ -32,8 +32,11 @@
             <CheckBox fx:id="autoDateCheckBox" text="Automatycznie (1 rok)" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
         </HBox>
 
-        <Label text="Skan Świadectwa:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
-        <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="3">
+        <Label fx:id="channelLabel" text="Przypisany Kanał:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
+        <Spinner fx:id="channelSpinner" editable="true" maxWidth="Infinity" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+        <Label text="Skan Świadectwa:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="4" />
+        <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="4">
             <TextField fx:id="certFilePathField" editable="false" HBox.hgrow="ALWAYS" promptText="Nie wybrano pliku..." style="-fx-pref-height: 36px;" />
             <Button onAction="#handleBrowseFile" text="Przeglądaj..." style="-fx-pref-height: 36px; -fx-font-weight: bold;" styleClass="accent" />
         </HBox>

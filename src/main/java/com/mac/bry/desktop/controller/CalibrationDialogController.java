@@ -34,6 +34,8 @@ public class CalibrationDialogController {
     @FXML private DatePicker calibrationDatePicker;
     @FXML private DatePicker validUntilPicker;
     @FXML private CheckBox autoDateCheckBox;
+    @FXML private Label channelLabel;
+    @FXML private Spinner<Integer> channelSpinner;
     @FXML private TextField certFilePathField;
     
     @FXML private TableView<CalibrationPoint> pointsTable;
@@ -129,6 +131,7 @@ public class CalibrationDialogController {
         this.calibration.setThermoRecorder(recorder);
         this.pointsData.clear();
         calibrationDatePicker.setValue(LocalDate.now());
+        setupChannelSpinner();
     }
 
     public void setCalibration(Calibration calibration) {
@@ -142,6 +145,32 @@ public class CalibrationDialogController {
         this.pointsData.setAll(calibration.getPoints());
         autoDateCheckBox.setSelected(false);
         certFilePathField.setText(calibration.getCertificateFilePath() != null ? calibration.getCertificateFilePath() : "");
+        
+        setupChannelSpinner();
+        if (calibration.getChannelNumber() != null) {
+            channelSpinner.getValueFactory().setValue(calibration.getChannelNumber());
+        }
+    }
+
+    private void setupChannelSpinner() {
+        int maxChannels = 1;
+        if (recorder != null && recorder.getModel() != null && recorder.getModel().getChannelCount() != null) {
+            maxChannels = recorder.getModel().getChannelCount();
+        }
+        
+        if (maxChannels > 1) {
+            channelLabel.setVisible(true);
+            channelLabel.setManaged(true);
+            channelSpinner.setVisible(true);
+            channelSpinner.setManaged(true);
+            SpinnerValueFactory<Integer> factory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, maxChannels, 1);
+            channelSpinner.setValueFactory(factory);
+        } else {
+            channelLabel.setVisible(false);
+            channelLabel.setManaged(false);
+            channelSpinner.setVisible(false);
+            channelSpinner.setManaged(false);
+        }
     }
 
     @FXML
@@ -173,6 +202,12 @@ public class CalibrationDialogController {
             calibration.setCalibrationDate(calibrationDatePicker.getValue());
             calibration.setValidUntil(validUntilPicker.getValue());
             calibration.setPoints(new java.util.ArrayList<>(pointsData));
+            
+            if (channelSpinner.isVisible() && channelSpinner.getValue() != null) {
+                calibration.setChannelNumber(channelSpinner.getValue());
+            } else {
+                calibration.setChannelNumber(1);
+            }
 
             if (calibration.getCertificateNumber().isEmpty() || calibration.getCalibrationDate() == null) {
                 log.error("Numer i data są wymagane");

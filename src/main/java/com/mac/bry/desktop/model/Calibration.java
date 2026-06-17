@@ -41,6 +41,11 @@ public class Calibration {
     @Column(name = "certificate_file_path", length = 500)
     private String certificateFilePath;
 
+    @Column(name = "channel_number", nullable = false)
+    @NotNull(message = "Numer kanału jest wymagany")
+    @Builder.Default
+    private Integer channelNumber = 1;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "thermo_recorder_id", nullable = false)
     private ThermoRecorder thermoRecorder;
