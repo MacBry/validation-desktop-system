@@ -80,23 +80,34 @@ public class DatabaseBackupService {
 
         log.info("Generowanie pliku backupu: {}", outputFile.getAbsolutePath());
 
-        ProcessBuilder pb = new ProcessBuilder(
-                mysqlDumpPath,
-                "--user=" + dbUsername,
-                "--password=" + dbPassword,
-                "--databases", dbName,
-                "--result-file=" + outputFile.getAbsolutePath()
-        );
+        java.util.List<String> command = new java.util.ArrayList<>();
+        command.add(mysqlDumpPath);
+        command.add("--user=" + dbUsername);
+        if (dbPassword != null && !dbPassword.trim().isEmpty()) {
+            command.add("--password=" + dbPassword);
+        }
+        command.add("--databases");
+        command.add(dbName);
+        command.add("--result-file=" + outputFile.getAbsolutePath());
+
+        ProcessBuilder pb = new ProcessBuilder(command);
 
         pb.redirectErrorStream(true);
         Process process = pb.start();
+        
+        // Odczytanie wyjścia żeby proces nie zawiesił się na pełnym buforze
+        // oraz by wypisać ewentualny błąd z mysqldump
+        String output;
+        try (java.util.Scanner scanner = new java.util.Scanner(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8).useDelimiter("\\A")) {
+            output = scanner.hasNext() ? scanner.next() : "";
+        }
         
         int exitCode = process.waitFor();
         if (exitCode == 0) {
             log.info("Backup zakończony sukcesem: {}", fileName);
         } else {
-            log.error("mysqldump zakończony błędem (kod: {}). Sprawdź logi systemowe.", exitCode);
-            throw new IOException("mysqldump failed with exit code " + exitCode);
+            log.error("mysqldump zakończony błędem (kod: {}). Wyjście: {}", exitCode, output);
+            throw new IOException("mysqldump failed with exit code " + exitCode + ". Output: " + output);
         }
     }
 
