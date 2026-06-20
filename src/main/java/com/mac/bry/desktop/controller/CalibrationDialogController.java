@@ -157,14 +157,16 @@ public class CalibrationDialogController {
         if (recorder != null && recorder.getModel() != null && recorder.getModel().getChannelCount() != null) {
             maxChannels = recorder.getModel().getChannelCount();
         }
-        
+
+        // Always set a ValueFactory to prevent NPE when setValue() is called later
+        SpinnerValueFactory<Integer> factory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, Math.max(1, maxChannels), 1);
+        channelSpinner.setValueFactory(factory);
+
         if (maxChannels > 1) {
             channelLabel.setVisible(true);
             channelLabel.setManaged(true);
             channelSpinner.setVisible(true);
             channelSpinner.setManaged(true);
-            SpinnerValueFactory<Integer> factory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, maxChannels, 1);
-            channelSpinner.setValueFactory(factory);
         } else {
             channelLabel.setVisible(false);
             channelLabel.setManaged(false);

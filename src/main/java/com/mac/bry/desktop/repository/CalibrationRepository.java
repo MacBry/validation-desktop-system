@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface CalibrationRepository extends JpaRepository<Calibration, Long> {
-    @EntityGraph(attributePaths = {"points"})
+    @EntityGraph(attributePaths = {"points", "thermoRecorder", "thermoRecorder.model"})
     List<Calibration> findByThermoRecorderIdOrderByCalibrationDateDesc(Long recorderId);
 }
