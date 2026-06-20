@@ -26,17 +26,18 @@ public class TestoRevalidationPdfService {
 
     private final ValidationPlanNumberRepository validationPlanNumberRepository;
     private final HypothesisTestingService hypothesisTestingService;
+    private final MetrologicalStatsService metrologicalStatsService;
 
     /**
      * Generuje zintegrowany raport z rewalidacji komory chłodniczej GxP w formacie PDF.
      */
     public void generateRevalidationReport(RevalidationSession session, File outputFile, File chartImageFile) throws IOException {
         log.info("Delegowanie generowania zintegrowanego raportu PDF: {}", outputFile.getAbsolutePath());
-        new RevalidationReportPdfRenderer().render(
-                session, 
-                outputFile, 
-                chartImageFile, 
-                hypothesisTestingService, 
+        new RevalidationReportPdfRenderer(metrologicalStatsService).render(
+                session,
+                outputFile,
+                chartImageFile,
+                hypothesisTestingService,
                 validationPlanNumberRepository
         );
     }

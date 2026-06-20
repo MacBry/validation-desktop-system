@@ -1,6 +1,9 @@
 package com.mac.bry.desktop.service;
 
+import com.mac.bry.desktop.dto.stats.CorrectedStatsDTO;
 import com.mac.bry.desktop.model.*;
+import com.mac.bry.desktop.service.stats.SpcEngine;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +12,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -21,7 +25,10 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MetrologicalStatsService {
+
+    private final CalibrationCorrectionService calibrationCorrectionService;
 
     private static final double GAS_CONSTANT = 8.314472; // J/(mol*K)
     private static final double DEFAULT_ACTIVATION_ENERGY = 83.14; // USP <1150> default: 83.14 kJ/mol
@@ -366,8 +373,149 @@ public class MetrologicalStatsService {
 
         series.setExpandedUncertainty(expandedU);
 
-        log.info("Zakończono obliczenia GUM dla serii pomiarowej ID: {} | uA: {}, uB1(cal): {}, uB2(res): {} -> U_exp: {}", 
+        log.info("Zakończono obliczenia GUM dla serii pomiarowej ID: {} | uA: {}, uB1(cal): {}, uB2(res): {} -> U_exp: {}",
                 series.getId(), String.format("%.4f", uA), String.format("%.4f", uB1), String.format("%.4f", uB2), String.format("%.4f", expandedU));
+    }
+
+    /**
+     * Oblicza komplet statystyk na wartościach skorygowanych przez świadectwo wzorcowania.
+     * Korekta stosuje interpolację liniową błędu systematycznego (GUM §4.3).
+     *
+     * <p>Istniejąca metoda {@link #calculateStatistics(ThermoMeasurementSeries)} pozostaje bez zmian.
+     * Statystyki surowe i skorygowane są niezależne.</p>
+     *
+     * @param series      Seria pomiarowa (źródło rawCelsius)
+     * @param calibration Świadectwo wzorcowania (null → hasCalibrationData=false)
+     * @param lsl         Dolny limit komory [°C] (może być null — wtedy Cp/Cpk nie są liczone)
+     * @param usl         Górny limit komory [°C] (może być null)
+     * @return {@link CorrectedStatsDTO} z kompletem statystyk skorygowanych
+     */
+    public CorrectedStatsDTO calculateCorrectedStatistics(
+            ThermoMeasurementSeries series,
+            Calibration calibration,
+            Double lsl,
+            Double usl) {
+
+        String posName = series.getGridPosition() != null ? series.getGridPosition().name() : "UNKNOWN";
+        String sn = series.getThermoRecorder() != null ? series.getThermoRecorder().getSerialNumber() : "UNKNOWN";
+
+        if (!calibrationCorrectionService.hasCalibrationData(calibration)) {
+            log.warn("calculateCorrectedStatistics: brak danych wzorcowania dla serii {} ({})", posName, sn);
+            return CorrectedStatsDTO.builder()
+                    .positionName(posName)
+                    .recorderSerialNumber(sn)
+                    .hasCalibrationData(false)
+                    .build();
+        }
+
+        List<ThermoMeasurementPoint> points = series.getMeasurements();
+        if (points == null || points.isEmpty()) {
+            return CorrectedStatsDTO.builder()
+                    .positionName(posName)
+                    .recorderSerialNumber(sn)
+                    .hasCalibrationData(false)
+                    .build();
+        }
+
+        // 1. Pobierz surowe wartości i zastosuj korekcję
+        double[] rawValues = points.stream().mapToDouble(ThermoMeasurementPoint::getRawCelsius).toArray();
+        double[] corrected = calibrationCorrectionService.correctValues(rawValues, calibration);
+        int n = corrected.length;
+
+        // 2. Podstawowe statystyki opisowe
+        double sum = 0.0;
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (double v : corrected) {
+            sum += v;
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+        double avg = sum / n;
+
+        // 3. Odchylenie standardowe próbkowe (n-1, Bessel)
+        double varSum = 0.0;
+        for (double v : corrected) {
+            varSum += (v - avg) * (v - avg);
+        }
+        double stdDev = n > 1 ? Math.sqrt(varSum / (n - 1)) : 0.0;
+
+        // 4. Mediana
+        double[] sortedC = corrected.clone();
+        Arrays.sort(sortedC);
+        double median;
+        if (n % 2 == 0) {
+            median = (sortedC[n / 2 - 1] + sortedC[n / 2]) / 2.0;
+        } else {
+            median = sortedC[n / 2];
+        }
+
+        // 5. Cp/Cpk na corrected[] vs LSL/USL (jeśli dostępne)
+        Double cpC = null;
+        Double cpkC = null;
+        if (lsl != null && usl != null) {
+            var capability = SpcEngine.calculateCapability(corrected, lsl, usl);
+            cpC  = capability.getCp();
+            cpkC = capability.getCpk();
+        }
+
+        // 6. Rozszerzona niepewność GUM (uA z corrected, uB1+uB2 jak w surowej)
+        double uA_star = n > 0 ? stdDev / Math.sqrt(n) : 0.0;
+
+        // uB1: niepewność ze świadectwa wzorcowania (punkt najbliższy średniej)
+        double uB1 = 0.05;
+        List<CalibrationPoint> calPoints = calibration.getPoints();
+        if (calPoints != null && !calPoints.isEmpty()) {
+            CalibrationPoint closest = null;
+            double minDiff = Double.MAX_VALUE;
+            for (CalibrationPoint cp : calPoints) {
+                double diff = Math.abs(cp.getTemperatureValue().doubleValue() - avg);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = cp;
+                }
+            }
+            if (closest != null) {
+                uB1 = closest.getUncertainty().doubleValue() / 2.0; // U(k=2) → u_std
+            }
+        }
+
+        // uB2: rozdzielczość rejestratora
+        double resolution = 0.1;
+        ThermoRecorder recorder = series.getThermoRecorder();
+        if (recorder != null && recorder.getResolution() != null) {
+            resolution = recorder.getResolution().doubleValue();
+        }
+        double uB2 = resolution / (2.0 * Math.sqrt(3.0));
+
+        double uC_star = Math.sqrt(uA_star * uA_star + uB1 * uB1 + uB2 * uB2);
+        double expandedU_star = 2.0 * uC_star;
+
+        // 7. correctionBias = avg_corrected - avg_raw
+        double avgRaw = series.getAvgTemperature() != null ? series.getAvgTemperature() : avg;
+        double bias = avg - avgRaw;
+
+        log.debug("calculateCorrectedStatistics [{}]: avg_raw={}, avg*={}, bias={}, U*={}",
+                posName,
+                String.format("%.4f", avgRaw),
+                String.format("%.4f", avg),
+                String.format("%.4f", bias),
+                String.format("%.4f", expandedU_star));
+
+        return CorrectedStatsDTO.builder()
+                .positionName(posName)
+                .recorderSerialNumber(sn)
+                .hasCalibrationData(true)
+                .minCorrected(min)
+                .maxCorrected(max)
+                .avgCorrected(avg)
+                .medianCorrected(median)
+                .stdDevCorrected(stdDev)
+                .cpCorrected(cpC)
+                .cpkCorrected(cpkC)
+                .expandedUncertaintyCorrected(expandedU_star)
+                .correctionBias(bias)
+                .build();
     }
 
     // --- Metody pomocnicze statystyczne ---

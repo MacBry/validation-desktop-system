@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.model;
 
+import com.mac.bry.desktop.dto.stats.CorrectedStatsDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,6 +30,14 @@ public class RevalidationSession {
 
     @Builder.Default
     private Map<GridPosition, PositionData> assignedPositions = new HashMap<>();
+
+    /**
+     * Mapa ze statystykami skorygowanymi (korekcja wzorcowania) per pozycja.
+     * Wypełniana przez {@code RevalidationReportPdfRenderer} przed renderowaniem sekcji PDF.
+     * Renderery sekcji odczytują dane z tej mapy — bez zmiany interfejsu PdfSectionRenderer.
+     */
+    @Builder.Default
+    private Map<GridPosition, CorrectedStatsDTO> correctedStatsMap = new HashMap<>();
 
     /**
      * Enum reprezentujący 8 fizycznych narożników (pozycji) komory chłodniczej.

@@ -10,6 +10,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.mac.bry.desktop.dto.stats.CapabilityIndexes;
 import com.mac.bry.desktop.dto.stats.ControlChartData;
+import com.mac.bry.desktop.dto.stats.CorrectedStatsDTO;
 import com.mac.bry.desktop.model.ChamberType;
 import com.mac.bry.desktop.model.CoolingChamber;
 import com.mac.bry.desktop.model.RevalidationSession;
@@ -127,8 +128,19 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
             String jbPValStr = (values.length >= 5) ? String.format("%.4f", jbPValue) : "–";
             java.awt.Color jbBg = (values.length >= 5 && jbPValue < 0.05) ? new java.awt.Color(254, 242, 242) : java.awt.Color.WHITE;
             statsTable.addCell(PdfStyleHelper.createCell(jbPValStr, PdfStyleHelper.getCellFont(), jbBg, Element.ALIGN_CENTER));
+
+            // --- Wiersz 2: Skorygowany* ---
+            addCorrectedSpcRow(statsTable, session.getCorrectedStatsMap().get(pos));
         }
         document.add(statsTable);
+
+        // Legenda
+        Paragraph statsLegend = new Paragraph(
+                "* Wartości oznaczone [Skor.*] zostały obliczone na danych skorygowanych o błąd systematyczny wzorcowania " +
+                "(interpolacja liniowa GUM §4.3). Skośność, Kurtoza i JB p-val nie są wyznaczane dla wartości skorygowanych.",
+                PdfStyleHelper.getFooterFont());
+        statsLegend.setSpacingAfter(10);
+        document.add(statsLegend);
 
         // Obliczenie rozstępu przestrzennego
         double sumSpatialRange = 0.0;
@@ -283,5 +295,51 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
 
         // Nowa strona na weryfikację stabilności Shewharta i reguł Nelsona (Sekcja 4.3)
         document.newPage();
+    }
+
+    /**
+     * Dodaje wiersz skorygowany do tabeli SPC (Sekcja 4.1).
+     * Skośność, Kurtoza i JB p-val nie są dostepne dla wartości skorygowanych.
+     */
+    private void addCorrectedSpcRow(com.lowagie.text.pdf.PdfPTable table, CorrectedStatsDTO dto) {
+        java.awt.Color correctedBg = new java.awt.Color(241, 245, 249); // slate-100
+        java.awt.Color labelBg    = new java.awt.Color(226, 232, 240); // slate-200
+
+        if (dto == null || !dto.isHasCalibrationData()) {
+            com.lowagie.text.pdf.PdfPCell noDataCell = new com.lowagie.text.pdf.PdfPCell(
+                    new com.lowagie.text.Phrase(
+                            "[Skor.*]  Brak danych wzorcowania — korekta niemożliwa",
+                            PdfStyleHelper.getCellFont()));
+            noDataCell.setColspan(10);
+            noDataCell.setBackgroundColor(correctedBg);
+            noDataCell.setPadding(4);
+            noDataCell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_LEFT);
+            table.addCell(noDataCell);
+            return;
+        }
+
+        table.addCell(PdfStyleHelper.createCell("[Skor.*]", PdfStyleHelper.getCellFont(), labelBg, Element.ALIGN_LEFT));
+        table.addCell(PdfStyleHelper.createCell("—", PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER)); // S/N
+        table.addCell(PdfStyleHelper.createCell(String.format("%.2f°C", dto.getMedianCorrected()), PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER));
+        table.addCell(PdfStyleHelper.createCell(String.format("%.3f°C", dto.getStdDevCorrected()), PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER));
+
+        // RSD* (CV%) na skorygowanych: s*/|avg*| * 100 (tylko dla temperatur dodatnich)
+        String rsdStr = "N/A";
+        if (dto.getAvgCorrected() > 0.0 && dto.getStdDevCorrected() >= 0.0) {
+            double rsd = (dto.getStdDevCorrected() / dto.getAvgCorrected()) * 100.0;
+            rsdStr = String.format("%.2f%%", rsd);
+        }
+        table.addCell(PdfStyleHelper.createCell(rsdStr, PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER));
+
+        table.addCell(PdfStyleHelper.createCell("—", PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER)); // Skośność
+        table.addCell(PdfStyleHelper.createCell("—", PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER)); // Kurtoza
+
+        // Cp*/Cpk*
+        String cpCStr  = dto.getCpCorrected()  != null ? String.format("%.2f", dto.getCpCorrected())  : "–";
+        String cpkCStr = dto.getCpkCorrected() != null ? String.format("%.2f", dto.getCpkCorrected()) : "–";
+        table.addCell(PdfStyleHelper.createCell(cpCStr,  PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER));
+        table.addCell(PdfStyleHelper.createCell(cpkCStr, PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER));
+
+        table.addCell(PdfStyleHelper.createCell("—", PdfStyleHelper.getCellFont(), correctedBg, Element.ALIGN_CENTER)); // JB p-val
     }
 }

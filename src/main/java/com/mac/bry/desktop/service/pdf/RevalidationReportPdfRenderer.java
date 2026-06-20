@@ -5,9 +5,11 @@ import com.lowagie.text.Font;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfWriter;
+import com.mac.bry.desktop.model.CoolingChamber;
 import com.mac.bry.desktop.model.GxPProcedureType;
 import com.mac.bry.desktop.model.RevalidationSession;
 import com.mac.bry.desktop.repository.ValidationPlanNumberRepository;
+import com.mac.bry.desktop.service.MetrologicalStatsService;
 import com.mac.bry.desktop.service.PdfHeaderFooterHandler;
 import com.mac.bry.desktop.service.pdf.section.*;
 import com.mac.bry.desktop.service.stats.HypothesisTestingService;
@@ -24,8 +26,10 @@ import java.util.List;
 public class RevalidationReportPdfRenderer {
 
     private final List<PdfSectionRenderer> sectionRenderers = new ArrayList<>();
+    private final MetrologicalStatsService metrologicalStatsService;
 
-    public RevalidationReportPdfRenderer() {
+    public RevalidationReportPdfRenderer(MetrologicalStatsService metrologicalStatsService) {
+        this.metrologicalStatsService = metrologicalStatsService;
         // Rejestracja sekcji w odpowiedniej kolejności
         sectionRenderers.add(new TitleAndChamberSectionRenderer());
         sectionRenderers.add(new TraceabilitySectionRenderer());
@@ -43,6 +47,20 @@ public class RevalidationReportPdfRenderer {
         // 1. Sortowanie aktywnych pozycji celem zachowania spójności kolumn w tabeli
         List<RevalidationSession.GridPosition> activePositions = new ArrayList<>(session.getAssignedPositions().keySet());
         Collections.sort(activePositions);
+
+        // 1b. Pre-compute skorygowanych statystyk wzorcowania per pozycja
+        CoolingChamber chamber = session.getCoolingChamber();
+        Double lsl = (chamber != null) ? chamber.getMinOperatingTemp() : null;
+        Double usl = (chamber != null) ? chamber.getMaxOperatingTemp() : null;
+        for (RevalidationSession.GridPosition pos : activePositions) {
+            RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
+            if (d != null && d.getSeries() != null) {
+                var correctedDto = metrologicalStatsService.calculateCorrectedStatistics(
+                        d.getSeries(), d.getLatestCalibration(), lsl, usl);
+                session.getCorrectedStatsMap().put(pos, correctedDto);
+            }
+        }
+        log.info("Pre-compute skorygowanych statystyk zakończony dla {} pozycji.", activePositions.size());
 
         // Pobranie numeru RPW (dla metadanych)
         String rpwFormatted = "–";
