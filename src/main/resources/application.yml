@@ -41,3 +41,19 @@ app:
     directory: backups/db
     mysql-dump-path: ${MYSQL_DUMP_PATH:C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe}
     retention-days: 14
+
+# ============================================================
+# DP-001 Regime-Aware Interpretation Layer
+# ZMIEN enabled NA true DOPIERO PO PRZEJSCIU CSV-TC-001..005
+# ============================================================
+regime:
+  detection:
+    enabled: false
+    ols-window-minutes: 30
+    ols-eps-slope: 0.01
+    ols-band-width: 1.5
+    ols-min-steady-minutes: 30
+    cusum-k: 0.5
+    cusum-h: 5.0
+    cusum-baseline-points: 30
+    min-steady-points-for-stats: 30

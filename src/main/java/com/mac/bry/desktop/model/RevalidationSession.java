@@ -1,12 +1,17 @@
 package com.mac.bry.desktop.model;
 
+import com.mac.bry.desktop.dto.stats.ConditionalStatsDTO;
 import com.mac.bry.desktop.dto.stats.CorrectedStatsDTO;
+import com.mac.bry.desktop.model.regime.MeasurementSegment;
+import com.mac.bry.desktop.model.regime.RunMode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,6 +43,31 @@ public class RevalidationSession {
      */
     @Builder.Default
     private Map<GridPosition, CorrectedStatsDTO> correctedStatsMap = new HashMap<>();
+
+    // ── Regime-Aware Layer (DP-001 Faza 1) ────────────────────────────────
+
+    /**
+     * Tryb runu zadeklarowany przez operatora przed wygenerowaniem raportu.
+     * Domyślnie CHARACTERIZATION — bezpieczna wartość (nie nakłada kryteriów kwalifikacyjnych).
+     */
+    @Builder.Default
+    private RunMode runMode = RunMode.CHARACTERIZATION;
+
+    /**
+     * Mapa wykrytych segmentów reżimów pracy per pozycja.
+     * Wypełniana przez {@code RevalidationReportPdfRenderer} przed renderowaniem.
+     * Klucz: GridPosition, Wartość: lista segmentów posortowanych chronologicznie.
+     */
+    @Builder.Default
+    private Map<GridPosition, List<MeasurementSegment>> detectedSegmentsMap = new HashMap<>();
+
+    /**
+     * Mapa statystyk warunkowych (STEADY_STATE only) per pozycja.
+     * Wypełniana przez {@code RevalidationReportPdfRenderer} przed renderowaniem.
+     * {@code null} wartości gdy feature flag wyłączony lub brak danych STEADY_STATE.
+     */
+    @Builder.Default
+    private Map<GridPosition, ConditionalStatsDTO> conditionalStatsMap = new HashMap<>();
 
     /**
      * Enum reprezentujący 8 fizycznych narożników (pozycji) komory chłodniczej.
