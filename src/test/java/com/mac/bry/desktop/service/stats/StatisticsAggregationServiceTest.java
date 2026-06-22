@@ -28,6 +28,9 @@ public class StatisticsAggregationServiceTest {
     @Autowired
     private MetrologicalStatsService metrologicalStatsService;
 
+    @Autowired
+    private com.mac.bry.desktop.repository.ThermoRecorderModelRepository modelRepository;
+
     private ThermoMeasurementSeries series;
     private CoolingChamber chamber;
     private ThermoRecorder recorder;
@@ -41,9 +44,17 @@ public class StatisticsAggregationServiceTest {
                 .maxOperatingTemp(8.0)
                 .build();
 
+        ThermoRecorderModel model = modelRepository.findByName("Testo 174T")
+                .orElseGet(() -> modelRepository.save(ThermoRecorderModel.builder()
+                        .name("Testo 174T")
+                        .channelCount(1)
+                        .defaultResolution(new BigDecimal("0.100"))
+                        .active(true)
+                        .build()));
+
         recorder = ThermoRecorder.builder()
                 .serialNumber("SN-AGG-111")
-                .model("Testo 174T")
+                .model(model)
                 .resolution(new BigDecimal("0.10"))
                 .build();
 

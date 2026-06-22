@@ -48,6 +48,9 @@ public class StatisticsWorkflowIntegrationTest {
     @Autowired
     private DepartmentRepository departmentRepository;
 
+    @Autowired
+    private ThermoRecorderModelRepository modelRepository;
+
     @Test
     @DisplayName("IT-STAT-01: Powinien przeprowadzić pełny przepływ walidacyjny z zapisem i weryfikacją w bazie danych")
     void shouldPerformFullRevalidationWorkflowAndVerifyInDb() {
@@ -73,9 +76,17 @@ public class StatisticsWorkflowIntegrationTest {
                 .build();
         chamber = coolingChamberRepository.save(chamber);
 
+        ThermoRecorderModel model = modelRepository.findByName("Testo 174T")
+                .orElseGet(() -> modelRepository.save(ThermoRecorderModel.builder()
+                        .name("Testo 174T")
+                        .channelCount(1)
+                        .defaultResolution(new BigDecimal("0.100"))
+                        .active(true)
+                        .build()));
+
         ThermoRecorder recorder = ThermoRecorder.builder()
                 .serialNumber("SN-INTEG-999")
-                .model("Testo 174T")
+                .model(model)
                 .resolution(new BigDecimal("0.10"))
                 .status(RecorderStatus.ACTIVE)
                 .department(dept)

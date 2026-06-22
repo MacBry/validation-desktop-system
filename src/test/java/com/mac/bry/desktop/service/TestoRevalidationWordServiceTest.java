@@ -63,7 +63,7 @@ public class TestoRevalidationWordServiceTest {
 
         PositionData activePositionData = PositionData.builder()
                 .serialNumber("SN-TEST-12345")
-                .model("Testo 174T")
+                .model(ThermoRecorderModel.builder().name("Testo 174T").build())
                 .series(series)
                 .build();
 
@@ -215,7 +215,7 @@ public class TestoRevalidationWordServiceTest {
 
         PositionData posData = PositionData.builder()
                 .serialNumber("SN-184-TEST")
-                .model("Testo 184T3")
+                .model(ThermoRecorderModel.builder().name("Testo 184T3").build())
                 .series(series)
                 .latestCalibration(calibration)
                 .build();

@@ -44,6 +44,9 @@ public class ThermoMeasurementSeriesIntegrationTest {
     @Autowired
     private ThermoMeasurementSeriesRepository seriesRepository;
 
+    @Autowired
+    private ThermoRecorderModelRepository modelRepository;
+
     private Department testDept;
     private CoolingDevice testDevice;
     private CoolingChamber testChamber;
@@ -63,6 +66,15 @@ public class ThermoMeasurementSeriesIntegrationTest {
         testDept.setAbbreviation("MET");
         testDept.setDescription("Opis działu");
         testDept = departmentRepository.save(testDept);
+
+        // Przygotowanie modelu rejestratora
+        ThermoRecorderModel model = modelRepository.findByName("Testo 174T")
+                .orElseGet(() -> modelRepository.save(ThermoRecorderModel.builder()
+                        .name("Testo 174T")
+                        .channelCount(1)
+                        .defaultResolution(new BigDecimal("0.100"))
+                        .active(true)
+                        .build()));
 
         // Przygotowanie urządzenia chłodniczego z komorą
         testDevice = CoolingDevice.builder()
@@ -85,7 +97,7 @@ public class ThermoMeasurementSeriesIntegrationTest {
         // Przygotowanie rejestratora
         testRecorder = ThermoRecorder.builder()
                 .serialNumber("SN-174-TEST")
-                .model("Testo 174T")
+                .model(model)
                 .status(RecorderStatus.ACTIVE)
                 .resolution(new BigDecimal("0.100"))
                 .department(testDept)

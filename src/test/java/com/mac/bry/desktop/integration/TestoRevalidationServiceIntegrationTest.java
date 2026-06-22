@@ -120,7 +120,7 @@ public class TestoRevalidationServiceIntegrationTest {
             String expectedCert = "CERT-2026-T00" + index + "-SIM";
 
             assertEquals(expectedSn, posData.getSerialNumber());
-            assertEquals("Testo 174T (Symulacja)", posData.getModel());
+            assertEquals("Testo 174T (Symulacja)", posData.getModel().getName());
             assertNotNull(posData.getRecorder());
             assertNotNull(posData.getLatestCalibration());
             assertEquals(expectedCert, posData.getLatestCalibration().getCertificateNumber());
@@ -161,7 +161,7 @@ public class TestoRevalidationServiceIntegrationTest {
             Optional<ThermoRecorder> recorderOpt = recorderRepository.findBySerialNumber(sn);
             assertTrue(recorderOpt.isPresent());
             ThermoRecorder rec = recorderOpt.get();
-            assertEquals("Testo 174T (Symulacja)", rec.getModel());
+            assertEquals("Testo 174T (Symulacja)", rec.getModel().getName());
             assertNotNull(rec.getLatestCalibration());
         }
 

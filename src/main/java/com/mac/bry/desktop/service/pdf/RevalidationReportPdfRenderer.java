@@ -13,6 +13,9 @@ import com.mac.bry.desktop.service.MetrologicalStatsService;
 import com.mac.bry.desktop.service.PdfHeaderFooterHandler;
 import com.mac.bry.desktop.service.pdf.section.*;
 import com.mac.bry.desktop.service.stats.HypothesisTestingService;
+import com.mac.bry.desktop.service.regime.RegimeDetectionService;
+import com.mac.bry.desktop.service.regime.RegimeAwareStatsService;
+import com.mac.bry.desktop.config.RegimeDetectionProperties;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -27,12 +30,23 @@ public class RevalidationReportPdfRenderer {
 
     private final List<PdfSectionRenderer> sectionRenderers = new ArrayList<>();
     private final MetrologicalStatsService metrologicalStatsService;
+    private final RegimeDetectionService regimeDetectionService;
+    private final RegimeAwareStatsService regimeAwareStatsService;
 
-    public RevalidationReportPdfRenderer(MetrologicalStatsService metrologicalStatsService) {
+    public RevalidationReportPdfRenderer(
+            MetrologicalStatsService metrologicalStatsService,
+            RegimeDetectionService regimeDetectionService,
+            RegimeAwareStatsService regimeAwareStatsService,
+            RegimeDetectionProperties regimeDetectionProperties) {
         this.metrologicalStatsService = metrologicalStatsService;
+        this.regimeDetectionService = regimeDetectionService;
+        this.regimeAwareStatsService = regimeAwareStatsService;
         // Rejestracja sekcji w odpowiedniej kolejności
         sectionRenderers.add(new TitleAndChamberSectionRenderer());
         sectionRenderers.add(new TraceabilitySectionRenderer());
+        if (regimeDetectionProperties.isEnabled()) {
+            sectionRenderers.add(new RegimeAwareSectionRenderer());
+        }
         sectionRenderers.add(new MetrologicalSectionRenderer());
         sectionRenderers.add(new StatisticalSectionRenderer());
         sectionRenderers.add(new ShewhartSectionRenderer());
@@ -61,6 +75,20 @@ public class RevalidationReportPdfRenderer {
             }
         }
         log.info("Pre-compute skorygowanych statystyk zakończony dla {} pozycji.", activePositions.size());
+
+        // 1c. Pre-compute segmentacji i statystyk warunkowych
+        for (RevalidationSession.GridPosition pos : activePositions) {
+            RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
+            if (d != null && d.getSeries() != null) {
+                var detection = regimeDetectionService.detect(d.getSeries());
+                session.getDetectedSegmentsMap().put(pos, detection.getSegments());
+
+                var conditionalDto = regimeAwareStatsService.calculateConditionalStatistics(
+                        d.getSeries(), detection.getSegments(), session.getRunMode(), lsl, usl);
+                session.getConditionalStatsMap().put(pos, conditionalDto);
+            }
+        }
+        log.info("Pre-compute segmentacji i statystyk warunkowych zakończony.");
 
         // Pobranie numeru RPW (dla metadanych)
         String rpwFormatted = "–";

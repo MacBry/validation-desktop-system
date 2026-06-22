@@ -27,13 +27,21 @@ public class TestoRevalidationPdfService {
     private final ValidationPlanNumberRepository validationPlanNumberRepository;
     private final HypothesisTestingService hypothesisTestingService;
     private final MetrologicalStatsService metrologicalStatsService;
+    private final com.mac.bry.desktop.service.regime.RegimeDetectionService regimeDetectionService;
+    private final com.mac.bry.desktop.service.regime.RegimeAwareStatsService regimeAwareStatsService;
+    private final com.mac.bry.desktop.config.RegimeDetectionProperties regimeDetectionProperties;
 
     /**
      * Generuje zintegrowany raport z rewalidacji komory chłodniczej GxP w formacie PDF.
      */
     public void generateRevalidationReport(RevalidationSession session, File outputFile, File chartImageFile) throws IOException {
         log.info("Delegowanie generowania zintegrowanego raportu PDF: {}", outputFile.getAbsolutePath());
-        new RevalidationReportPdfRenderer(metrologicalStatsService).render(
+        new RevalidationReportPdfRenderer(
+                metrologicalStatsService,
+                regimeDetectionService,
+                regimeAwareStatsService,
+                regimeDetectionProperties
+        ).render(
                 session,
                 outputFile,
                 chartImageFile,

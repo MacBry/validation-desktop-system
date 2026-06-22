@@ -37,7 +37,7 @@ class MetrologicalStatsServiceTest {
     private ThermoRecorder createMockRecorder() {
         ThermoRecorder recorder = ThermoRecorder.builder()
                 .serialNumber("SN-TEST-123")
-                .model("Testo 174T")
+                .model(ThermoRecorderModel.builder().name("Testo 174T").build())
                 .resolution(new BigDecimal("0.100"))
                 .build();
 

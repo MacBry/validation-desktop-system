@@ -19,7 +19,35 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestoRevalidationPdfServiceTest {
 
-    private final TestoRevalidationPdfService pdfService = new TestoRevalidationPdfService(null, new HypothesisTestingService());
+    private static final com.mac.bry.desktop.config.RegimeDetectionProperties properties = 
+            new com.mac.bry.desktop.config.RegimeDetectionProperties();
+    
+    private static final com.mac.bry.desktop.service.regime.OlsSegmentor olsSegmentor = 
+            new com.mac.bry.desktop.service.regime.OlsSegmentor(properties);
+
+    private static final com.mac.bry.desktop.service.regime.CusumDetector cusumDetector = 
+            new com.mac.bry.desktop.service.regime.CusumDetector(properties);
+
+    private static final com.mac.bry.desktop.service.regime.RegimeDetectionService regimeDetectionService = 
+            new com.mac.bry.desktop.service.regime.RegimeDetectionService(olsSegmentor, cusumDetector, properties);
+
+    private static final com.mac.bry.desktop.service.CalibrationCorrectionService calibrationCorrectionService =
+            new com.mac.bry.desktop.service.CalibrationCorrectionService();
+
+    private static final MetrologicalStatsService metrologicalStatsService = 
+            new MetrologicalStatsService(calibrationCorrectionService);
+
+    private static final com.mac.bry.desktop.service.regime.RegimeAwareStatsService regimeAwareStatsService = 
+            new com.mac.bry.desktop.service.regime.RegimeAwareStatsService(metrologicalStatsService, properties);
+
+    private final TestoRevalidationPdfService pdfService = new TestoRevalidationPdfService(
+            null,
+            new HypothesisTestingService(),
+            metrologicalStatsService,
+            regimeDetectionService,
+            regimeAwareStatsService,
+            properties
+    );
 
     @Test
     @DisplayName("Powinien wygenerować indywidualny wykres serii PDF o rozmiarze większym niż zero")
@@ -48,7 +76,7 @@ public class TestoRevalidationPdfServiceTest {
 
         PositionData positionData = PositionData.builder()
                 .serialNumber("SN-999-PDF")
-                .model("Testo 174T")
+                .model(ThermoRecorderModel.builder().name("Testo 174T").build())
                 .series(series)
                 .build();
 
@@ -68,7 +96,7 @@ public class TestoRevalidationPdfServiceTest {
 
         ThermoRecorder recorder = ThermoRecorder.builder()
                 .serialNumber("SN-CERT-777")
-                .model("Testo 174T")
+                .model(ThermoRecorderModel.builder().name("Testo 174T").build())
                 .build();
 
         Calibration calibration = Calibration.builder()
@@ -143,7 +171,7 @@ public class TestoRevalidationPdfServiceTest {
 
         PositionData positionData = PositionData.builder()
                 .serialNumber("SN-999-PDF")
-                .model("Testo 174T")
+                .model(ThermoRecorderModel.builder().name("Testo 174T").build())
                 .series(series)
                 .build();
 
