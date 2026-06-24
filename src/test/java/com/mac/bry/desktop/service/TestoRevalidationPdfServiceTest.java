@@ -28,8 +28,11 @@ public class TestoRevalidationPdfServiceTest {
     private static final com.mac.bry.desktop.service.regime.CusumDetector cusumDetector = 
             new com.mac.bry.desktop.service.regime.CusumDetector(properties);
 
+    private static final com.mac.bry.desktop.service.regime.ExcursionDetector excursionDetector = 
+            new com.mac.bry.desktop.service.regime.ExcursionDetector(properties);
+
     private static final com.mac.bry.desktop.service.regime.RegimeDetectionService regimeDetectionService = 
-            new com.mac.bry.desktop.service.regime.RegimeDetectionService(olsSegmentor, cusumDetector, properties);
+            new com.mac.bry.desktop.service.regime.RegimeDetectionService(olsSegmentor, cusumDetector, excursionDetector, properties);
 
     private static final com.mac.bry.desktop.service.CalibrationCorrectionService calibrationCorrectionService =
             new com.mac.bry.desktop.service.CalibrationCorrectionService();

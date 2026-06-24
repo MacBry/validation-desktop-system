@@ -57,3 +57,5 @@ regime:
     cusum-h: 5.0
     cusum-baseline-points: 30
     min-steady-points-for-stats: 30
+    excursion-gradient-threshold: 0.5
+    excursion-return-window-minutes: 60

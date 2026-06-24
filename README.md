@@ -11,7 +11,8 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Status:** Production-Ready | **Version:** 1.0.0-beta | **Build:** ✅ All Tests Passing  
-**GxP Compliance:** ✅ FDA 21 CFR Part 11 | ✅ WHO Annex 11 | ✅ ISPE GAMP 5
+**GxP Compliance:** ✅ FDA 21 CFR Part 11 | ✅ WHO Annex 11 | ✅ ISPE GAMP 5  
+**Platform:** ⚠️ Windows 10/11 x64 only (FTDI USB driver requirement)
 
 </div>
 
@@ -115,14 +116,14 @@ validation-desktop/
 │   ├── model/               # JPA entities
 │   ├── dto/                 # Data Transfer Objects
 │   └── security/            # Authentication & authorization
-├── src/main/resources/
-│   ├── db/migration/        # Flyway migrations (V1 → V23)
-│   ├── ui/                  # FXML templates
-│   └── docs/                # 97 specification & validation documents
-├── src/test/java/
-│   ├── integration/         # Integration tests (5+ test suites)
-│   └── service/stats/       # Unit tests for statistical engines
-└── pom.xml                  # Maven configuration (Java 21, Spring Boot 3.2.2)
+│   ├── src/main/resources/
+│   │   ├── db/migration/        # Flyway migrations (V1 → V29)
+│   │   ├── ui/                  # FXML templates
+│   │   └── docs/                # 97 specification & validation documents
+│   ├── src/test/java/
+│   │   ├── integration/         # Integration tests (5+ test suites)
+│   │   └── service/stats/       # Unit tests for statistical engines
+│   └── pom.xml                  # Maven configuration (Java 21, Spring Boot 3.2.2)
 ```
 
 ### Design Patterns Applied
@@ -261,6 +262,58 @@ docs/
 - **MySQL 8.0** or later
 - **Maven 3.8+**
 - **Git**
+- **Python 3.9+** (required for Testo device communication)
+  - Verify: `python --version`
+  - Optional charts: `pip install matplotlib`
+  - ⚠️ On Windows, `python` may open Microsoft Store instead of the interpreter. If so, reinstall Python from [python.org](https://www.python.org/) with "Add to PATH" checked.
+- **FTDI D2XX driver** (required for Testo 174T USB — not needed for Testo 184)
+  - Install [Testo Comfort Software Basic](https://www.testo.com/en/service-support/software) (driver included), or
+  - Download `ftd2xx64.dll` from [ftdichip.com](https://ftdichip.com/drivers/d2xx-drivers/) and place in `C:\Windows\System32\`
+  - Driver search paths can be customized in `src/main/resources/testo/testo_config.yml`
+
+### 🔍 Automated Prerequisites Check (Recommended)
+
+Before manual setup, run the **`check_requirements.ps1`** script to verify all dependencies and optionally install missing ones:
+
+```powershell
+# Report-only mode (no changes, just verification)
+powershell -ExecutionPolicy Bypass -File ".\check_requirements.ps1" -ReportOnly
+
+# Interactive mode (asks before each installation)
+powershell -ExecutionPolicy Bypass -File ".\check_requirements.ps1"
+
+# Auto-install all missing dependencies (requires Administrator)
+powershell -ExecutionPolicy Bypass -File ".\check_requirements.ps1" -AutoInstall
+
+# Skip optional checks (matplotlib, etc.)
+powershell -ExecutionPolicy Bypass -File ".\check_requirements.ps1" -ReportOnly -SkipOptional
+```
+
+**What the script checks:**
+
+| Check | Details |
+|-------|---------|
+| **System** | Windows x64, RAM, disk space, admin rights, winget availability |
+| **Java 21** | JDK presence, version, JAVA_HOME, Temurin distribution, `javac` cross-check |
+| **Maven 3.8+** | Installation, version, Java compatibility |
+| **MySQL 8.0+** | Client, service status, binary paths, `mysqldump`, database existence |
+| **Git** | Installation and version |
+| **Python 3.9+** | Version, pip, matplotlib (optional), Microsoft Store stub detection |
+| **FTDI D2XX** | Driver DLL presence (required only for Testo 174T) |
+| **Project config** | `.env` file, Word report templates |
+
+**Script flags:**
+
+| Flag | Behavior |
+|------|----------|
+| *(no flags)* | Interactive — asks before each installation |
+| `-ReportOnly` | Only shows results, no installation prompts |
+| `-AutoInstall` | Installs all missing dependencies via `winget` without asking |
+| `-SkipOptional` | Skips optional checks (matplotlib) |
+
+**Exit codes:** `0` = all requirements met, `1` = missing requirements (CI/CD compatible).
+
+> ⚠️ **Note:** After installing dependencies via the script, you may need to restart your terminal for PATH changes to take effect.
 
 ### 1. Clone Repository
 ```bash
@@ -293,7 +346,20 @@ SMTP_PASSWORD=your_smtp_password
 MYSQL_DUMP_PATH=C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump.exe
 ```
 
-### 3. Build Application
+### 3. Provide Word Report Templates
+
+Word report templates are **not included in this repository** (internal company documents). Before building, place the following files in `src/main/resources/templates/`:
+
+```
+src/main/resources/templates/
+├── appendix_3_template.docx   # Revalidation protocol
+├── appendix_7_template.docx   # Temperature mapping
+└── appendix_8_template.docx   # Measurement summary
+```
+
+> Without these files the application starts normally, but generating Word reports will throw a `FileNotFoundException`.
+
+### 4. Build Application
 ```bash
 mvn clean install
 ```
@@ -305,7 +371,7 @@ mvn clean install
 [INFO] Tests run: 85, Failures: 0
 ```
 
-### 4. Run Application
+### 5. Run Application
 ```bash
 mvn spring-boot:run
 ```
@@ -313,10 +379,10 @@ mvn spring-boot:run
 The application launches with:
 - ✅ JavaFX desktop window opens
 - ✅ Spring Boot backend initializes
-- ✅ MySQL database migrations run automatically (Flyway)
+- ✅ MySQL database migrations run automatically (Flyway — 29 versions)
 - ✅ Login screen appears
 
-### 5. Login with Default Credentials
+### 6. Login with Default Credentials
 ```
 Username: admin
 Password: admin
@@ -347,7 +413,7 @@ Password: admin
 - **Authentication:** Spring Security + database-backed users
 - **Authorization:** Role-based (SUPER_ADMIN, DEPT_ADMIN, USER)
 - **Audit Trail:** Hibernate Envers (every change tracked)
-- **Password Policy:** Expiration, complexity, history validation
+- **Password Policy:** Enforced expiration, complexity, history validation
 
 ### Device Management (`service/CoolingDeviceService`)
 - Create/edit cooling equipment
@@ -408,7 +474,7 @@ mvn jacoco:report
 - **Lines of Code:** ~15,000 (main code)
 - **Test Classes:** 7+ with 100+ test cases
 - **Documentation:** 97 specification files
-- **Database Migrations:** 23 Flyway versions
+- **Database Migrations:** 29 Flyway versions
 - **Service Classes:** 30+
 - **Controller Classes:** 15+
 - **Test Coverage:** 85%+ (stats module)
@@ -583,6 +649,22 @@ mvn install -DskipTests
 # Ensure FxWeaver dependency is in pom.xml (should be)
 ```
 
+### Python / Testo Device Error
+```
+Nie znaleziono skryptu testo_usb_programmer.py
+```
+**Solution:**
+1. Verify Python is installed: `python --version`
+2. If using Testo 174T: ensure FTDI D2XX driver is installed (`ftd2xx64.dll`)
+3. Check driver paths in `src/main/resources/testo/testo_config.yml`
+4. For Testo 184: verify the device appears as a USB drive (mass storage)
+
+### Word Report Error
+```
+FileNotFoundException: /templates/appendix_3_template.docx
+```
+**Solution:** Place company Word templates in `src/main/resources/templates/` (see [Step 3](#3-provide-word-report-templates))
+
 ### JIT Warmup Warning
 Statistical tests may run slower on first execution (JIT compilation phase):
 - **Expected:** Warmup phase takes 1-2 seconds
@@ -671,5 +753,3 @@ If this project helped you understand pharmaceutical validation systems or GxP-c
 **Version:** 1.0.0-beta | **Last Updated:** 2026-06-07  
 **Repository:** [github.com/MacBry/validation-desktop-system](https://github.com/MacBry/validation-desktop-system)  
 **Issues:** [github.com/MacBry/validation-desktop-system/issues](https://github.com/MacBry/validation-desktop-system/issues)
-
-

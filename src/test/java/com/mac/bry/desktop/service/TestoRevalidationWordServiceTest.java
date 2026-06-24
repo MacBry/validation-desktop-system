@@ -465,4 +465,44 @@ public class TestoRevalidationWordServiceTest {
             assertThat(fullText).doesNotContain("$ON8$");
         }
     }
+
+    @Test
+    @DisplayName("Powinien wygenerować dokument zastępczy (fallback) z poprawną tabelą parametrów i podstawionymi wartościami")
+    void shouldGenerateFallbackDocumentCorrectly() throws Exception {
+        // Given
+        Map<String, String> replacements = new HashMap<>();
+        replacements.put("$nazwaUrzadzenia$", "Testowy Inkubator");
+        replacements.put("$numerInw$", "INV-1234");
+        replacements.put("$dział$", "Dzial Testowy");
+        
+        // When
+        XWPFDocument doc = wordService.generateFallbackDocument("Testowy Zalacznik", "/non/existent/path.docx", replacements);
+        
+        // Then
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        doc.write(baos);
+        byte[] docxBytes = baos.toByteArray();
+        assertThat(docxBytes).isNotEmpty();
+        
+        try (XWPFDocument readDoc = new XWPFDocument(new ByteArrayInputStream(docxBytes))) {
+            String fullText = extractTextFromDoc(readDoc);
+            
+            // Sprawdzenie nagłówków dokumentu zastępczego
+            assertThat(fullText).contains("DOKUMENTACJA ZASTĘPCZA (MOCK) - TESTOWY ZALACZNIK");
+            assertThat(fullText).contains("Brakujący plik szablonu: /non/existent/path.docx");
+            
+            // Sprawdzenie, czy klucze (oczyszczone) i wartości (podmienione) znajdują się w tekście
+            assertThat(fullText).contains("nazwaUrzadzenia");
+            assertThat(fullText).contains("Testowy Inkubator");
+            assertThat(fullText).contains("numerInw");
+            assertThat(fullText).contains("INV-1234");
+            assertThat(fullText).contains("dział");
+            assertThat(fullText).contains("Dzial Testowy");
+            
+            // Sprawdzenie, czy surowe klucze zostały poprawnie usunięte/zastąpione i nie występują w tekście
+            assertThat(fullText).doesNotContain("$nazwaUrzadzenia$");
+            assertThat(fullText).doesNotContain("$numerInw$");
+            assertThat(fullText).doesNotContain("$dział$");
+        }
+    }
 }

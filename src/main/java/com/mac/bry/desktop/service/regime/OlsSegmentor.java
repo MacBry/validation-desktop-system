@@ -122,26 +122,50 @@ public class OlsSegmentor {
 
         List<MeasurementSegment> result = new ArrayList<>();
         int n = points.size();
-        int i = 0;
+        int window = props.getOlsWindowMinutes();
 
         // Pierwsze `window` punktów zawsze = EQUILIBRATION (brak danych OLS)
-        int firstClassifiedIdx = props.getOlsWindowMinutes();
-
-        if (firstClassifiedIdx > 0) {
-            result.add(buildSegment(
-                    series,
-                    points.get(0).getTimestampLocal(),
-                    points.get(firstClassifiedIdx - 1).getTimestampLocal(),
+        // Ale musimy uważać na przerwy czasowe w tym początkowym fragmencie
+        int i = 0;
+        int start = 0;
+        while (i < window && i < n) {
+            if (i > start) {
+                long gap = java.time.temporal.ChronoUnit.MINUTES.between(
+                        points.get(i - 1).getTimestampLocal(),
+                        points.get(i).getTimestampLocal());
+                if (gap > 5) {
+                    result.add(buildSegment(series,
+                            points.get(start).getTimestampLocal(),
+                            points.get(i - 1).getTimestampLocal(),
+                            SegmentType.EQUILIBRATION,
+                            1.0));
+                    start = i;
+                }
+            }
+            i++;
+        }
+        if (start < window && start < n) {
+            result.add(buildSegment(series,
+                    points.get(start).getTimestampLocal(),
+                    points.get(Math.min(window, n) - 1).getTimestampLocal(),
                     SegmentType.EQUILIBRATION,
                     1.0));
         }
 
-        i = firstClassifiedIdx;
+        i = window;
         while (i < n) {
             boolean currentSteady = steadyMask[i];
-            int start = i;
+            start = i;
 
             while (i < n && steadyMask[i] == currentSteady) {
+                if (i > start) {
+                    long gap = java.time.temporal.ChronoUnit.MINUTES.between(
+                            points.get(i - 1).getTimestampLocal(),
+                            points.get(i).getTimestampLocal());
+                    if (gap > 5) {
+                        break;
+                    }
+                }
                 i++;
             }
             int end = i - 1;

@@ -23,7 +23,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import com.mac.bry.desktop.model.ThermoMeasurementSeries;
 
 @Slf4j
 public class RevalidationReportPdfRenderer {
@@ -77,10 +80,18 @@ public class RevalidationReportPdfRenderer {
         log.info("Pre-compute skorygowanych statystyk zakończony dla {} pozycji.", activePositions.size());
 
         // 1c. Pre-compute segmentacji i statystyk warunkowych
+        Map<RevalidationSession.GridPosition, ThermoMeasurementSeries> allChannels = new HashMap<>();
         for (RevalidationSession.GridPosition pos : activePositions) {
             RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
             if (d != null && d.getSeries() != null) {
-                var detection = regimeDetectionService.detect(d.getSeries());
+                allChannels.put(pos, d.getSeries());
+            }
+        }
+
+        for (RevalidationSession.GridPosition pos : activePositions) {
+            RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
+            if (d != null && d.getSeries() != null) {
+                var detection = regimeDetectionService.detect(d.getSeries(), allChannels);
                 session.getDetectedSegmentsMap().put(pos, detection.getSegments());
 
                 var conditionalDto = regimeAwareStatsService.calculateConditionalStatistics(

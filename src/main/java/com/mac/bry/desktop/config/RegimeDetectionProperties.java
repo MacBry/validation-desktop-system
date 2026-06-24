@@ -74,4 +74,16 @@ public class RegimeDetectionProperties {
      * Poniżej tej wartości zwracamy hasSteadyStateData=false.
      */
     private int minSteadyPointsForStats = 30;
+
+    // ── Excursion Detector ────────────────────────────────────────────────────
+    
+    /**
+     * Minimalny gradient temperatury kwalifikujący skok jako początek ekskursji [°C/min].
+     */
+    private double excursionGradientThreshold = 0.5;
+
+    /**
+     * Maksymalny czas powrotu do baseline dla krótkotrwałego zdarzenia [minuty].
+     */
+    private int excursionReturnWindowMinutes = 60;
 }
