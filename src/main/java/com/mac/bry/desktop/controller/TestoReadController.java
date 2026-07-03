@@ -136,19 +136,21 @@ public class TestoReadController {
                 File testo184Pdf = findTesto184PdfOnRemovableDrives();
                 if (testo184Pdf != null) {
                     log.info("Wykryto rejestrator Testo 184 na dysku. Importowanie pliku: {}", testo184Pdf.getAbsolutePath());
-                    Platform.runLater(() -> statusLabel.setText("Status: Wykryto Testo 184. Importowanie raportu PDF..."));
+                    updateMessage("Status: Wykryto Testo 184. Importowanie raportu PDF...");
                     return testo184UsbImportService.importFromPdf(testo184Pdf);
                 }
 
                 // 2. Jeśli nie wykryto Testo 184, spróbuj odczytać Testo 174T przez FTDI
-                Platform.runLater(() -> statusLabel.setText("Status: Inicjalizacja połączenia USB (T174T)..."));
+                updateMessage("Status: Inicjalizacja połączenia USB (T174T)...");
                 return testoUsbImportService.readFromUsb();
             }
         };
 
         readProgressBar.progressProperty().bind(task.progressProperty());
+        statusLabel.textProperty().bind(task.messageProperty());
 
         task.setOnSucceeded(workerStateEvent -> {
+            statusLabel.textProperty().unbind();
             TestoUsbImportService.TestoImportResult results = task.getValue();
 
             // Wyłączenie pasków wczytywania
@@ -222,6 +224,7 @@ public class TestoReadController {
         });
 
         task.setOnFailed(workerStateEvent -> {
+            statusLabel.textProperty().unbind();
             Throwable e = task.getException();
             log.error("Wyjątek podczas odczytu USB", e);
 

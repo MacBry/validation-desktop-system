@@ -70,7 +70,7 @@ Pharmaceutical companies must validate that storage environments maintain specif
 
 ### 📋 Regulatory Compliance
 - **GxP-aware design** - every feature considers regulatory requirements
-- **FDA 21 CFR Part 11** - electronic signature ready
+- **FDA 21 CFR Part 11** - compliance readiness (architecture prepared for e-signatures)
 - **WHO Technical Report 961** - cold-chain validation framework
 - **ISPE GAMP 5** - software validation guidelines
 - **Flyway migrations** - database versioning for reproducibility
@@ -145,7 +145,7 @@ validation-desktop/
 | **Audit Trail** | Hibernate Envers | Complete change tracking |
 | **Security** | Spring Security 6.2.1 | Authentication & authorization |
 | **Testing** | JUnit 5, AssertJ | Unit & integration testing |
-| **Reporting** | Apache PDFBox | PDF generation |
+| **Reporting** | OpenPDF | PDF generation |
 
 ---
 

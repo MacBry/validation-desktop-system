@@ -9,7 +9,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none # Flyway zarządza schematem
-    show-sql: true
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true

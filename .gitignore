@@ -36,3 +36,6 @@ uploads/
 *.pdf
 *.docx
 *.csv
+
+# Archive folder for heavy local files
+docs/archive/

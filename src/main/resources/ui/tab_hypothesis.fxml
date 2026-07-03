@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="15.0" style="-fx-padding: 15;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mac.bry.desktop.controller.HypothesisTabController">
+    <children>
+        <Label text="Weryfikacja Statystyczna Hipotez Badawczych (Poziom Istotności α = 0.05)" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
+        
+        <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+            <children>
+                <!-- Panel Lewy: TOST & F-Test (Dwugrupowe) -->
+                <VBox spacing="15.0" HBox.hgrow="ALWAYS">
+                    <children>
+                        <!-- TEST RÓWNOWAŻNOŚCI TOST -->
+                        <VBox spacing="10.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 15; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                            <children>
+                                <Label text="1. Test Równoważności Stref (TOST)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="Sensor 1:" />
+                                        <ComboBox fx:id="tostSensor1Combo" prefWidth="150.0" promptText="Wybierz..." />
+                                        <Label text="Sensor 2:" />
+                                        <ComboBox fx:id="tostSensor2Combo" prefWidth="150.0" promptText="Wybierz..." />
+                                        <Label text="Tolerancja θ [°C]:" />
+                                        <TextField fx:id="txtTostTheta" prefWidth="60.0" text="0.50" />
+                                        <Button text="Wykonaj TOST" onAction="#handleRunTostTest" styleClass="accent" />
+                                    </children>
+                                </HBox>
+                                <HBox fx:id="tostResultBox" spacing="15.0" alignment="CENTER_LEFT" visible="false" managed="false" style="-fx-background-color: -color-bg-default; -fx-padding: 10; -fx-background-radius: 6px;">
+                                    <children>
+                                        <Label fx:id="lblTostBadge" text="POTWIERDZONO" style="-fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: -color-success-emphasis; -fx-padding: 4 8; -fx-background-radius: 4;" />
+                                        <VBox spacing="3.0">
+                                            <children>
+                                                <Label fx:id="lblTostDifference" text="Średnia różnica: 0.00°C w granicach ±0.50°C" style="-fx-font-weight: bold;" />
+                                                <Label fx:id="lblTostDetails" text="Szczegóły" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                        
+                        <!-- TEST WARIANCJI F-TEST -->
+                        <VBox spacing="10.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 15; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                            <children>
+                                <Label text="2. Test Jednorodności Wariancji (F-Test - Stabilność)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="Sensor 1:" />
+                                        <ComboBox fx:id="fSensor1Combo" prefWidth="150.0" promptText="Wybierz..." />
+                                        <Label text="Sensor 2:" />
+                                        <ComboBox fx:id="fSensor2Combo" prefWidth="150.0" promptText="Wybierz..." />
+                                        <Button text="Wykonaj Test F" onAction="#handleRunFTest" styleClass="accent" />
+                                    </children>
+                                </HBox>
+                                <HBox fx:id="fResultBox" spacing="15.0" alignment="CENTER_LEFT" visible="false" managed="false" style="-fx-background-color: -color-bg-default; -fx-padding: 10; -fx-background-radius: 6px;">
+                                    <children>
+                                        <Label fx:id="lblFBadge" text="ZGODNE WARIANCJE" style="-fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: -color-success-emphasis; -fx-padding: 4 8; -fx-background-radius: 4;" />
+                                        <VBox spacing="3.0">
+                                            <children>
+                                                <Label fx:id="lblFRatio" text="Stosunek wariancji" style="-fx-font-weight: bold;" />
+                                                <Label fx:id="lblFDetails" text="p-value" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+                
+                <!-- Panel Prawy: ANOVA / Kruskal-Wallis (Globalny) -->
+                <VBox spacing="15.0" HBox.hgrow="ALWAYS" style="-fx-background-color: -color-bg-overlay; -fx-padding: 15; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                    <children>
+                        <Label text="3. Globalny Test Jednorodności Stref" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                        <Label text="Porównuje równocześnie wszystkie aktywne strefy komory, automatycznie wybierając ANOVA lub test Kruskala-Wallisa." style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" wrapText="true" />
+                        
+                        <Region prefHeight="10.0" />
+                        <Button text="Uruchom Test Globalny" onAction="#handleRunGlobalHomogeneityTest" maxWidth="1.7976931348623157E308" styleClass="accent" />
+                        
+                        <Region VBox.vgrow="ALWAYS" />
+                        
+                        <VBox fx:id="homogeneityResultBox" spacing="10.0" visible="false" managed="false" style="-fx-background-color: -color-bg-default; -fx-padding: 12; -fx-background-radius: 6px;">
+                            <children>
+                                <Label fx:id="lblHomogeneityBadge" text="JEDNORODNOŚĆ POTWIERDZONA" style="-fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: -color-success-emphasis; -fx-padding: 4 8; -fx-background-radius: 4;" maxWidth="1.7976931348623157E308" alignment="CENTER" />
+                                <GridPane hgap="8.0" vgap="4.0">
+                                    <columnConstraints>
+                                        <ColumnConstraints minWidth="120.0" prefWidth="120.0" />
+                                        <ColumnConstraints hgrow="ALWAYS" />
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+                                    <children>
+                                        <Label text="Zastosowany test:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                        <Label fx:id="lblHomogeneityTestName" text="ANOVA" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-font-weight: bold; -fx-font-size: 11px;" />
+                                        
+                                        <Label text="Wartość p (p-value):" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                        <Label fx:id="lblHomogeneityPValue" text="0.0000" GridPane.columnIndex="1" GridPane.rowIndex="1" style="-fx-font-weight: bold; -fx-font-size: 11px;" />
+                                    </children>
+                                </GridPane>
+                                <Label fx:id="lblHomogeneityDetails" text="Brak istotnych różnic." style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" wrapText="true" />
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+    </children>
+</VBox>
