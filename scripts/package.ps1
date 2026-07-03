@@ -1,4 +1,4 @@
-# Skrypt budujący natywny pakiet instalacyjny dla Windows za pomocą jpackage
+﻿# Skrypt budujący natywny pakiet instalacyjny dla Windows za pomocą jpackage
 # Wymaga JDK 21 oraz WiX Toolset v3 w celu wygenerowania instalatora MSI.
 
 param (
