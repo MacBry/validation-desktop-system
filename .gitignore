@@ -37,5 +37,9 @@ uploads/
 *.docx
 *.csv
 
+# ...but never ignore bundled source/test resources (Word templates, test fixtures)
+!src/main/resources/**
+!src/test/resources/**
+
 # Archive folder for heavy local files
 docs/archive/
