@@ -189,6 +189,9 @@ docs/
 │   ├── DATABASE_BACKUP_BA.md                  # Data protection
 │   ├── ADMIN_PANEL_BA.md                      # Administration features
 │   ├── ORGANIZATION_BA.md                     # Multi-tenant structure
+│   ├── BA_PROPAGATION_AWARE_EXCURSION_CLASSIFIER.md   # Heat propagation vector excursion classifier (BA)
+│   ├── IMPL_PROPAGATION_AWARE_EXCURSION_CLASSIFIER.md # Technical implementation details
+│   ├── TEST_PROPAGATION_AWARE_EXCURSION_CLASSIFIER.md # Verification and validation plan
 │   └── REVALIDATION_*.md                      # Periodic validation
 │
 ├── Testo Device Integration
@@ -219,6 +222,12 @@ docs/
 │   ├── article_hotspot_coldspot_EN.md
 │   ├── article_java_implementation_PL.md      # Java implementation guide
 │   ├── article_java_implementation_EN.md
+│   ├── article_defrost_cycle_detection_PL.md   # Defrost cycle detection article (PL)
+│   ├── article_defrost_cycle_detection_EN.md   # Defrost cycle detection article (EN)
+│   ├── article_propagation_vector_part1_PL.md # Heat propagation part 1 (PL)
+│   ├── article_propagation_vector_part1_EN.md # Heat propagation part 1 (EN)
+│   ├── article_propagation_vector_part2_PL.md # Heat propagation part 2 (PL)
+│   ├── article_propagation_vector_part2_EN.md # Heat propagation part 2 (EN)
 │   └── sources_for_hotspot_article.md
 │
 └── Test Scenarios

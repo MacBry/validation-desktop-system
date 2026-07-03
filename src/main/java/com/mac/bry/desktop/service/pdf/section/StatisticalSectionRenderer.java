@@ -254,9 +254,41 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
         conclusions.add(new Chunk(normalityText + "\n\n", PdfStyleHelper.getValueFont()));
 
         // 4. Rozstęp przestrzenny
-        conclusions.add(new Chunk("4. Ocena Jednorodności Przestrzennej:\n", PdfStyleHelper.getLabelFont()));
-        String spatialText = String.format("Średni rozstęp przestrzenny (jednorodność temperatury w komorze) wynosi %.2f°C, natomiast maksymalny chwilowy rozstęp przestrzenny w czasie trwania sesji wyniósł %.2f°C. Wartości te określają maksymalny gradient temperatury pomiędzy najcieplejszym a najzimniejszym punktem komory chłodniczej i potwierdzają stopień stabilności rozkładu przestrzennego.", meanSpatialRange, maxSpatialRange);
-        conclusions.add(new Chunk(spatialText + "\n\n", PdfStyleHelper.getValueFont()));
+        conclusions.add(new Chunk("4. Ocena Jednorodności Przestrzennej i Gradientu Pionowego:\n", PdfStyleHelper.getLabelFont()));
+        com.mac.bry.desktop.dto.stats.SpatialStatsResult spatialStats = session.getSpatialStats();
+        if (spatialStats != null) {
+            String spatialText = String.format(
+                    "Średni rozstęp przestrzenny (jednorodność temperatury w komorze) wynosi %.2f°C, natomiast maksymalny chwilowy rozstęp przestrzenny wyniósł %.2f°C. " +
+                    "Średni rozstęp na poziomie GÓRA (TOP): %.2f°C (max: %.2f°C), na poziomie DÓŁ (BOTTOM): %.2f°C (max: %.2f°C).\n" +
+                    "Średni pionowy gradient temperatury (ΔT_vert = |Avg(GÓRA) - Avg(DÓŁ)|) wyniósł %.2f°C, a maksymalny chwilowy pionowy gradient wyniósł %.2f°C.\n" +
+                    "Metodologia weryfikacji istotności różnic poziomów: %s. Wartość p-value: %.4f.\n" +
+                    "Werdykt weryfikacji jednorodności pionowej: %s.",
+                    spatialStats.getMeanSpatialRange(), spatialStats.getMaxSpatialRange(),
+                    spatialStats.getMeanRangeTop(), spatialStats.getMaxRangeTop(),
+                    spatialStats.getMeanRangeBottom(), spatialStats.getMaxRangeBottom(),
+                    spatialStats.getMeanVerticalGradient(), spatialStats.getMaxVerticalGradient(),
+                    spatialStats.getHomogeneityTestName(), spatialStats.getHomogeneityPValue(),
+                    spatialStats.getHomogeneityVerdict()
+            );
+            conclusions.add(new Chunk(spatialText + "\n", PdfStyleHelper.getValueFont()));
+
+            if (spatialStats.getHomogeneityPValue() < 0.05) {
+                if (spatialStats.isNormallyDistributed() && !spatialStats.getGamesHowellResults().isEmpty()) {
+                    var gh = spatialStats.getGamesHowellResults().get(0);
+                    conclusions.add(new Chunk(String.format("Test post-hoc Games-Howell wykazuje istotną różnicę między poziomami (mean diff: %.3f°C, p: %.4f). Wymagane wdrożenie CAPA.\n\n", gh.getMeanDifference(), gh.getPValue()), PdfStyleHelper.getValueFont()));
+                } else if (!spatialStats.getDunnResults().isEmpty()) {
+                    var dunn = spatialStats.getDunnResults().get(0);
+                    conclusions.add(new Chunk(String.format("Test post-hoc Dunn wykazuje istotną różnicę między poziomami (mean rank diff: %.3f, p_adj: %.4f). Wymagane wdrożenie CAPA.\n\n", dunn.getMeanRankDifference(), dunn.getAdjustedPValue()), PdfStyleHelper.getValueFont()));
+                } else {
+                    conclusions.add(new Chunk("Wykryto istotną statystycznie różnicę w temperaturach pomiędzy strefami poziomowymi. Wymagane wdrożenie CAPA.\n\n", PdfStyleHelper.getValueFont()));
+                }
+            } else {
+                conclusions.add(new Chunk("Nie stwierdzono statystycznie istotnych różnic temperatur między poziomem górnym a dolnym (p >= 0.05). Gradient pionowy jest akceptowalny.\n\n", PdfStyleHelper.getValueFont()));
+            }
+        } else {
+            String spatialText = String.format("Średni rozstęp przestrzenny (jednorodność temperatury w komorze) wynosi %.2f°C, natomiast maksymalny chwilowy rozstęp przestrzenny w czasie trwania sesji wyniósł %.2f°C. Wartości te określają maksymalny gradient temperatury pomiędzy najcieplejszym a najzimniejszym punktem komory chłodniczej i potwierdzają stopień stabilności rozkładu przestrzennego.", meanSpatialRange, maxSpatialRange);
+            conclusions.add(new Chunk(spatialText + "\n\n", PdfStyleHelper.getValueFont()));
+        }
 
         // 5. Weryfikacja reguł stabilności Nelsona
         conclusions.add(new Chunk("5. Weryfikacja Stabilności Procesu (Karty Shewharta & Nelson Rules):\n", PdfStyleHelper.getLabelFont()));

@@ -778,6 +778,7 @@ public class TestoRevalidationController {
                     .map(RevalidationSession.PositionData::getSeries)
                     .collect(java.util.stream.Collectors.toList());
             com.mac.bry.desktop.dto.stats.SpatialStatsResult spatialResult = spatialService.calculateSpatialStats(allSeries);
+            session.setSpatialStats(spatialResult);
             setSpatialData(spatialResult);
         } catch (Throwable t) {
             log.error("Krytyczny błąd podczas budowania podsumowania rewalidacji GxP", t);

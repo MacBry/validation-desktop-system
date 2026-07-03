@@ -37,6 +37,16 @@ public class SpatialStatsResult {
     /** Seria czasowa gradientu pionowego: timestamp → ΔT_vertical [°C]. */
     private Map<LocalDateTime, Double> verticalGradientOverTime;
 
+    // --- Statystyki Jednorodności Poziomów Fizycznych ---
+    private boolean normallyDistributed;
+    private double homogeneityPValue;
+    private String homogeneityTestName;
+    private String homogeneityVerdict;
+    private WelchAnovaResult welchAnovaResult;
+    private java.util.List<GamesHowellResult> gamesHowellResults;
+    private double kruskalWallisPValue;
+    private java.util.List<DunnResult> dunnResults;
+
     /** Zwraca true gdy dane poziomowe są dostępne (tzn. były czujniki na obu poziomach). */
     public boolean hasLevelData() {
         return spatialRangesOverTimeTop != null && !spatialRangesOverTimeTop.isEmpty()

@@ -2,6 +2,9 @@ package com.mac.bry.desktop.service.stats;
 
 import com.mac.bry.desktop.dto.stats.AnovaResult;
 import com.mac.bry.desktop.dto.stats.TostResult;
+import com.mac.bry.desktop.dto.stats.WelchAnovaResult;
+import com.mac.bry.desktop.dto.stats.GamesHowellResult;
+import com.mac.bry.desktop.dto.stats.DunnResult;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -48,6 +51,90 @@ public class HypothesisTestingService {
         double den = Math.sqrt(term);
         double z = num / den;
         return normalCdf(z);
+    }
+
+    // --- Lanczos logGamma approximation ---
+    public static double logGamma(double x) {
+        double[] coef = {
+            1.000000000190015,
+            76.18009172947146,
+            -86.50532032941677,
+            24.01409824083091,
+            -1.231739572450155,
+            0.1208650973866179e-2,
+            -0.5395239384953e-5
+        };
+        double temp = x + 5.5;
+        temp -= (x + 0.5) * Math.log(temp);
+        double ser = coef[0];
+        for (int i = 1; i < coef.length; i++) {
+            ser += coef[i] / (x + i);
+        }
+        return -temp + Math.log(2.5066282746310005 * ser / x);
+    }
+
+    private static double phi(double x) {
+        return Math.exp(-x * x / 2.0) / Math.sqrt(2.0 * Math.PI);
+    }
+
+    private static double pRangeNormal(double w, int k) {
+        if (w <= 0.0) return 0.0;
+        double startU = -8.0;
+        double endU = 8.0;
+        int steps = 200;
+        double stepU = (endU - startU) / steps;
+        double sum = 0.0;
+        for (int i = 0; i <= steps; i++) {
+            double u = startU + i * stepU;
+            double phiVal = phi(u);
+            double cdfDiff = normalCdf(u) - normalCdf(u - w);
+            if (cdfDiff < 0.0) cdfDiff = 0.0;
+            if (cdfDiff > 1.0) cdfDiff = 1.0;
+            double term = k * phiVal * Math.pow(cdfDiff, k - 1);
+            
+            double weight = stepU;
+            if (i > 0 && i < steps) {
+                weight *= (i % 2 == 0) ? 2.0 : 4.0;
+            }
+            sum += weight * term;
+        }
+        double result = sum / 3.0;
+        return Math.min(1.0, Math.max(0.0, result));
+    }
+
+    public static double pTukey(double q, int k, double df) {
+        if (q <= 0.0) return 1.0;
+        if (k < 2 || df < 1.0) return 1.0;
+        
+        double pRange;
+        if (df > 1000.0) {
+            pRange = pRangeNormal(q, k);
+        } else {
+            double startS = Math.max(0.01, 1.0 - 5.0 / Math.sqrt(2.0 * df));
+            double endS = 1.0 + 5.0 / Math.sqrt(2.0 * df);
+            int stepsS = 50;
+            double stepS = (endS - startS) / stepsS;
+            double sum = 0.0;
+            double totalWeight = 0.0;
+            
+            for (int i = 0; i <= stepsS; i++) {
+                double s = startS + i * stepS;
+                double logDensity = Math.log(2) + (df / 2.0) * Math.log(df / 2.0) - logGamma(df / 2.0) + (df - 1.0) * Math.log(s) - (df * s * s) / 2.0;
+                double density = Math.exp(logDensity);
+                
+                double weight = stepS;
+                if (i > 0 && i < stepsS) {
+                    weight *= (i % 2 == 0) ? 2.0 : 4.0;
+                }
+                
+                double pVal = pRangeNormal(q * s, k);
+                sum += weight * density * pVal;
+                totalWeight += weight * density;
+            }
+            pRange = sum / totalWeight;
+        }
+        double pVal = 1.0 - pRange;
+        return Math.min(1.0, Math.max(0.0, pVal));
     }
 
     // --- Zaimplementowane Testy ---
@@ -263,6 +350,216 @@ public class HypothesisTestingService {
 
         // JB ma rozkład Chi-Kwadrat z df=2
         return 1.0 - chiSquareCdf(jb, 2);
+    }
+
+    /**
+     * Welch's ANOVA (Jednokierunkowa analiza wariancji dla nierównych wariancji)
+     */
+    public WelchAnovaResult performWelchAnova(List<double[]> samples) {
+        if (samples == null || samples.size() < 2) {
+            return new WelchAnovaResult(false, 1.0, 0.0, 0.0, 0.0);
+        }
+
+        int k = samples.size();
+        double[] means = new double[k];
+        double[] vars = new double[k];
+        double[] weights = new double[k];
+        int[] ns = new int[k];
+        double sumWeights = 0.0;
+
+        for (int i = 0; i < k; i++) {
+            double[] s = samples.get(i);
+            if (s == null || s.length < 2) {
+                return new WelchAnovaResult(false, 1.0, 0.0, 0.0, 0.0);
+            }
+            ns[i] = s.length;
+            means[i] = SensorStatsEngine.calculateMean(s);
+            double v = SensorStatsEngine.calculateVariance(s);
+            if (v <= 0.0) {
+                v = 1e-9;
+            }
+            vars[i] = v;
+            weights[i] = ns[i] / v;
+            sumWeights += weights[i];
+        }
+
+        double weightedMean = 0.0;
+        for (int i = 0; i < k; i++) {
+            weightedMean += weights[i] * means[i];
+        }
+        weightedMean /= sumWeights;
+
+        double lambda = 0.0;
+        for (int i = 0; i < k; i++) {
+            lambda += weights[i] * Math.pow(means[i] - weightedMean, 2);
+        }
+        lambda /= (k - 1);
+
+        double qSum = 0.0;
+        for (int i = 0; i < k; i++) {
+            qSum += (1.0 / (ns[i] - 1.0)) * Math.pow(1.0 - weights[i] / sumWeights, 2);
+        }
+        double qValue = (3.0 * qSum) / (k * k - 1.0);
+
+        double fValue = lambda / (1.0 + (2.0 * (k - 2.0) / 3.0) * qValue);
+        double df1 = k - 1.0;
+        double df2 = 1.0 / qValue;
+
+        double pValue = 1.0 - fCdf(fValue, df1, df2);
+        return new WelchAnovaResult(pValue < 0.05, pValue, fValue, df1, df2);
+    }
+
+    /**
+     * Games-Howell post-hoc test
+     */
+    public List<GamesHowellResult> performGamesHowell(List<double[]> samples) {
+        List<GamesHowellResult> results = new ArrayList<>();
+        if (samples == null || samples.size() < 2) {
+            return results;
+        }
+
+        int k = samples.size();
+        double[] means = new double[k];
+        double[] vars = new double[k];
+        int[] ns = new int[k];
+
+        for (int i = 0; i < k; i++) {
+            double[] s = samples.get(i);
+            if (s == null || s.length < 2) {
+                return results;
+            }
+            ns[i] = s.length;
+            means[i] = SensorStatsEngine.calculateMean(s);
+            double v = SensorStatsEngine.calculateVariance(s);
+            if (v <= 0.0) {
+                v = 1e-9;
+            }
+            vars[i] = v;
+        }
+
+        for (int i = 0; i < k; i++) {
+            for (int j = i + 1; j < k; j++) {
+                double meanDiff = Math.abs(means[i] - means[j]);
+                double vi_ni = vars[i] / ns[i];
+                double vj_nj = vars[j] / ns[j];
+
+                double se = Math.sqrt(0.5 * (vi_ni + vj_nj));
+                double tValue = meanDiff / Math.sqrt(vi_ni + vj_nj);
+                double qValue = meanDiff / se;
+
+                double num = Math.pow(vi_ni + vj_nj, 2);
+                double den = Math.pow(vi_ni, 2) / (ns[i] - 1.0) + Math.pow(vj_nj, 2) / (ns[j] - 1.0);
+                double df = num / den;
+
+                double pValue = pTukey(qValue, k, df);
+                results.add(new GamesHowellResult(i, j, meanDiff, se, df, tValue, qValue, pValue, pValue < 0.05));
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Dunn's post-hoc test
+     */
+    public List<DunnResult> performDunnTest(List<double[]> samples) {
+        List<DunnResult> results = new ArrayList<>();
+        if (samples == null || samples.size() < 2) {
+            return results;
+        }
+
+        int k = samples.size();
+        
+        List<RankItem> allItems = new ArrayList<>();
+        for (int g = 0; g < k; g++) {
+            for (double val : samples.get(g)) {
+                allItems.add(new RankItem(val, g));
+            }
+        }
+
+        int totalN = allItems.size();
+        if (totalN == 0) {
+            return results;
+        }
+
+        allItems.sort((a, b) -> Double.compare(a.value, b.value));
+
+        int i = 0;
+        while (i < totalN) {
+            int j = i + 1;
+            while (j < totalN && allItems.get(j).value == allItems.get(i).value) {
+                j++;
+            }
+            double rankSum = 0;
+            for (int r = i; r < j; r++) {
+                rankSum += (r + 1);
+            }
+            double avgRank = rankSum / (j - i);
+            for (int r = i; r < j; r++) {
+                allItems.get(r).rank = avgRank;
+            }
+            i = j;
+        }
+
+        double[] groupRankSums = new double[k];
+        int[] groupSizes = new int[k];
+        for (RankItem item : allItems) {
+            groupRankSums[item.group] += item.rank;
+            groupSizes[item.group]++;
+        }
+
+        double[] meanRanks = new double[k];
+        for (int g = 0; g < k; g++) {
+            if (groupSizes[g] > 0) {
+                meanRanks[g] = groupRankSums[g] / groupSizes[g];
+            }
+        }
+
+        double sumTieTerms = 0.0;
+        i = 0;
+        while (i < totalN) {
+            int j = i + 1;
+            while (j < totalN && allItems.get(j).value == allItems.get(i).value) {
+                j++;
+            }
+            int tieCount = j - i;
+            if (tieCount > 1) {
+                sumTieTerms += (Math.pow(tieCount, 3) - tieCount);
+            }
+            i = j;
+        }
+
+        double tiesCorrection = 0.0;
+        if (totalN > 1) {
+            tiesCorrection = sumTieTerms / (12.0 * (totalN - 1.0));
+        }
+
+        double numComparisons = k * (k - 1) / 2.0;
+
+        for (int g1 = 0; g1 < k; g1++) {
+            for (int g2 = g1 + 1; g2 < k; g2++) {
+                int n1 = groupSizes[g1];
+                int n2 = groupSizes[g2];
+
+                if (n1 == 0 || n2 == 0) {
+                    continue;
+                }
+
+                double meanRankDiff = Math.abs(meanRanks[g1] - meanRanks[g2]);
+                
+                double factor1 = (totalN * (totalN + 1.0)) / 12.0 - tiesCorrection;
+                double factor2 = 1.0 / n1 + 1.0 / n2;
+                double se = Math.sqrt(factor1 * factor2);
+
+                double zValue = se > 0.0 ? meanRankDiff / se : 0.0;
+                double pValue = 2.0 * (1.0 - normalCdf(zValue));
+                double adjustedPValue = Math.min(pValue * numComparisons, 1.0);
+
+                results.add(new DunnResult(g1, g2, meanRankDiff, zValue, pValue, adjustedPValue, adjustedPValue < 0.05));
+            }
+        }
+
+        return results;
     }
 
     private static class RankItem {

@@ -1,16 +1,23 @@
 package com.mac.bry.desktop.service.stats;
 
+import com.mac.bry.desktop.dto.stats.DunnResult;
+import com.mac.bry.desktop.dto.stats.GamesHowellResult;
 import com.mac.bry.desktop.dto.stats.SpatialStatsResult;
+import com.mac.bry.desktop.dto.stats.WelchAnovaResult;
 import com.mac.bry.desktop.model.RevalidationSession;
 import com.mac.bry.desktop.model.ThermoMeasurementPoint;
 import com.mac.bry.desktop.model.ThermoMeasurementSeries;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class SpatialStatsService {
+
+    private final HypothesisTestingService hypothesisTestingService;
 
     public SpatialStatsResult calculateSpatialStats(Collection<ThermoMeasurementSeries> seriesList) {
         if (seriesList == null || seriesList.isEmpty()) {
@@ -57,6 +64,49 @@ public class SpatialStatsService {
             maxVertical  = maxV == Double.NEGATIVE_INFINITY ? 0.0 : maxV;
         }
 
+        // --- Hypothesis Testing comparing TOP vs. BOTTOM ---
+        boolean normallyDistributed = true;
+        double homogeneityPValue = 1.0;
+        String homogeneityTestName = "N/D";
+        String homogeneityVerdict = "N/D";
+        WelchAnovaResult welchAnovaResult = null;
+        List<GamesHowellResult> gamesHowellResults = Collections.emptyList();
+        double kruskalWallisPValue = 1.0;
+        List<DunnResult> dunnResults = Collections.emptyList();
+
+        double[] topValues = topSeries.stream()
+                .filter(s -> s.getMeasurements() != null)
+                .flatMap(s -> s.getMeasurements().stream())
+                .mapToDouble(ThermoMeasurementPoint::getRawCelsius)
+                .toArray();
+
+        double[] bottomValues = bottomSeries.stream()
+                .filter(s -> s.getMeasurements() != null)
+                .flatMap(s -> s.getMeasurements().stream())
+                .mapToDouble(ThermoMeasurementPoint::getRawCelsius)
+                .toArray();
+
+        if (topValues.length >= 5 && bottomValues.length >= 5) {
+            double jbTop = hypothesisTestingService.performJarqueBera(topValues);
+            double jbBottom = hypothesisTestingService.performJarqueBera(bottomValues);
+            normallyDistributed = (jbTop >= 0.05 && jbBottom >= 0.05);
+
+            List<double[]> samples = Arrays.asList(topValues, bottomValues);
+            if (normallyDistributed) {
+                homogeneityTestName = "Welch's ANOVA (Rozkład normalny)";
+                welchAnovaResult = hypothesisTestingService.performWelchAnova(samples);
+                homogeneityPValue = welchAnovaResult.getPValue();
+                gamesHowellResults = hypothesisTestingService.performGamesHowell(samples);
+                homogeneityVerdict = homogeneityPValue >= 0.05 ? "JEDNORODNOŚĆ POTWIERDZONA (PASS)" : "NIEJEDNORODNOŚĆ WYKAZANA (FAIL)";
+            } else {
+                homogeneityTestName = "Test Kruskala-Wallisa (Brak normalności rozkładu)";
+                kruskalWallisPValue = hypothesisTestingService.performKruskalWallis(samples);
+                homogeneityPValue = kruskalWallisPValue;
+                dunnResults = hypothesisTestingService.performDunnTest(samples);
+                homogeneityVerdict = homogeneityPValue >= 0.05 ? "JEDNORODNOŚĆ POTWIERDZONA (PASS)" : "NIEJEDNORODNOŚĆ WYKAZANA (FAIL)";
+            }
+        }
+
         return SpatialStatsResult.builder()
                 // Global
                 .meanSpatialRange(global.mean)
@@ -74,6 +124,15 @@ public class SpatialStatsService {
                 .meanVerticalGradient(meanVertical)
                 .maxVerticalGradient(maxVertical)
                 .verticalGradientOverTime(verticalGradientOverTime)
+                // Homogeneity
+                .normallyDistributed(normallyDistributed)
+                .homogeneityPValue(homogeneityPValue)
+                .homogeneityTestName(homogeneityTestName)
+                .homogeneityVerdict(homogeneityVerdict)
+                .welchAnovaResult(welchAnovaResult)
+                .gamesHowellResults(gamesHowellResults)
+                .kruskalWallisPValue(kruskalWallisPValue)
+                .dunnResults(dunnResults)
                 .build();
     }
 

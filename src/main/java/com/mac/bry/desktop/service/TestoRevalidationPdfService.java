@@ -8,6 +8,7 @@ import com.mac.bry.desktop.service.pdf.IndividualChartPdfRenderer;
 import com.mac.bry.desktop.service.pdf.CalibrationCertificatePdfRenderer;
 import com.mac.bry.desktop.service.pdf.PdfStyleHelper;
 import com.mac.bry.desktop.service.stats.HypothesisTestingService;
+import com.mac.bry.desktop.service.stats.SpatialStatsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,12 +31,20 @@ public class TestoRevalidationPdfService {
     private final com.mac.bry.desktop.service.regime.RegimeDetectionService regimeDetectionService;
     private final com.mac.bry.desktop.service.regime.RegimeAwareStatsService regimeAwareStatsService;
     private final com.mac.bry.desktop.config.RegimeDetectionProperties regimeDetectionProperties;
+    private final SpatialStatsService spatialStatsService;
 
     /**
      * Generuje zintegrowany raport z rewalidacji komory chłodniczej GxP w formacie PDF.
      */
     public void generateRevalidationReport(RevalidationSession session, File outputFile, File chartImageFile) throws IOException {
         log.info("Delegowanie generowania zintegrowanego raportu PDF: {}", outputFile.getAbsolutePath());
+        if (session.getSpatialStats() == null) {
+            java.util.List<com.mac.bry.desktop.model.ThermoMeasurementSeries> allSeries = session.getAssignedPositions().values().stream()
+                    .map(RevalidationSession.PositionData::getSeries)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toList());
+            session.setSpatialStats(spatialStatsService.calculateSpatialStats(allSeries));
+        }
         new RevalidationReportPdfRenderer(
                 metrologicalStatsService,
                 regimeDetectionService,

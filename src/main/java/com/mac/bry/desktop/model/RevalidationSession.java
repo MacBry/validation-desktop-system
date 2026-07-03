@@ -2,6 +2,7 @@ package com.mac.bry.desktop.model;
 
 import com.mac.bry.desktop.dto.stats.ConditionalStatsDTO;
 import com.mac.bry.desktop.dto.stats.CorrectedStatsDTO;
+import com.mac.bry.desktop.dto.stats.SpatialStatsResult;
 import com.mac.bry.desktop.model.regime.MeasurementSegment;
 import com.mac.bry.desktop.model.regime.RunMode;
 import lombok.AllArgsConstructor;
@@ -68,6 +69,11 @@ public class RevalidationSession {
      */
     @Builder.Default
     private Map<GridPosition, ConditionalStatsDTO> conditionalStatsMap = new HashMap<>();
+
+    /**
+     * Obliczony rozstęp przestrzenny i wyniki testów jednorodności pionowej poziomów.
+     */
+    private SpatialStatsResult spatialStats;
 
     /**
      * Enum reprezentujący 8 fizycznych narożników (pozycji) komory chłodniczej.

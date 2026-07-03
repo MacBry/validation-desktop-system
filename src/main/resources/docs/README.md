@@ -40,3 +40,6 @@ Trzy fazy refaktoryzacji:
 - **[Analiza Biznesowa: Urządzenia Chłodnicze](COOLING_DEVICE_BA.md)** - Wymagania metrologiczne (PDA TR-64), kubatury, klasy czujników oraz słownik kategorii przechowywanych materiałów.
 - **[Specyfikacja Techniczna: Urządzenia Chłodnicze](COOLING_DEVICE_TECHNICAL_SPEC.md)** - Architektura danych, integracja z Hibernate Envers, migracja Flyway V16, architektura kontrolera oraz serwisy UI.
 - **[Specyfikacja Techniczna: Zarządzanie Użytkownikami](USER_MANAGEMENT_TECHNICAL_SPEC.md)** - Architektura bezpieczeństwa, serwisy użytkowników (po refaktoryzacji) oraz kontrola dostępu.
+- **[Klasyfikacja Ekskursji: Analiza Biznesowa](BA_PROPAGATION_AWARE_EXCURSION_CLASSIFIER.md)** - Klasyfikacja przestrzenna anomalii termicznych na podstawie wektora propagacji ciepła w siatce czujników.
+- **[Klasyfikacja Ekskursji: Specyfikacja Implementacji](IMPL_PROPAGATION_AWARE_EXCURSION_CLASSIFIER.md)** - Ważona regresja opóźnień reakcji czujników i walidacja krzyżowa z konfiguracją źródła nawiewu.
+- **[Klasyfikacja Ekskursji: Plan i Scenariusze Testowe](TEST_PROPAGATION_AWARE_EXCURSION_CLASSIFIER.md)** - Scenariusze testowe weryfikacji algorytmu regresji dla różnych geometrii propagacji.

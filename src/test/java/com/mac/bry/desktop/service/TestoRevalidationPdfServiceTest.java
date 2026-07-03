@@ -4,6 +4,7 @@ import com.mac.bry.desktop.model.*;
 import com.mac.bry.desktop.model.RevalidationSession.GridPosition;
 import com.mac.bry.desktop.model.RevalidationSession.PositionData;
 import com.mac.bry.desktop.service.stats.HypothesisTestingService;
+import com.mac.bry.desktop.service.stats.SpatialStatsService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -43,13 +44,20 @@ public class TestoRevalidationPdfServiceTest {
     private static final com.mac.bry.desktop.service.regime.RegimeAwareStatsService regimeAwareStatsService = 
             new com.mac.bry.desktop.service.regime.RegimeAwareStatsService(metrologicalStatsService, properties);
 
+    private static final HypothesisTestingService hypothesisTestingService = 
+            new HypothesisTestingService();
+
+    private static final SpatialStatsService spatialStatsService = 
+            new SpatialStatsService(hypothesisTestingService);
+
     private final TestoRevalidationPdfService pdfService = new TestoRevalidationPdfService(
             null,
-            new HypothesisTestingService(),
+            hypothesisTestingService,
             metrologicalStatsService,
             regimeDetectionService,
             regimeAwareStatsService,
-            properties
+            properties,
+            spatialStatsService
     );
 
     @Test
