@@ -69,8 +69,25 @@
                </children>
             </VBox>
 
-            <!-- Rząd 3: Kategoria Indicator -->
-            <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2">
+            <!-- Rząd 3: Źródło nawiewu / ewaporator (IMPL-EXC002) -->
+            <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="3">
+               <children>
+                  <Label text="Źródło nawiewu / ewaporator:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <ComboBox fx:id="airflowSourceCombo" prefWidth="300.0" promptText="Wybierz konfigurację nawiewu..." style="-fx-pref-height: 38px;" />
+                  <Label text="Upewnij się, że deklaracja odpowiada fizycznej konfiguracji komory." style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" wrapText="true" />
+               </children>
+            </VBox>
+
+            <!-- Rząd 4: Pozycje CUSTOM (widoczne tylko dla konfiguracji ręcznej) -->
+            <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.columnSpan="2">
+               <children>
+                  <Label fx:id="customPositionsLabel" text="Pozycje bliskiego pola źródła (CUSTOM):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" visible="false" managed="false" />
+                  <FlowPane fx:id="customPositionsPane" hgap="15.0" vgap="8.0" visible="false" managed="false" />
+               </children>
+            </VBox>
+
+            <!-- Rząd 5: Kategoria Indicator -->
+            <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2">
                <children>
                   <Label text="Klasyfikacja Kubatury PDA:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                   <Label fx:id="volumeCategoryBadge" text="BRAK DANYCH" style="-fx-background-color: #cbd5e1; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 8px 15px; -fx-background-radius: 6px; -fx-alignment: CENTER;" />

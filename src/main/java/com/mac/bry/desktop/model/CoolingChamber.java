@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.model;
 
+import com.mac.bry.desktop.model.regime.AirflowSourcePreset;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -67,6 +68,22 @@ public class CoolingChamber {
     @Enumerated(EnumType.STRING)
     @Column(name = "coldspot_position", length = 50)
     private RevalidationSession.GridPosition coldspotPosition;
+
+    /**
+     * Deklarowana lokalizacja źródła nawiewu/ewaporatora (IMPL-EXC002 §2.3).
+     * Determinuje oczekiwany kierunek propagacji defrostu.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "airflow_source_preset", length = 30)
+    @Builder.Default
+    private AirflowSourcePreset airflowSourcePreset = AirflowSourcePreset.REAR_WALL;
+
+    /**
+     * Pozycje bliskiego pola źródła nawiewu — wypełniane tylko dla CUSTOM.
+     * Przechowywane jako CSV (np. "TOP_BACK_LEFT,TOP_BACK_RIGHT").
+     */
+    @Column(name = "custom_airflow_positions", length = 500)
+    private String customAirflowPositions;
 
     public String getFormattedMinOperatingTemp() {
         return minOperatingTemp != null ? String.format("%.1f°C", minOperatingTemp) : "–";

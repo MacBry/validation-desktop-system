@@ -3,18 +3,24 @@ package com.mac.bry.desktop.controller;
 import com.mac.bry.desktop.model.ChamberType;
 import com.mac.bry.desktop.model.CoolingChamber;
 import com.mac.bry.desktop.model.MaterialType;
+import com.mac.bry.desktop.model.RevalidationSession.GridPosition;
 import com.mac.bry.desktop.model.VolumeCategory;
+import com.mac.bry.desktop.model.regime.AirflowSourcePreset;
 import com.mac.bry.desktop.service.MaterialTypeService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -35,6 +41,11 @@ public class CoolingChamberDialogController {
     @FXML private Label pdaCategoryLabel;
     @FXML private Label pdaSensorLabel;
     @FXML private Button saveButton;
+    @FXML private ComboBox<AirflowSourcePreset> airflowSourceCombo;
+    @FXML private Label customPositionsLabel;
+    @FXML private FlowPane customPositionsPane;
+
+    private final Map<GridPosition, CheckBox> positionCheckboxes = new EnumMap<>(GridPosition.class);
 
     private CoolingChamber coolingChamber;
     private boolean isEdit = false;
@@ -73,7 +84,11 @@ public class CoolingChamberDialogController {
             tempMinField.setText(chamber.getMinOperatingTemp() != null ? String.valueOf(chamber.getMinOperatingTemp()) : "");
             tempMaxField.setText(chamber.getMaxOperatingTemp() != null ? String.valueOf(chamber.getMaxOperatingTemp()) : "");
             volumeField.setText(chamber.getVolume() != null ? String.valueOf(chamber.getVolume()) : "");
-            
+            airflowSourceCombo.setValue(chamber.getAirflowSourcePreset() != null
+                    ? chamber.getAirflowSourcePreset()
+                    : AirflowSourcePreset.REAR_WALL);
+            applyCustomPositionsFromCsv(chamber.getCustomAirflowPositions());
+
             updatePdaDetails(chamber.getVolume());
         }
     }
@@ -108,6 +123,34 @@ public class CoolingChamberDialogController {
                 return null;
             }
         });
+
+        // Konwerter dla Źródła Nawiewu (IMPL-EXC002 §6.2)
+        airflowSourceCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(AirflowSourcePreset preset) {
+                return preset != null ? preset.getLabel() : "";
+            }
+
+            @Override
+            public AirflowSourcePreset fromString(String string) {
+                return null;
+            }
+        });
+
+        // CheckBoxy pozycji bliskiego pola dla trybu CUSTOM
+        for (GridPosition pos : GridPosition.values()) {
+            CheckBox cb = new CheckBox(pos.getLabel());
+            positionCheckboxes.put(pos, cb);
+            customPositionsPane.getChildren().add(cb);
+        }
+
+        airflowSourceCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            boolean showCustom = newVal == AirflowSourcePreset.CUSTOM;
+            customPositionsLabel.setVisible(showCustom);
+            customPositionsLabel.setManaged(showCustom);
+            customPositionsPane.setVisible(showCustom);
+            customPositionsPane.setManaged(showCustom);
+        });
     }
 
     private void setupListeners() {
@@ -129,6 +172,7 @@ public class CoolingChamberDialogController {
     private void populateCombos() {
         chamberTypeCombo.setItems(FXCollections.observableArrayList(ChamberType.values()));
         materialTypeCombo.setItems(FXCollections.observableArrayList(materialTypeService.findAllActive()));
+        airflowSourceCombo.setItems(FXCollections.observableArrayList(AirflowSourcePreset.values()));
     }
 
     private void updatePdaDetails(Double vol) {
@@ -174,8 +218,35 @@ public class CoolingChamberDialogController {
         tempMinField.setDisable(true);
         tempMaxField.setDisable(true);
         volumeField.setDisable(true);
+        airflowSourceCombo.setDisable(true);
+        customPositionsPane.setDisable(true);
         saveButton.setVisible(false);
         saveButton.setManaged(false);
+    }
+
+    /** Zaznacza CheckBoxy CUSTOM na podstawie CSV z encji. */
+    private void applyCustomPositionsFromCsv(String csv) {
+        positionCheckboxes.values().forEach(cb -> cb.setSelected(false));
+        if (csv == null || csv.isBlank()) return;
+        for (String s : csv.split(",")) {
+            try {
+                GridPosition pos = GridPosition.valueOf(s.trim());
+                CheckBox cb = positionCheckboxes.get(pos);
+                if (cb != null) cb.setSelected(true);
+            } catch (IllegalArgumentException e) {
+                log.warn("Nieznana pozycja GridPosition w custom_airflow_positions: {}", s.trim());
+            }
+        }
+    }
+
+    /** Zbiera zaznaczone pozycje CUSTOM do CSV; null gdy preset != CUSTOM lub brak zaznaczeń. */
+    private String collectCustomPositionsCsv() {
+        if (airflowSourceCombo.getValue() != AirflowSourcePreset.CUSTOM) return null;
+        String csv = positionCheckboxes.entrySet().stream()
+                .filter(e -> e.getValue().isSelected())
+                .map(e -> e.getKey().name())
+                .collect(Collectors.joining(","));
+        return csv.isEmpty() ? null : csv;
     }
 
     @FXML
@@ -186,6 +257,10 @@ public class CoolingChamberDialogController {
             coolingChamber.setChamberName(chamberNameField.getText().trim());
             coolingChamber.setChamberType(chamberTypeCombo.getValue());
             coolingChamber.setMaterialType(materialTypeCombo.getValue());
+            coolingChamber.setAirflowSourcePreset(airflowSourceCombo.getValue() != null
+                    ? airflowSourceCombo.getValue()
+                    : AirflowSourcePreset.REAR_WALL);
+            coolingChamber.setCustomAirflowPositions(collectCustomPositionsCsv());
 
             try {
                 if (!tempMinField.getText().trim().isEmpty()) {

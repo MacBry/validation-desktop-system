@@ -59,3 +59,8 @@ regime:
     min-steady-points-for-stats: 30
     excursion-gradient-threshold: 0.5
     excursion-return-window-minutes: 60
+    propagation-aware: false
+    propagation-cosine-similarity-threshold: 0.7
+    propagation-ambiguity-margin: 0.1
+    propagation-min-sensors-for-vector: 3
+    propagation-default-preset: REAR_WALL

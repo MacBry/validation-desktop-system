@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.config;
 
+import com.mac.bry.desktop.model.regime.AirflowSourcePreset;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -86,4 +87,24 @@ public class RegimeDetectionProperties {
      * Maksymalny czas powrotu do baseline dla krótkotrwałego zdarzenia [minuty].
      */
     private int excursionReturnWindowMinutes = 60;
+
+    // ── Propagation-Aware Excursion Classifier (IMPL-EXC002) ──────────────────
+
+    /**
+     * Feature flag — klasyfikacja przestrzenna na podstawie wektora propagacji.
+     * Gdy false → dotychczasowa logika isFrontPosition() (backward compat).
+     */
+    private boolean propagationAware = false;
+
+    /** Minimalny cosine similarity do uznania kierunku za zgodny. */
+    private double propagationCosineSimilarityThreshold = 0.7;
+
+    /** Margines niejednoznaczności — jeśli |cos_defrost - cos_door| &lt; margin → EXCURSION. */
+    private double propagationAmbiguityMargin = 0.1;
+
+    /** Minimalna liczba czujników z niezerowym lagiem do obliczenia wektora. */
+    private int propagationMinSensorsForVector = 3;
+
+    /** Domyślny preset dla komór bez konfiguracji. */
+    private AirflowSourcePreset propagationDefaultPreset = AirflowSourcePreset.REAR_WALL;
 }

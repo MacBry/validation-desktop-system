@@ -4,6 +4,7 @@ import com.mac.bry.desktop.config.RegimeDetectionProperties;
 import com.mac.bry.desktop.model.RevalidationSession.GridPosition;
 import com.mac.bry.desktop.model.ThermoMeasurementPoint;
 import com.mac.bry.desktop.model.ThermoMeasurementSeries;
+import com.mac.bry.desktop.model.regime.AirflowSourcePreset;
 import com.mac.bry.desktop.model.regime.DetectionSource;
 import com.mac.bry.desktop.model.regime.MeasurementSegment;
 import com.mac.bry.desktop.model.regime.SegmentType;
@@ -26,17 +27,35 @@ import java.util.*;
 public class ExcursionDetector {
 
     private final RegimeDetectionProperties props;
+    private final PropagationVectorClassifier propagationClassifier;
 
     /**
      * Wykonuje detekcję szpilek dla wszystkich kanałów, analizując okresowość
      * oraz nakładanie się czasowe celem detekcji sygnatury przestrzennej.
+     * Wariant bez konfiguracji nawiewu — domyślny preset REAR_WALL (backward compat).
      *
      * @param allChannels Mapa pozycji na odpowiadające im serie pomiarowe.
      * @return Mapa z wykrytymi szpilkami (reżimami ekskursji) per pozycja.
      */
     public Map<GridPosition, List<MeasurementSegment>> detectAll(
             Map<GridPosition, ThermoMeasurementSeries> allChannels) {
-        
+        return detectAll(allChannels, AirflowSourcePreset.REAR_WALL, null);
+    }
+
+    /**
+     * Wykonuje detekcję szpilek z uwzględnieniem deklarowanej konfiguracji
+     * źródła nawiewu komory (IMPL-EXC002 §4).
+     *
+     * @param allChannels            Mapa pozycji na odpowiadające im serie pomiarowe.
+     * @param airflowSourcePreset    Deklarowany preset źródła nawiewu.
+     * @param customAirflowPositions Pozycje bliskiego pola dla trybu CUSTOM (może być null).
+     * @return Mapa z wykrytymi szpilkami (reżimami ekskursji) per pozycja.
+     */
+    public Map<GridPosition, List<MeasurementSegment>> detectAll(
+            Map<GridPosition, ThermoMeasurementSeries> allChannels,
+            AirflowSourcePreset airflowSourcePreset,
+            Set<GridPosition> customAirflowPositions) {
+
         Map<GridPosition, List<MeasurementSegment>> rawSpikesMap = new HashMap<>();
 
         // 1. Detekcja szpilek dla każdego kanału osobno
@@ -48,7 +67,7 @@ public class ExcursionDetector {
         }
 
         // 2. Klasyfikacja przestrzenno-okresowa szpilek
-        classifySpikes(rawSpikesMap);
+        classifySpikes(rawSpikesMap, airflowSourcePreset, customAirflowPositions);
 
         return rawSpikesMap;
     }
@@ -120,7 +139,9 @@ public class ExcursionDetector {
         return spikes;
     }
 
-    private void classifySpikes(Map<GridPosition, List<MeasurementSegment>> rawSpikesMap) {
+    private void classifySpikes(Map<GridPosition, List<MeasurementSegment>> rawSpikesMap,
+                                AirflowSourcePreset airflowSourcePreset,
+                                Set<GridPosition> customAirflowPositions) {
         // A. Sprawdzenie okresowości (Defrost) per kanał
         for (GridPosition pos : rawSpikesMap.keySet()) {
             List<MeasurementSegment> spikes = rawSpikesMap.get(pos);
@@ -169,21 +190,10 @@ public class ExcursionDetector {
 
         for (List<PositionSpike> group : overlappingGroups) {
             if (group.size() > 1) {
-                PositionSpike earliest = group.stream()
-                        .min(Comparator.comparing(ps -> ps.segment.getFromTimestamp()))
-                        .orElse(null);
-
-                if (earliest != null) {
-                    boolean isFrontFirst = isFrontPosition(earliest.position);
-                    SegmentType type = isFrontFirst ? SegmentType.DOOR_EVENT : SegmentType.DEFROST;
-                    String note = isFrontFirst 
-                            ? "Wykryto otwarcie drzwi (pierwsza reakcja: " + earliest.position.getLabel() + ")"
-                            : "Wykryto cykl odszraniania (pierwsza reakcja: " + earliest.position.getLabel() + ")";
-
-                    for (PositionSpike ps : group) {
-                        ps.segment.setType(type);
-                        ps.segment.setNote(note);
-                    }
+                if (props.isPropagationAware()) {
+                    classifyByPropagationVector(group, airflowSourcePreset, customAirflowPositions);
+                } else {
+                    classifyByFrontPosition(group); // dotychczasowa logika — backward compat
                 }
             } else if (group.size() == 1) {
                 PositionSpike ps = group.get(0);
@@ -199,6 +209,59 @@ public class ExcursionDetector {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Dotychczasowa klasyfikacja przestrzenna: pierwsza reakcja na froncie → DOOR_EVENT,
+     * w głębi → DEFROST. Poprawna tylko dla komór z ewaporatorem na tylnej ścianie.
+     * Używana gdy {@code propagationAware=false}.
+     */
+    private void classifyByFrontPosition(List<PositionSpike> group) {
+        PositionSpike earliest = group.stream()
+                .min(Comparator.comparing(ps -> ps.segment.getFromTimestamp()))
+                .orElse(null);
+
+        if (earliest != null) {
+            boolean isFrontFirst = isFrontPosition(earliest.position);
+            SegmentType type = isFrontFirst ? SegmentType.DOOR_EVENT : SegmentType.DEFROST;
+            String note = isFrontFirst
+                    ? "Wykryto otwarcie drzwi (pierwsza reakcja: " + earliest.position.getLabel() + ")"
+                    : "Wykryto cykl odszraniania (pierwsza reakcja: " + earliest.position.getLabel() + ")";
+
+            for (PositionSpike ps : group) {
+                ps.segment.setType(type);
+                ps.segment.setNote(note);
+            }
+        }
+    }
+
+    /**
+     * Klasyfikacja przestrzenna na podstawie wektora propagacji ciepła
+     * i deklarowanego źródła nawiewu (IMPL-EXC002 §4.2).
+     */
+    private void classifyByPropagationVector(
+            List<PositionSpike> group,
+            AirflowSourcePreset preset,
+            Set<GridPosition> customPositions) {
+
+        List<PropagationVectorClassifier.SpikeEvent> events = group.stream()
+                .map(ps -> new PropagationVectorClassifier.SpikeEvent(
+                        ps.position, ps.segment.getFromTimestamp()))
+                .toList();
+
+        PropagationVectorClassifier.ClassificationResult result =
+                propagationClassifier.classify(events, preset, customPositions);
+
+        // Pełna traceability dla audytora (IMPL-EXC002 §7): nota zawiera wektor,
+        // cosine similarity, deklarowane źródło i confidence.
+        String fullNote = String.format("%s. Deklarowane źródło: %s. Confidence: %.2f",
+                result.note(), preset.getLabel(), result.confidence());
+
+        for (PositionSpike ps : group) {
+            ps.segment.setType(result.type());
+            ps.segment.setConfidence(result.confidence());
+            ps.segment.setNote(fullNote);
         }
     }
 

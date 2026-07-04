@@ -4,6 +4,7 @@ import com.mac.bry.desktop.config.RegimeDetectionProperties;
 import com.mac.bry.desktop.model.ThermoMeasurementPoint;
 import com.mac.bry.desktop.model.ThermoMeasurementSeries;
 import com.mac.bry.desktop.model.RevalidationSession.GridPosition;
+import com.mac.bry.desktop.model.regime.AirflowSourcePreset;
 import com.mac.bry.desktop.model.regime.DetectionSource;
 import com.mac.bry.desktop.model.regime.MeasurementSegment;
 import com.mac.bry.desktop.model.regime.SegmentType;
@@ -14,9 +15,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Fasada detekcji reżimów pracy — główny punkt wejścia dla Fazy 1 (DP-001) i Fazy 2.
@@ -101,7 +104,12 @@ public class RegimeDetectionService {
             if (!channels.containsKey(series.getGridPosition())) {
                 channels.put(series.getGridPosition(), series);
             }
-            Map<GridPosition, List<MeasurementSegment>> allExcursions = excursionDetector.detectAll(channels);
+            // Konfiguracja źródła nawiewu z komory (IMPL-EXC002 §5.1)
+            AirflowSourcePreset preset = resolvePreset(series);
+            Set<GridPosition> customPositions = resolveCustomPositions(series);
+
+            Map<GridPosition, List<MeasurementSegment>> allExcursions =
+                    excursionDetector.detectAll(channels, preset, customPositions);
             List<MeasurementSegment> excursions = allExcursions.getOrDefault(series.getGridPosition(), List.of());
             if (!excursions.isEmpty()) {
                 log.debug("ExcursionDetector: wykryto {} szpilek/ekskursji dla pozycji {}", excursions.size(), series.getGridPosition());
@@ -309,5 +317,30 @@ public class RegimeDetectionService {
 
     private long countType(List<MeasurementSegment> segments, SegmentType type) {
         return segments.stream().filter(s -> s.getType() == type).count();
+    }
+
+    /** Preset źródła nawiewu z komory serii; fallback do domyślnego z konfiguracji. */
+    private AirflowSourcePreset resolvePreset(ThermoMeasurementSeries series) {
+        if (series.getCoolingChamber() != null
+                && series.getCoolingChamber().getAirflowSourcePreset() != null) {
+            return series.getCoolingChamber().getAirflowSourcePreset();
+        }
+        return props.getPropagationDefaultPreset();
+    }
+
+    /** Pozycje CUSTOM bliskiego pola z komory serii (CSV → EnumSet). */
+    private Set<GridPosition> resolveCustomPositions(ThermoMeasurementSeries series) {
+        if (series.getCoolingChamber() == null) return null;
+        String csv = series.getCoolingChamber().getCustomAirflowPositions();
+        if (csv == null || csv.isBlank()) return null;
+        Set<GridPosition> positions = EnumSet.noneOf(GridPosition.class);
+        for (String s : csv.split(",")) {
+            try {
+                positions.add(GridPosition.valueOf(s.trim()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Nieznana pozycja GridPosition w custom_airflow_positions: {}", s.trim());
+            }
+        }
+        return positions;
     }
 }
