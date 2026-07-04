@@ -69,6 +69,8 @@ public class TestoRevalidationController {
     @FXML private ComboBox<CoolingDevice> deviceComboBox;
     @FXML private ComboBox<CoolingChamber> chamberComboBox;
     @FXML private ComboBox<GxPProcedureType> procedureTypeComboBox;
+    @FXML private ComboBox<com.mac.bry.desktop.model.regime.RunMode> runModeComboBox;
+    @FXML private Label lblRunModeHint;
     @FXML private Label lblProcedureWarning;
     @FXML private TextField chamberNameField;
     @FXML private TextField chamberTypeField;
@@ -191,7 +193,8 @@ public class TestoRevalidationController {
         gridButtons.put(RevalidationSession.GridPosition.BOTTOM_BACK_RIGHT, btnBottomBackRight);
 
         setupStep1();
-        
+        setupRunModeCombo();
+
         TestoRevalidationTableHelper.setupSummaryTable(summaryTableView, colPosName, colPosSn, colPosModel, colPosCert, colPosCertValid, colPosCount, colPosStatus);
         TestoRevalidationTableHelper.setupMetrologicalTable(metrologicalTableView, colMetroPos, colMetroSn, colMetroMin, colMetroMax, colMetroAvg, colMetroMkt, colMetroUnc, colMetroSpikes, colMetroDrift);
         TestoRevalidationTableHelper.setupStatsTable(statsTableView, colStatsPos, colStatsMedian, colStatsStdDev, colStatsRsd, colStatsSkewness, colStatsKurtosis, colStatsCp, colStatsCpk, colStatsJbPVal, colStatsAction, this::handleShowDiagnostics);
@@ -205,6 +208,45 @@ public class TestoRevalidationController {
         resetGridButtons();
         // Domyślnie: Rewalidacja Okresowa
         applyProcedureTypeUI(GxPProcedureType.PERIODIC_REVALIDATION);
+    }
+
+    /**
+     * Konfiguruje ComboBox deklaracji trybu runu (DP-001 §4.5).
+     * Wybór operatora przenoszony do sesji przy jej inicjalizacji oraz na bieżąco.
+     */
+    private void setupRunModeCombo() {
+        runModeComboBox.setItems(FXCollections.observableArrayList(
+                com.mac.bry.desktop.model.regime.RunMode.values()));
+        runModeComboBox.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(com.mac.bry.desktop.model.regime.RunMode mode) {
+                if (mode == null) return "";
+                return switch (mode) {
+                    case QUALIFICATION -> "Kwalifikacja (IQ/OQ/PQ)";
+                    case CHARACTERIZATION -> "Charakteryzacja";
+                    case MONITORING -> "Monitoring okresowy";
+                };
+            }
+
+            @Override
+            public com.mac.bry.desktop.model.regime.RunMode fromString(String s) {
+                return null;
+            }
+        });
+        runModeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) return;
+            lblRunModeHint.setText(switch (newVal) {
+                case QUALIFICATION -> "Kwalifikacja: rygorystyczne kryteria WHO/GMP — ekskursja w fazie ustalonej oznacza FAIL.";
+                case CHARACTERIZATION -> "Charakteryzacja: obserwacja zachowania — zdarzenia raportowane jako FINDING.";
+                case MONITORING -> "Monitoring: porównanie ze stanem bazowym — odchylenia raportowane jako WARNING.";
+            });
+            if (session != null) {
+                session.setRunMode(newVal);
+                log.info("Operator zadeklarował tryb runu: {}", newVal);
+            }
+        });
+        // Domyślnie CHARACTERIZATION — bezpieczna wartość (nie nakłada kryteriów kwalifikacyjnych)
+        runModeComboBox.setValue(com.mac.bry.desktop.model.regime.RunMode.CHARACTERIZATION);
     }
 
     /**
@@ -364,6 +406,9 @@ public class TestoRevalidationController {
         GxPProcedureType procedureType = procedureTypeComboBox.getSelectionModel().getSelectedItem();
         if (device != null && chamber != null && procedureType != null) {
             session = facade.initSession(device, chamber, procedureType);
+            if (runModeComboBox.getValue() != null) {
+                session.setRunMode(runModeComboBox.getValue());
+            }
             resetGridButtons();
             refreshGridHighlight();
             selectedPosition = null;

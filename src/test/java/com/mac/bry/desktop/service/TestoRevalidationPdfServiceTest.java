@@ -44,8 +44,14 @@ public class TestoRevalidationPdfServiceTest {
     private static final MetrologicalStatsService metrologicalStatsService = 
             new MetrologicalStatsService(calibrationCorrectionService);
 
-    private static final com.mac.bry.desktop.service.regime.RegimeAwareStatsService regimeAwareStatsService = 
-            new com.mac.bry.desktop.service.regime.RegimeAwareStatsService(metrologicalStatsService, properties);
+    private static final com.mac.bry.desktop.service.regime.verdict.VerdictPolicyRegistry verdictPolicyRegistry =
+            new com.mac.bry.desktop.service.regime.verdict.VerdictPolicyRegistry(java.util.List.of(
+                    new com.mac.bry.desktop.service.regime.verdict.QualificationVerdictPolicy(),
+                    new com.mac.bry.desktop.service.regime.verdict.CharacterizationVerdictPolicy(),
+                    new com.mac.bry.desktop.service.regime.verdict.MonitoringVerdictPolicy()));
+
+    private static final com.mac.bry.desktop.service.regime.RegimeAwareStatsService regimeAwareStatsService =
+            new com.mac.bry.desktop.service.regime.RegimeAwareStatsService(metrologicalStatsService, properties, verdictPolicyRegistry);
 
     private static final HypothesisTestingService hypothesisTestingService = 
             new HypothesisTestingService();

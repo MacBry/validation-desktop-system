@@ -1,6 +1,7 @@
 package com.mac.bry.desktop.dto.stats;
 
 import com.mac.bry.desktop.model.regime.RunMode;
+import com.mac.bry.desktop.model.regime.VerdictStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -70,4 +71,10 @@ public class ConditionalStatsDTO {
 
     /** Notatka werdyktu — powód WARNING/INCONCLUSIVE/FAIL lub null gdy PASS. */
     private String verdictNote;
+
+    /**
+     * Status werdyktu wyznaczony przez {@code VerdictPolicy} zależną od trybu runu
+     * (DP-001 §4.5). PASS gdy wszystkie kryteria spełnione.
+     */
+    private VerdictStatus verdictStatus;
 }

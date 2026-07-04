@@ -9,6 +9,9 @@ import com.mac.bry.desktop.model.regime.MeasurementSegment;
 import com.mac.bry.desktop.model.regime.RunMode;
 import com.mac.bry.desktop.model.regime.SegmentType;
 import com.mac.bry.desktop.service.MetrologicalStatsService;
+import com.mac.bry.desktop.service.regime.verdict.VerdictContext;
+import com.mac.bry.desktop.service.regime.verdict.VerdictPolicyRegistry;
+import com.mac.bry.desktop.service.regime.verdict.VerdictResult;
 import com.mac.bry.desktop.service.stats.SpcEngine;
 import com.mac.bry.desktop.config.RegimeDetectionProperties;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,7 @@ public class RegimeAwareStatsService {
 
     private final MetrologicalStatsService metrologicalStatsService;
     private final RegimeDetectionProperties props;
+    private final VerdictPolicyRegistry verdictPolicyRegistry;
 
     /**
      * Oblicza statystyki warunkowe dla serii pomiarowej na podstawie wykrytych segmentów.
@@ -69,16 +73,18 @@ public class RegimeAwareStatsService {
         if (steadyPoints.size() < props.getMinSteadyPointsForStats()) {
             log.warn("RegimeAwareStatsService [{}]: zbyt mało punktów STEADY_STATE: {} (min: {})",
                     posLabel, steadyPoints.size(), props.getMinSteadyPointsForStats());
+            double coverage = totalPoints > 0
+                    ? (double) steadyPoints.size() / totalPoints * 100.0 : 0.0;
+            VerdictResult verdict = evaluateVerdict(runMode, false, coverage, null, null, segments);
             return ConditionalStatsDTO.builder()
                     .positionLabel(posLabel)
                     .recorderSerialNumber(sn)
                     .runMode(runMode)
                     .hasSteadyStateData(false)
                     .steadyStatePointCount(steadyPoints.size())
-                    .steadyStateCoveragePercent(totalPoints > 0
-                            ? (double) steadyPoints.size() / totalPoints * 100.0 : 0.0)
-                    .verdictNote("Brak wystarczającej ilości danych w fazie STEADY_STATE ("
-                            + steadyPoints.size() + " punktów < min. " + props.getMinSteadyPointsForStats() + ")")
+                    .steadyStateCoveragePercent(coverage)
+                    .verdictNote(verdict.formattedNote())
+                    .verdictStatus(verdict.status())
                     .build();
         }
 
@@ -117,8 +123,8 @@ public class RegimeAwareStatsService {
         // 6. Pokrycie
         double coveragePct = (double) steadyPoints.size() / totalPoints * 100.0;
 
-        // 7. Notatka werdyktu
-        String verdictNote = buildVerdictNote(cpkPass, stdDevPass, coveragePct, runMode);
+        // 7. Werdykt przez politykę zależną od trybu runu (DP-001 §4.5, Strategy)
+        VerdictResult verdict = evaluateVerdict(runMode, true, coveragePct, cpkPass, stdDevPass, segments);
 
         log.debug("RegimeAwareStatsService [{}]: steady={} pkt ({:.1f}%), "
                         + "avg={:.2f}°C, std={:.3f}°C, Cpk={}",
@@ -142,7 +148,8 @@ public class RegimeAwareStatsService {
                 .expandedUncertaintySteady(expandedU)
                 .cpkPassSteady(cpkPass)
                 .stdDevPassSteady(stdDevPass)
-                .verdictNote(verdictNote)
+                .verdictNote(verdict.formattedNote())
+                .verdictStatus(verdict.status())
                 .build();
     }
 
@@ -247,21 +254,17 @@ public class RegimeAwareStatsService {
                 : "Nieznana pozycja";
     }
 
-    private String buildVerdictNote(Boolean cpkPass, Boolean stdDevPass,
-                                    double coveragePct, RunMode runMode) {
-        if (coveragePct < 20.0) {
-            return String.format("INCONCLUSIVE: faza STEADY_STATE stanowi tylko %.0f%% przebiegu", coveragePct);
-        }
-        if (Boolean.FALSE.equals(cpkPass)) {
-            return runMode == RunMode.QUALIFICATION
-                    ? "FAIL: Cpk(STEADY) < 1,0 — niezdolność procesu w fazie ustalonej"
-                    : "FINDING: Cpk(STEADY) < 1,0 (przebieg charakteryzacyjny)";
-        }
-        if (Boolean.FALSE.equals(stdDevPass)) {
-            return runMode == RunMode.QUALIFICATION
-                    ? "WARNING: std dev(STEADY) przekracza limit WHO"
-                    : "FINDING: std dev(STEADY) powyżej limitu WHO (przebieg charakteryzacyjny)";
-        }
-        return null; // PASS — brak notatki
+    /** Deleguje ocenę do polityki werdyktu wybranej wg trybu runu (Strategy, DP-001 §4.5). */
+    private VerdictResult evaluateVerdict(RunMode runMode, boolean hasSteadyStateData,
+                                          double coveragePct, Boolean cpkPass, Boolean stdDevPass,
+                                          List<MeasurementSegment> segments) {
+        VerdictContext ctx = VerdictContext.builder()
+                .hasSteadyStateData(hasSteadyStateData)
+                .steadyStateCoveragePercent(coveragePct)
+                .cpkPass(cpkPass)
+                .stdDevPass(stdDevPass)
+                .segments(segments)
+                .build();
+        return verdictPolicyRegistry.forMode(runMode).evaluate(ctx);
     }
 }

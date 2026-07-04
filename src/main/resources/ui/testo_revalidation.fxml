@@ -73,6 +73,13 @@
 
                                             <!-- procedureTypeComboBox ukryty — typ procedury wybierany z paska bocznego -->
                                             <ComboBox fx:id="procedureTypeComboBox" visible="false" managed="false" />
+
+                                            <!-- Deklaracja trybu runu (DP-001 §4.5) -->
+                                            <VBox spacing="5.0">
+                                                <Label text="Tryb runu (polityka werdyktu):" />
+                                                <ComboBox fx:id="runModeComboBox" maxWidth="1.7976931348623157E308" promptText="Wybierz tryb runu..." />
+                                                <Label fx:id="lblRunModeHint" wrapText="true" style="-fx-text-fill: -color-fg-muted; -fx-font-size: 11px;" />
+                                            </VBox>
                                         </children>
                                     </VBox>
 

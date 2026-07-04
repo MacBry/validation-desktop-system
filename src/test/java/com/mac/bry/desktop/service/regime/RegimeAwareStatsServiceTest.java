@@ -8,6 +8,10 @@ import com.mac.bry.desktop.model.regime.MeasurementSegment;
 import com.mac.bry.desktop.model.regime.RunMode;
 import com.mac.bry.desktop.model.regime.SegmentType;
 import com.mac.bry.desktop.service.MetrologicalStatsService;
+import com.mac.bry.desktop.service.regime.verdict.CharacterizationVerdictPolicy;
+import com.mac.bry.desktop.service.regime.verdict.MonitoringVerdictPolicy;
+import com.mac.bry.desktop.service.regime.verdict.QualificationVerdictPolicy;
+import com.mac.bry.desktop.service.regime.verdict.VerdictPolicyRegistry;
 import com.mac.bry.desktop.service.stats.SpcEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +40,12 @@ class RegimeAwareStatsServiceTest {
 
     @Spy
     private RegimeDetectionProperties properties = new RegimeDetectionProperties();
+
+    @Spy
+    private VerdictPolicyRegistry verdictPolicyRegistry = new VerdictPolicyRegistry(List.of(
+            new QualificationVerdictPolicy(),
+            new CharacterizationVerdictPolicy(),
+            new MonitoringVerdictPolicy()));
 
     @BeforeEach
     void setUp() {
