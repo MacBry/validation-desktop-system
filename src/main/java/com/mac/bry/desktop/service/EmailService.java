@@ -1,7 +1,7 @@
 package com.mac.bry.desktop.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -9,12 +9,17 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class EmailService {
 
     private final JavaMailSender mailSender;
-    private final String FROM_ADDRESS = "maciej.bryja@wp.pl";
+    private final String FROM_ADDRESS;
+
+    public EmailService(JavaMailSender mailSender,
+                        @Value("${app.mail.from:maciej.bryja@wp.pl}") String fromAddress) {
+        this.mailSender = mailSender;
+        this.FROM_ADDRESS = fromAddress;
+    }
 
     public void sendPasswordResetEmail(String to, String tempPassword) {
         try {

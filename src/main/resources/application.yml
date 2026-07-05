@@ -42,6 +42,15 @@ app:
   security:
     inactivity-timeout-minutes: 15
     account-expiration-days: 90
+  mail:
+    # Adres nadawcy powiadomień systemowych
+    from: ${MAIL_FROM:maciej.bryja@wp.pl}
+  notifications:
+    # Dzienny digest GxP: wygasające świadectwa wzorcowania + zaległe rewalidacje
+    enabled: ${GXP_NOTIFICATIONS_ENABLED:true}
+    cron: "0 0 7 * * *"          # codziennie 7:00
+    advance-days: 30              # próg ostrzeżenia (spójny z dashboardem)
+    revalidation-cycle-months: 12
   backup:
     directory: backups/db
     mysql-dump-path: ${MYSQL_DUMP_PATH:C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe}
