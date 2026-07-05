@@ -22,8 +22,8 @@
                   <Insets top="25.0" bottom="15.0" />
                </VBox.margin>
                <children>
-                  <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="VCC Validation System" />
-                  <Label style="-fx-font-size: 13px; -fx-text-fill: #64748b;" text="Weryfikacja Urządzeń Pomiarowych" />
+                  <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="%login.app.title" />
+                  <Label style="-fx-font-size: 13px; -fx-text-fill: #64748b;" text="%login.app.subtitle" />
                </children>
             </VBox>
             
@@ -31,32 +31,32 @@
             <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
               <tabs>
                 <!-- ZAKŁADKA LOGOWANIA -->
-                <Tab text="Logowanie">
+                <Tab text="%login.tab.login">
                   <content>
                     <VBox spacing="15.0">
                       <padding>
                         <Insets bottom="30.0" left="35.0" right="35.0" top="20.0" />
                       </padding>
                       <children>
-                        <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="Zaloguj się do konta" />
+                        <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="%login.form.header" />
                         
                         <Label fx:id="loginErrorLabel" style="-fx-text-fill: #dc2626; -fx-font-size: 12px; -fx-font-weight: bold;" visible="false" wrapText="true" />
                         
                         <VBox spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Nazwa użytkownika" />
-                              <TextField fx:id="loginUsernameField" promptText="Wpisz nazwę użytkownika" style="-fx-pref-height: 38px;" />
+                              <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%login.form.username" />
+                              <TextField fx:id="loginUsernameField" promptText="%login.form.username.prompt" style="-fx-pref-height: 38px;" />
                            </children>
                         </VBox>
                         
                         <VBox spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Hasło" />
-                              <PasswordField fx:id="loginPasswordField" promptText="Wpisz hasło" style="-fx-pref-height: 38px;" />
+                              <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%login.form.password" />
+                              <PasswordField fx:id="loginPasswordField" promptText="%login.form.password.prompt" style="-fx-pref-height: 38px;" />
                            </children>
                         </VBox>
                         
-                        <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" prefHeight="40.0" prefWidth="380.0" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="Zaloguj się">
+                        <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" prefHeight="40.0" prefWidth="380.0" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="%login.form.submit">
                            <VBox.margin>
                               <Insets top="15.0" />
                            </VBox.margin>
@@ -70,29 +70,29 @@
                 </Tab>
                 
                 <!-- ZAKŁADKA REJESTRACJI -->
-                <Tab text="Rejestracja">
+                <Tab text="%login.tab.register">
                   <content>
                     <VBox spacing="10.0">
                       <padding>
                         <Insets bottom="25.0" left="35.0" right="35.0" top="15.0" />
                       </padding>
                       <children>
-                        <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="Utwórz nowe konto" />
+                        <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="%register.form.header" />
                         
                         <Label fx:id="registerMessageLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" visible="false" wrapText="true" />
                         
-                        <TextField fx:id="regUsernameField" promptText="Nazwa użytkownika (login)" style="-fx-pref-height: 34px;" />
-                        <TextField fx:id="regEmailField" promptText="Adres email" style="-fx-pref-height: 34px;" />
+                        <TextField fx:id="regUsernameField" promptText="%register.form.username.prompt" style="-fx-pref-height: 34px;" />
+                        <TextField fx:id="regEmailField" promptText="%register.form.email.prompt" style="-fx-pref-height: 34px;" />
                         <HBox spacing="10.0">
                            <children>
-                              <TextField fx:id="regFirstNameField" promptText="Imię" style="-fx-pref-height: 34px;" HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="regLastNameField" promptText="Nazwisko" style="-fx-pref-height: 34px;" HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="regFirstNameField" promptText="%register.form.firstName.prompt" style="-fx-pref-height: 34px;" HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="regLastNameField" promptText="%register.form.lastName.prompt" style="-fx-pref-height: 34px;" HBox.hgrow="ALWAYS" />
                            </children>
                         </HBox>
-                        <PasswordField fx:id="regPasswordField" promptText="Hasło" style="-fx-pref-height: 34px;" />
-                        <PasswordField fx:id="regPasswordConfirmField" promptText="Powtórz hasło" style="-fx-pref-height: 34px;" />
+                        <PasswordField fx:id="regPasswordField" promptText="%register.form.password.prompt" style="-fx-pref-height: 34px;" />
+                        <PasswordField fx:id="regPasswordConfirmField" promptText="%register.form.passwordConfirm.prompt" style="-fx-pref-height: 34px;" />
                         
-                        <Button mnemonicParsing="false" onAction="#handleRegister" prefHeight="38.0" prefWidth="380.0" style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="Zarejestruj się">
+                        <Button mnemonicParsing="false" onAction="#handleRegister" prefHeight="38.0" prefWidth="380.0" style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="%register.form.submit">
                            <VBox.margin>
                               <Insets top="10.0" />
                            </VBox.margin>
@@ -106,26 +106,26 @@
                 </Tab>
                 
                 <!-- ZAKŁADKA RESETU HASŁA -->
-                <Tab text="Reset Hasła">
+                <Tab text="%login.tab.reset">
                   <content>
                     <VBox spacing="15.0">
                       <padding>
                         <Insets bottom="30.0" left="35.0" right="35.0" top="20.0" />
                       </padding>
                       <children>
-                        <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="Przywróć dostęp do konta" />
-                        <Label style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="Podaj adres email przypisany do Twojego konta. Wyślemy na niego instrukcje resetowania hasła." wrapText="true" />
+                        <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="%reset.form.header" />
+                        <Label style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="%reset.form.description" wrapText="true" />
                         
                         <Label fx:id="resetMessageLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" visible="false" wrapText="true" />
                         
                         <VBox spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Adres email" />
-                              <TextField fx:id="resetEmailField" promptText="np. jan.kowalski@vcc.pl" style="-fx-pref-height: 38px;" />
+                              <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%reset.form.email" />
+                              <TextField fx:id="resetEmailField" promptText="%reset.form.email.prompt" style="-fx-pref-height: 38px;" />
                            </children>
                         </VBox>
                         
-                        <Button mnemonicParsing="false" onAction="#handlePasswordReset" prefHeight="40.0" prefWidth="380.0" style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="Wyślij link resetujący">
+                        <Button mnemonicParsing="false" onAction="#handlePasswordReset" prefHeight="40.0" prefWidth="380.0" style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="%reset.form.submit">
                            <VBox.margin>
                               <Insets top="15.0" />
                            </VBox.margin>

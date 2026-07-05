@@ -21,6 +21,10 @@ public class JavaFxApplication extends Application {
         this.applicationContext = new SpringApplicationBuilder()
                 .sources(ValidationDesktopApplication.class)
                 .run(args);
+
+        // Locale UI z konfiguracji (app.locale / zmienna APP_LOCALE), domyślnie pl
+        com.mac.bry.desktop.config.I18n.init(
+                applicationContext.getEnvironment().getProperty("app.locale", "pl"));
     }
 
     @Override
@@ -29,7 +33,8 @@ public class JavaFxApplication extends Application {
         Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
 
         // Załadowanie widoku przy użyciu standardowego FXMLLoader z wstrzykiwaniem Springa
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"),
+                com.mac.bry.desktop.config.I18n.getBundle());
         fxmlLoader.setControllerFactory(applicationContext::getBean);
         Parent root = fxmlLoader.load();
         

@@ -109,7 +109,8 @@ public class InactivityMonitor {
         // Powrót do ekranu logowania na wątku UI
         Platform.runLater(() -> {
             try {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"),
+                        com.mac.bry.desktop.config.I18n.getBundle());
                 fxmlLoader.setControllerFactory(applicationContext::getBean);
                 Parent root = fxmlLoader.load();
                 

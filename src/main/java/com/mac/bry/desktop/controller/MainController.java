@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.controller;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.security.ui.InactivityMonitor;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -79,21 +80,21 @@ public class MainController {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
-            userInfoLabel.setText("Zalogowano jako: " + auth.getName());
-            
+            userInfoLabel.setText(I18n.t("main.user.loggedInAs", auth.getName()));
+
             if (auth.getPrincipal() instanceof com.mac.bry.desktop.security.model.User) {
                 com.mac.bry.desktop.security.model.User user = (com.mac.bry.desktop.security.model.User) auth.getPrincipal();
                 sidebarUserLabel.setText(user.getFullName() + "\n(" + user.getEmail() + ")");
             } else {
-                sidebarUserLabel.setText("Zalogowany:\n" + auth.getName());
+                sidebarUserLabel.setText(I18n.t("main.user.loggedInNamed", auth.getName()));
             }
-            
+
             String roles = auth.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .map(r -> r.replace("ROLE_", ""))
                     .collect(java.util.stream.Collectors.joining(", "));
-            if (roles.isEmpty()) roles = "Brak";
-            sidebarRoleLabel.setText("Role: " + roles);
+            if (roles.isEmpty()) roles = "–";
+            sidebarRoleLabel.setText(I18n.t("main.user.roles", roles));
 
             // Sprawdzenie uprawnień
             boolean isAdmin = auth.getAuthorities().stream()
@@ -139,7 +140,7 @@ public class MainController {
     public void showDashboard(ActionEvent event) {
         contentArea.getChildren().clear();
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/dashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/dashboard.fxml"), I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent dashboardView = loader.load();
             contentArea.getChildren().add(dashboardView);
@@ -174,7 +175,7 @@ public class MainController {
     @FXML
     public void showTestoProgramming(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/testo_programming_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/testo_programming_dialog.fxml"), I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent view = loader.load();
             
@@ -188,7 +189,7 @@ public class MainController {
         } catch (IOException e) {
             log.error("Failed to load Testo programming dialog", e);
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-            alert.setTitle("Błąd ładowania widoku");
+            alert.setTitle(I18n.t("common.error.viewLoad.title"));
             alert.setHeaderText("Nie udało się załadować okna programowania.");
             alert.setContentText(e.getMessage());
             alert.showAndWait();
@@ -227,7 +228,7 @@ public class MainController {
 
     private void loadRevalidationView(com.mac.bry.desktop.model.GxPProcedureType procedureType) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/testo_revalidation.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/testo_revalidation.fxml"), I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent view = loader.load();
 
@@ -241,7 +242,7 @@ public class MainController {
         } catch (Exception e) {
             log.error("Failed to load revalidation view with procedure type: {}", procedureType, e);
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-            alert.setTitle("Błąd ładowania widoku");
+            alert.setTitle(I18n.t("common.error.viewLoad.title"));
             alert.setHeaderText("Nie udało się załadować kreatora rewalidacji.");
             alert.setContentText(e.getMessage() != null ? e.getMessage() : e.toString());
             alert.showAndWait();
@@ -275,7 +276,7 @@ public class MainController {
 
     private void loadAdminTab(int tabIndex) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/admin_panel.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/admin_panel.fxml"), I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             TabPane tabPane = loader.load();
             tabPane.getSelectionModel().select(tabIndex);
@@ -286,7 +287,7 @@ public class MainController {
             log.error("Failed to load admin tab: " + tabIndex, e);
             
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-            alert.setTitle("Błąd ładowania widoku");
+            alert.setTitle(I18n.t("common.error.viewLoad.title"));
             alert.setHeaderText("Nie udało się załadować panelu administracyjnego");
             alert.setContentText(e.getMessage() != null ? e.getMessage() : e.toString());
             alert.showAndWait();
@@ -305,7 +306,7 @@ public class MainController {
         inactivityMonitor.stopMonitoring();
         SecurityContextHolder.clearContext();
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"), I18n.getBundle());
             fxmlLoader.setControllerFactory(applicationContext::getBean);
             Parent root = fxmlLoader.load();
             
@@ -320,7 +321,7 @@ public class MainController {
 
     private void loadView(String fxmlPath) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath), I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent view = loader.load();
             
@@ -330,7 +331,7 @@ public class MainController {
             log.error("Failed to load view: " + fxmlPath, e);
             
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-            alert.setTitle("Błąd ładowania widoku");
+            alert.setTitle(I18n.t("common.error.viewLoad.title"));
             alert.setHeaderText("Nie udało się załadować ekranu: " + fxmlPath);
             alert.setContentText(e.getMessage() != null ? e.getMessage() : e.toString());
             alert.showAndWait();

@@ -78,7 +78,8 @@ public class ForcePasswordChangeController {
 
     private void loadMainView() {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/main.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/main.fxml"),
+                    com.mac.bry.desktop.config.I18n.getBundle());
             fxmlLoader.setControllerFactory(applicationContext::getBean);
             Parent root = fxmlLoader.load();
             

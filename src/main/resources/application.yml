@@ -34,6 +34,8 @@ javafx:
   title: Validation System - Desktop Edition
 
 app:
+  # Język UI: pl (domyślny) lub en; nadpisywalny zmienną APP_LOCALE
+  locale: ${APP_LOCALE:pl}
   security:
     inactivity-timeout-minutes: 15
     account-expiration-days: 90
@@ -46,6 +48,7 @@ app:
 # DP-001 Regime-Aware Interpretation Layer
 # ZMIEN enabled NA true DOPIERO PO PRZEJSCIU CSV-TC-001..005
 # ============================================================
+
 regime:
   detection:
     enabled: false
