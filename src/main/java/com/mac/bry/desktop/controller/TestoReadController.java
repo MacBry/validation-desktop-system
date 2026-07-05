@@ -200,7 +200,7 @@ public class TestoReadController {
             // Dane urządzenia
             modelField.setText(results.device.model);
             serialNumberField.setText(results.device.serialNumber);
-            batteryLevelField.setText(results.session.batteryLevelPercent + "%");
+            batteryLevelField.setText(results.session.batteryLevelPercent >= 0 ? results.session.batteryLevelPercent + "%" : "N/D");
             
             // Metadane sesji
             intervalField.setText(results.session.intervalMinutes + " minut");
@@ -536,7 +536,7 @@ public class TestoReadController {
             // Dane urządzenia
             modelField.setText(results.device.model);
             serialNumberField.setText(results.device.serialNumber);
-            batteryLevelField.setText(results.session.batteryLevelPercent + "%");
+            batteryLevelField.setText(results.session.batteryLevelPercent >= 0 ? results.session.batteryLevelPercent + "%" : "N/D");
             
             // Metadane sesji
             intervalField.setText(results.session.intervalMinutes + " minut");

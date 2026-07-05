@@ -1,5 +1,7 @@
 package com.mac.bry.desktop.service;
 
+import com.mac.bry.desktop.service.helper.PythonBridgeRunner;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -8,15 +10,20 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class Testo184ProgrammingService {
+
+    private static final Duration BRIDGE_TIMEOUT = Duration.ofSeconds(15);
+
+    private final PythonBridgeRunner bridgeRunner;
 
     /**
      * Uruchamia proces programowania rejestratora Testo 184T poprzez most Pythonowy.
@@ -40,8 +47,6 @@ public class Testo184ProgrammingService {
             String startStr = startLocalTime.format(formatter);
 
             List<String> command = new ArrayList<>();
-            command.add("python");
-            command.add(programmerScript.getAbsolutePath());
             command.add("--drive");
             command.add(driveLetter);
             command.add("--interval");
@@ -76,35 +81,19 @@ public class Testo184ProgrammingService {
                 command.add(String.valueOf(lowerMinutes != null ? lowerMinutes : 60));
             }
 
-            ProcessBuilder pb = new ProcessBuilder(command);
-            pb.directory(programmerScript.getParentFile());
-            pb.redirectErrorStream(true);
+            PythonBridgeRunner.BridgeResult bridge = bridgeRunner.run(
+                    programmerScript, command, BRIDGE_TIMEOUT);
 
-            log.info("Uruchamianie procesu Python: {}", command);
-            Process process = pb.start();
-
-            // Odczyt wyjścia procesu
-            StringBuilder output = new StringBuilder();
-            try (InputStream is = process.getInputStream()) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    output.append(new String(buffer, 0, bytesRead));
-                }
-            }
-
-            boolean finished = process.waitFor(15, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                log.error("Przekroczono czas oczekiwania (15s) na proces programowania Testo 184T.");
+            if (bridge.timedOut()) {
+                log.error("Przekroczono czas oczekiwania ({}s) na proces programowania Testo 184T.",
+                        BRIDGE_TIMEOUT.toSeconds());
                 return false;
             }
 
-            int exitCode = process.exitValue();
-            String outputStr = output.toString().trim();
-            log.info("Proces programowania zakończony z kodem {}. Wyjście:\n{}", exitCode, outputStr);
+            log.info("Proces programowania zakończony z kodem {}. Wyjście:\n{}",
+                    bridge.exitCode(), bridge.stdout());
 
-            return exitCode == 0 && outputStr.contains("[OK]");
+            return bridge.exitCode() == 0 && bridge.stdout().contains("[OK]");
 
         } catch (Exception e) {
             log.error("Krytyczny błąd podczas programowania logera Testo 184T", e);

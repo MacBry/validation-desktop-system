@@ -159,7 +159,11 @@ class TestoConfig:
     stop_time: str = "23:59"
     configuration_by: str = ""             # imie/nazwisko konfigurujacego
     mkt_activation_energy: float = 83.144  # kJ/mol (domyslnie z dokumentacji)
-    time_zone: int = 53                    # 53 = UTC+02:00 (Europe/Warsaw)
+    # UWAGA (do weryfikacji sprzętowej): indeks strefy jest zafiksowany na 53
+    # (UTC+02:00, czas letni PL). Zimą Polska ma UTC+1 — flaga DST w ogonie
+    # alldata (isxls 990/991) jest ustawiana z zegara maszyny, ale sam indeks
+    # strefy się nie zmienia; możliwe przesunięcie czasu urządzenia o 1h zimą.
+    time_zone: int = 53                    # 53 = UTC+02:00 (Europe/Warsaw, DST)
     date_format: int = 3                   # 1=US, 2=EU, 3=DD-MM-YYYY (Domyślnie 3 dla zgodności z firmware)
 
     # --- wyswietlanie / display flags ---------------------------------------
@@ -819,7 +823,9 @@ if __name__ == "__main__":
     parser.add_argument("--count", type=int, default=10, help="Planowana liczba pomiarow")
     parser.add_argument("--start", type=str, default=None, help="Czas startu (format HH:MM lub RRRR-MM-DD HH:MM, domyslnie za 5 minut)")
     parser.add_argument("--output", type=str, default="testo 184 configuration_data.xml", help="Sciezka zapisu pliku (np. E:\\testo 184 configuration_data.xml)")
-    parser.add_argument("--start-mode", type=int, default=3, choices=[3, 4], help="Tryb startu: 3=przycisk (button), 4=czas (date/time)")
+    # Mapowanie spójne z modelem TestoConfig i mostem testo_184_programmer.py:
+    # 1 = date/time (czasowy), 3 = button (przycisk)
+    parser.add_argument("--start-mode", type=int, default=3, choices=[1, 3], help="Tryb startu: 1=czas (date/time), 3=przycisk (button)")
     parser.add_argument("--model", type=int, default=3, help="Model urzadzenia: 1=T1, 2=T2, 3=T3, 4=H1, 5=G1 (domyslnie: 3)")
 
     args = parser.parse_args()

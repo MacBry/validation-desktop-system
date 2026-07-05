@@ -44,6 +44,11 @@ app:
     mysql-dump-path: ${MYSQL_DUMP_PATH:C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe}
     retention-days: 14
 
+# Komenda interpretera Python dla mostów Testo (pełna ścieżka,
+# gdy 'python' wskazuje na stub Microsoft Store)
+testo:
+  python-command: ${TESTO_PYTHON_COMMAND:python}
+
 # ============================================================
 # DP-001 Regime-Aware Interpretation Layer
 # ZMIEN enabled NA true DOPIERO PO PRZEJSCIU CSV-TC-001..005

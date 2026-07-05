@@ -113,7 +113,41 @@ def main():
         )
         
         testo_184_config.XdpIO.write(config, xml_path, now=now_dt)
-        print("[OK]")
+
+        # Weryfikacja round-trip (GxP: verify after write) — odczytujemy zapisany
+        # plik i porównujemy kluczowe pola konfiguracji z zamierzonymi wartościami.
+        alldata = testo_184_config.XdpIO.read_alldata(xml_path)
+        decoded = testo_184_config.AlldataDecoder.decode(alldata)
+
+        expected = {
+            "device_model": 3,
+            "meas_interval_minutes": args.interval,
+            "start_mode": start_mode,
+            "start_date": start_date,
+            "start_time": start_time_val,
+            "stop_date": stop_date,
+            "stop_time": stop_time_val,
+        }
+        mismatches = [
+            f"{key}: zapisano '{decoded.get(key)}', oczekiwano '{value}'"
+            for key, value in expected.items()
+            if decoded.get(key) != value
+        ]
+        if alarm_max_enabled and decoded.get("alarm_temp_1", {}).get("limit") != alarm_max_limit:
+            mismatches.append(
+                f"alarm_temp_1.limit: zapisano '{decoded.get('alarm_temp_1', {}).get('limit')}', "
+                f"oczekiwano '{alarm_max_limit}'")
+        if alarm_min_enabled and decoded.get("alarm_temp_2", {}).get("limit") != alarm_min_limit:
+            mismatches.append(
+                f"alarm_temp_2.limit: zapisano '{decoded.get('alarm_temp_2', {}).get('limit')}', "
+                f"oczekiwano '{alarm_min_limit}'")
+
+        if mismatches:
+            print("Weryfikacja zapisanej konfiguracji NIE powiodła się: "
+                  + "; ".join(mismatches), file=sys.stderr)
+            sys.exit(1)
+
+        print("[OK] (konfiguracja zapisana i zweryfikowana round-trip)")
         sys.exit(0)
         
     except Exception as e:

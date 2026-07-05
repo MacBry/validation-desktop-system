@@ -1,6 +1,8 @@
 package com.mac.bry.desktop.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mac.bry.desktop.service.helper.PythonBridgeRunner;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -9,12 +11,17 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class Testo184UsbImportService {
 
+    private static final Duration BRIDGE_TIMEOUT = Duration.ofSeconds(30);
+
+    private final PythonBridgeRunner bridgeRunner;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -35,40 +42,20 @@ public class Testo184UsbImportService {
                 return result;
             }
 
-            ProcessBuilder pb = new ProcessBuilder(
-                    "python",
-                    readerScript.getAbsolutePath(),
-                    pdfFile.getAbsolutePath()
-            );
-            pb.directory(readerScript.getParentFile());
-            pb.redirectErrorStream(true);
+            PythonBridgeRunner.BridgeResult bridge = bridgeRunner.run(
+                    readerScript, List.of(pdfFile.getAbsolutePath()), BRIDGE_TIMEOUT);
 
-            log.info("Uruchamianie procesu Python: {} {}", readerScript.getAbsolutePath(), pdfFile.getAbsolutePath());
-            Process process = pb.start();
-
-            // Czytanie strumienia stdout
-            StringBuilder jsonOutput = new StringBuilder();
-            try (InputStream is = process.getInputStream()) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    jsonOutput.append(new String(buffer, 0, bytesRead));
-                }
-            }
-
-            boolean finished = process.waitFor(15, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
+            if (bridge.timedOut()) {
                 result.status = "ERROR";
-                result.message = "Przekroczono czas oczekiwania (15s) na proces odczytu PDF Testo 184T.";
+                result.message = "Przekroczono czas oczekiwania (" + BRIDGE_TIMEOUT.toSeconds()
+                        + "s) na proces odczytu PDF Testo 184T.";
                 return result;
             }
 
-            int exitCode = process.exitValue();
-            String outputStr = jsonOutput.toString().trim();
-            log.info("Proces odczytu zakończony z kodem {}. Rozmiar stdout: {} bajtów.", exitCode, outputStr.length());
+            log.info("Proces odczytu zakończony z kodem {}. Rozmiar stdout: {} znaków.",
+                    bridge.exitCode(), bridge.stdout().length());
 
-            if (outputStr.isEmpty()) {
+            if (bridge.stdout().isEmpty()) {
                 result.status = "ERROR";
                 result.message = "Skrypt Python nie zwrócił żadnych danych na wyjście standardowe.";
                 return result;
@@ -76,9 +63,10 @@ public class Testo184UsbImportService {
 
             // Deserializacja Jacksonem
             try {
-                return objectMapper.readValue(outputStr, TestoUsbImportService.TestoImportResult.class);
+                return objectMapper.readValue(bridge.stdout(), TestoUsbImportService.TestoImportResult.class);
             } catch (Exception parseException) {
-                log.error("Nie udało się sparsować JSON odczytanego ze skryptu Python PDF. Wyjście:\n{}", outputStr, parseException);
+                log.error("Nie udało się sparsować JSON odczytanego ze skryptu Python PDF. Wyjście:\n{}",
+                        bridge.stdout(), parseException);
                 result.status = "ERROR";
                 result.message = "Błąd parsowania odpowiedzi JSON ze skryptu PDF: " + parseException.getMessage();
                 return result;

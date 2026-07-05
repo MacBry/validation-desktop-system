@@ -136,12 +136,12 @@ def parse_metadata_from_text(text):
     fw_match = re.search(r'(V\d+\.\d+)', text)
     meta["firmware"] = fw_match.group(1).strip() if fw_match else "Nieznana"
     
-    # Interwał
-    int_match = re.search(r'Meas\.\s+Interval\s*\n\s*(\d+)\s*(min|sek|h|d)', text, re.IGNORECASE)
+    # Interwał (jednostki: min, sek/sec/s — raporty PL/EN, h, d)
+    int_match = re.search(r'Meas\.\s+Interval\s*\n\s*(\d+)\s*(min|sek|sec|s|h|d)', text, re.IGNORECASE)
     if not int_match:
-        int_match = re.search(r'Interval\s*\n\s*(\d+)\s*(min|sek|h|d)', text, re.IGNORECASE)
+        int_match = re.search(r'Interval\s*\n\s*(\d+)\s*(min|sek|sec|s|h|d)', text, re.IGNORECASE)
     meta["interval_value"] = int(int_match.group(1)) if int_match else 1
-    meta["interval_unit"] = int_match.group(2).strip() if int_match else "min"
+    meta["interval_unit"] = int_match.group(2).strip().lower() if int_match else "min"
     
     # Liczba wartości
     count_match = re.search(r'No\.\s+of\s+Values\s*\n\s*(\d+)', text, re.IGNORECASE)
@@ -199,36 +199,45 @@ def parse_metadata_from_text(text):
     
     return meta
 
+# Koniec bufora pomiarowego w strumieniu prywatnym — wartość zreverse-engineerowana
+# z referencyjnego raportu (SN 44373263, 11 pomiarów). Struktura NIE została
+# potwierdzona dla dłuższych sesji; stąd twardy limit i jawny błąd poniżej.
+MEASUREMENT_BUFFER_END_OFFSET = 1476
+MAX_SUPPORTED_COUNT = MEASUREMENT_BUFFER_END_OFFSET // 4  # 369 pomiarów
+
+
 def decode_measurements(private_stream, count):
     """
     Dekoduje precyzyjne pomiary z bufora binarnego streamu.
-    Wykorzystuje stały offset bufora pomiarowego (kończący się na bajcie 1476).
+    Każdy pomiar to uint32 Little-Endian w formacie Q16.16:
+    T = (V / 6553600) - 100.0
+
+    Rzuca ValueError zamiast zwracać częściowe/błędne dane — dla systemu GxP
+    ciche obcięcie pomiarów jest gorsze niż odmowa importu.
     """
-    if not private_stream or len(private_stream) < 1476:
-        return []
-        
+    if not private_stream:
+        raise ValueError("Brak strumienia prywatnego w pliku PDF (PieceInfo/Private).")
+    if len(private_stream) < MEASUREMENT_BUFFER_END_OFFSET:
+        raise ValueError(
+            f"Strumień prywatny za krótki ({len(private_stream)} B < "
+            f"{MEASUREMENT_BUFFER_END_OFFSET} B) — nieznany wariant pliku PDF.")
+    if count <= 0:
+        raise ValueError("Nie odczytano liczby pomiarów (No. of Values) z tekstu raportu.")
+    if count > MAX_SUPPORTED_COUNT:
+        raise ValueError(
+            f"Raport zawiera {count} pomiarów — dekoder obsługuje maksymalnie "
+            f"{MAX_SUPPORTED_COUNT} (struktura strumienia dla dłuższych sesji "
+            f"nie została zweryfikowana). Import przerwany, aby nie zwrócić "
+            f"błędnych danych.")
+
     measurements = []
-    # Bufor pomiarów ma stałą strukturę i kończy się na offset 1476.
-    # Każdy pomiar zajmuje 4 bajty w formacie uint32 Little-Endian
-    end_offset = 1476
-    start_offset = end_offset - (count * 4)
-    
-    if start_offset < 0:
-        # Zabezpieczenie przed błędną liczbą próbek
-        start_offset = 1432
-        count = (end_offset - start_offset) // 4
-        
+    start_offset = MEASUREMENT_BUFFER_END_OFFSET - (count * 4)
     for i in range(count):
         offset = start_offset + (i * 4)
-        val_bytes = private_stream[offset:offset+4]
-        if len(val_bytes) < 4:
-            break
-            
-        val = struct.unpack('<I', val_bytes)[0]
-        # Wzór dekodowania Q16.16: T = (V / 6553600) - 100.0
+        val = struct.unpack('<I', private_stream[offset:offset + 4])[0]
         temp = (val / 6553600.0) - 100.0
         measurements.append(temp)
-        
+
     return measurements
 
 def main():
@@ -259,7 +268,11 @@ def main():
     
     # Dekodowanie surowych pomiarów
     count = meta.get("count", 0)
-    measurements = decode_measurements(pdf_data["private_stream"], count)
+    try:
+        measurements = decode_measurements(pdf_data["private_stream"], count)
+    except ValueError as e:
+        print(f"Błąd dekodowania pomiarów: {e}", file=sys.stderr)
+        sys.exit(1)
     
     # Obliczanie osi czasu pomiarów
     points = []
@@ -269,7 +282,7 @@ def main():
             start_dt = datetime.strptime(meta["start_date_str"], "%d.%m.%Y %H:%M")
             interval_mins = meta.get("interval_value", 1)
             # Jeśli jednostka interwału to sekundy lub godziny, przelicz odpowiednio
-            if meta.get("interval_unit") == "sek":
+            if meta.get("interval_unit") in ("sek", "sec", "s"):
                 delta_type = "seconds"
             elif meta.get("interval_unit") == "h":
                 delta_type = "hours"
