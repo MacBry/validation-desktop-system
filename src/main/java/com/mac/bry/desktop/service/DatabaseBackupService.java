@@ -45,7 +45,10 @@ public class DatabaseBackupService {
     public void performScheduledBackup() {
         log.info("Rozpoczynanie zaplanowanego backupu bazy danych...");
         try {
-            if (isMysqlDumpAvailable()) {
+            if (isH2Database()) {
+                executeH2Backup();
+                cleanOldBackups();
+            } else if (isMysqlDumpAvailable()) {
                 executeBackup();
                 cleanOldBackups();
             } else {
@@ -55,6 +58,31 @@ public class DatabaseBackupService {
         } catch (Exception e) {
             log.error("BŁĄD BACKUPU: Nieoczekiwany problem podczas tworzenia kopii zapasowej", e);
         }
+    }
+
+    private boolean isH2Database() {
+        return dbUrl != null && dbUrl.startsWith("jdbc:h2:");
+    }
+
+    /**
+     * Backup trybu standalone: natywne polecenie H2 {@code BACKUP TO} —
+     * spójny zrzut online całej bazy do archiwum ZIP, bez zewnętrznych narzędzi.
+     */
+    public void executeH2Backup() throws java.sql.SQLException, IOException {
+        Path backupPath = Paths.get(backupDir);
+        if (!Files.exists(backupPath)) {
+            Files.createDirectories(backupPath);
+        }
+
+        String fileName = String.format("db_backup_h2_%s.zip", LocalDateTime.now().format(FILE_NAME_FORMAT));
+        File outputFile = backupPath.resolve(fileName).toFile();
+
+        log.info("Generowanie backupu H2 (BACKUP TO): {}", outputFile.getAbsolutePath());
+        try (java.sql.Connection conn = java.sql.DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.execute("BACKUP TO '" + outputFile.getAbsolutePath().replace("'", "''") + "'");
+        }
+        log.info("Backup H2 zakończony sukcesem: {}", fileName);
     }
 
     private boolean isMysqlDumpAvailable() {
@@ -120,7 +148,7 @@ public class DatabaseBackupService {
         LocalDateTime threshold = LocalDateTime.now().minusDays(retentionDays);
 
         Files.list(backupPath)
-                .filter(path -> path.toString().endsWith(".sql"))
+                .filter(path -> path.toString().endsWith(".sql") || path.toString().endsWith(".zip"))
                 .filter(path -> {
                     try {
                         return Files.getLastModifiedTime(path).toInstant().isBefore(threshold.atZone(java.time.ZoneId.systemDefault()).toInstant());

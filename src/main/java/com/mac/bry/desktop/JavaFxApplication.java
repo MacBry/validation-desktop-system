@@ -17,10 +17,18 @@ public class JavaFxApplication extends Application {
     public void init() {
         DotenvLoader.load();
         String[] args = getParameters().getRaw().toArray(new String[0]);
+
+        // Tryb bazy danych: server (MySQL, domyślny) lub standalone (wbudowane H2)
+        String dbMode = System.getProperty("DB_MODE",
+                System.getenv().getOrDefault("DB_MODE", "server"));
+
+        SpringApplicationBuilder builder = new SpringApplicationBuilder()
+                .sources(ValidationDesktopApplication.class);
+        if ("standalone".equalsIgnoreCase(dbMode.trim())) {
+            builder.profiles("standalone");
+        }
         // Inicjalizacja kontekstu Spring Boot w tle
-        this.applicationContext = new SpringApplicationBuilder()
-                .sources(ValidationDesktopApplication.class)
-                .run(args);
+        this.applicationContext = builder.run(args);
 
         // Locale UI: zapamiętany wybór użytkownika > app.locale/APP_LOCALE > pl
         com.mac.bry.desktop.config.I18n.initFromPreferences(

@@ -30,6 +30,10 @@ desktop.ini
 .env
 backups/
 uploads/
+# Wbudowana baza H2 trybu standalone
+data/
+*.mv.db
+*.trace.db
 
 # Output reports and logs
 *.log

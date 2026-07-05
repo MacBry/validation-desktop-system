@@ -16,7 +16,10 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    # Migracje wspólne + warianty vendorowe ({vendor} -> mysql / h2).
+    # Pliki w mysql/ to oryginały (niezmienione checksumy dla istniejących baz);
+    # h2/ zawiera odpowiedniki dla trybu standalone.
+    locations: classpath:db/migration/common,classpath:db/migration/{vendor}
     baseline-on-migrate: true
   mail:
     host: ${SMTP_HOST:smtp-relay.brevo.com}
