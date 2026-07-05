@@ -124,7 +124,7 @@ public class ThermoRecorderModelManagerController {
 
     private void openDialog(ThermoRecorderModel model) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/thermo_recorder_model_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/thermo_recorder_model_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent view = loader.load();
 

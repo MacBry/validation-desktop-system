@@ -18,11 +18,11 @@
                 <!-- NAGŁÓWEK -->
                 <HBox alignment="CENTER_LEFT" spacing="15">
                     <children>
-                        <Label text="Zarządzanie Użytkownikami"
+                        <Label text="%adminusers.zarzadzanie_uzytkownikami"
                                style="-fx-font-weight: bold; -fx-font-size: 22px; -fx-text-fill: #0f172a;" />
                         <Region HBox.hgrow="ALWAYS" />
                         <Button mnemonicParsing="false" onAction="#handleCreateUser"
-                                text="+ Nowy Użytkownik" styleClass="accent"
+                                text="%adminusers.nowy_uzytkownik" styleClass="accent"
                                 style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
                     </children>
                 </HBox>
@@ -34,38 +34,38 @@
                     <children>
                         <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS" spacing="8">
                             <children>
-                                <Label text="Szukaj:"
+                                <Label text="%common.szukaj"
                                        style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                                 <TextField fx:id="searchField"
-                                           promptText="Wpisz login, nazwisko, adres e-mail..."
+                                           promptText="%adminusers.wpisz_login_nazwisko_adres"
                                            HBox.hgrow="ALWAYS" style="-fx-pref-height: 36px;" />
                             </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="8">
                             <children>
-                                <Label text="Status:"
+                                <Label text="%common.status2"
                                        style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                                 <ComboBox fx:id="statusFilterCombo"
                                           style="-fx-pref-height: 36px; -fx-pref-width: 160px;"
-                                          promptText="Status: Wszyscy" />
+                                          promptText="%adminusers.status_wszyscy" />
                             </children>
                         </HBox>
                         <Button mnemonicParsing="false" onAction="#handleClearFilters"
-                                text="Wyczyść" style="-fx-pref-height: 36px; -fx-font-weight: bold;" />
+                                text="%common.wyczysc" style="-fx-pref-height: 36px; -fx-font-weight: bold;" />
                     </children>
                 </HBox>
 
                 <!-- TABELA UŻYTKOWNIKÓW -->
                 <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
                     <columns>
-                        <TableColumn fx:id="idColumn" prefWidth="60.0" text="ID" />
-                        <TableColumn fx:id="usernameColumn" prefWidth="130.0" text="Login" />
-                        <TableColumn fx:id="emailColumn" prefWidth="160.0" text="E-mail" />
-                        <TableColumn fx:id="deptCol" prefWidth="130.0" text="Dział" />
-                        <TableColumn fx:id="labCol" prefWidth="130.0" text="Pracownia" />
-                        <TableColumn fx:id="enabledColumn" prefWidth="100.0" text="Aktywny"
+                        <TableColumn fx:id="idColumn" prefWidth="60.0" text="%common.id" />
+                        <TableColumn fx:id="usernameColumn" prefWidth="130.0" text="%adminusers.login" />
+                        <TableColumn fx:id="emailColumn" prefWidth="160.0" text="%adminusers.e_mail" />
+                        <TableColumn fx:id="deptCol" prefWidth="130.0" text="%common.dzial" />
+                        <TableColumn fx:id="labCol" prefWidth="130.0" text="%common.pracownia" />
+                        <TableColumn fx:id="enabledColumn" prefWidth="100.0" text="%common.aktywny"
                                      style="-fx-alignment: CENTER;" />
-                        <TableColumn fx:id="lockedColumn" prefWidth="100.0" text="Zablokowany"
+                        <TableColumn fx:id="lockedColumn" prefWidth="100.0" text="%adminusers.zablokowany"
                                      style="-fx-alignment: CENTER;" />
                     </columns>
                     <columnResizePolicy>
@@ -77,13 +77,13 @@
                 <HBox spacing="10.0">
                     <children>
                         <Button mnemonicParsing="false" onAction="#handleBulkUnlock"
-                                text="Odblokuj zaznaczone" styleClass="button-sm"
+                                text="%adminusers.odblokuj_zaznaczone" styleClass="button-sm"
                                 style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
                         <Button mnemonicParsing="false" onAction="#handleBulkLock"
-                                text="Zablokuj zaznaczone" styleClass="button-sm"
+                                text="%adminusers.zablokuj_zaznaczone" styleClass="button-sm"
                                 style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;" />
                         <Button mnemonicParsing="false" onAction="#handleBulkNotify"
-                                text="Wyślij powiadomienie" styleClass="button-sm"
+                                text="%adminusers.wyslij_powiadomienie" styleClass="button-sm"
                                 style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold;" />
                     </children>
                 </HBox>
@@ -95,46 +95,46 @@
               style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
                      -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
             <children>
-                <Label text="Szczegóły Użytkownika"
+                <Label text="%adminusers.szczegoly_uzytkownika"
                        style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
-                <Label fx:id="selectedUserLabel" text="Wybierz użytkownika z listy"
+                <Label fx:id="selectedUserLabel" text="%adminusers.wybierz_uzytkownika_z_listy"
                        style="-fx-font-size: 13px; -fx-text-fill: #64748b;" />
 
                 <Separator />
 
-                <Label text="USTAWIENIA KONTA"
+                <Label text="%adminusers.ustawienia_konta"
                        style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;" />
                 <VBox spacing="10.0"
                       style="-fx-background-color: #f8fafc; -fx-padding: 12px; -fx-background-radius: 8px;">
                     <children>
-                        <CheckBox fx:id="enabledCheckbox" text="Konto aktywne"
+                        <CheckBox fx:id="enabledCheckbox" text="%adminusers.konto_aktywne"
                                   style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                        <CheckBox fx:id="lockedCheckbox" text="Konto zablokowane"
+                        <CheckBox fx:id="lockedCheckbox" text="%adminusers.konto_zablokowane"
                                   style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <CheckBox fx:id="mustChangePasswordCheckbox"
-                                  text="Wymuś zmianę hasła przy logowaniu"
+                                  text="%adminusers.wymus_zmiane_hasla_przy"
                                   style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                     </children>
                 </VBox>
 
                 <Separator />
 
-                <Label text="LOKALIZACJA W STRUKTURZE"
+                <Label text="%adminusers.lokalizacja_w_strukturze"
                        style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;" />
                 <VBox spacing="8.0">
                     <children>
-                        <Label text="Dział:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <Label text="%common.dzial2" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <ComboBox fx:id="deptComboBox" prefWidth="340.0"
-                                  promptText="Wybierz dział..." style="-fx-pref-height: 36px;" />
-                        <Label text="Pracownia:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                                  promptText="%common.wybierz_dzial" style="-fx-pref-height: 36px;" />
+                        <Label text="%common.pracownia2" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <ComboBox fx:id="labComboBox" prefWidth="340.0"
-                                  promptText="Wybierz pracownię..." style="-fx-pref-height: 36px;" />
+                                  promptText="%common.wybierz_pracownie" style="-fx-pref-height: 36px;" />
                     </children>
                 </VBox>
 
                 <Separator />
 
-                <Label text="PRZYPISANE ROLE BEZPIECZEŃSTWA"
+                <Label text="%adminusers.przypisane_role_bezpieczenstwa"
                        style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;" />
                 <ScrollPane fitToWidth="true" prefHeight="100.0"
                             style="-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-radius: 6px;">
@@ -150,13 +150,13 @@
                         <Button mnemonicParsing="false" onAction="#handleShowAudit"
                                 styleClass="button-sm"
                                 style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
-                                text="Audit" />
+                                text="%common.audit" />
                         <Button mnemonicParsing="false" onAction="#handleResetPassword"
-                                styleClass="button-sm" text="Reset Hasła" />
+                                styleClass="button-sm" text="%adminusers.reset_hasla" />
                         <Button mnemonicParsing="false" onAction="#handleSaveUser"
                                 styleClass="button-sm"
                                 style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold;"
-                                text="Zapisz" />
+                                text="%common.zapisz" />
                     </children>
                 </HBox>
                 <Label fx:id="statusLabel" text="" wrapText="true"

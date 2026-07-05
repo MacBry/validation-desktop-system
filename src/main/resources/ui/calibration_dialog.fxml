@@ -11,7 +11,7 @@
     </padding>
 
     <!-- NAGŁÓWEK DIALOGU -->
-    <Label styleClass="title-2" text="Nowe Świadectwo Wzorcowania" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+    <Label styleClass="title-2" text="%calibrationdialog.nowe_swiadectwo_wzorcowania" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;" />
     
     <!-- SEKRO DOSTAWY DANYCH (CARD-STYLE GRID) -->
     <GridPane hgap="15" vgap="15" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
@@ -20,42 +20,42 @@
             <ColumnConstraints hgrow="ALWAYS" />
         </columnConstraints>
 
-        <Label text="Numer Świadectwa:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
-        <TextField fx:id="certNumberField" promptText="np. ŚW/2026/041" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+        <Label text="%calibrationdialog.numer_swiadectwa" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+        <TextField fx:id="certNumberField" promptText="%calibrationdialog.np_sw_2026_041" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-        <Label text="Data Wzorcowania:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+        <Label text="%calibrationdialog.data_wzorcowania" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
         <DatePicker fx:id="calibrationDatePicker" maxWidth="Infinity" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-        <Label text="Ważne do:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+        <Label text="%calibrationdialog.wazne_do" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
         <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="2">
             <DatePicker fx:id="validUntilPicker" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-pref-height: 36px;" />
-            <CheckBox fx:id="autoDateCheckBox" text="Automatycznie (1 rok)" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+            <CheckBox fx:id="autoDateCheckBox" text="%calibrationdialog.automatycznie_1_rok" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
         </HBox>
 
-        <Label fx:id="channelLabel" text="Przypisany Kanał:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
+        <Label fx:id="channelLabel" text="%calibrationdialog.przypisany_kanal" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
         <Spinner fx:id="channelSpinner" editable="true" maxWidth="Infinity" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-        <Label text="Skan Świadectwa:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="4" />
+        <Label text="%calibrationdialog.skan_swiadectwa" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="4" />
         <HBox spacing="10" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="4">
-            <TextField fx:id="certFilePathField" editable="false" HBox.hgrow="ALWAYS" promptText="Nie wybrano pliku..." style="-fx-pref-height: 36px;" />
-            <Button onAction="#handleBrowseFile" text="Przeglądaj..." style="-fx-pref-height: 36px; -fx-font-weight: bold;" styleClass="accent" />
+            <TextField fx:id="certFilePathField" editable="false" HBox.hgrow="ALWAYS" promptText="%calibrationdialog.nie_wybrano_pliku" style="-fx-pref-height: 36px;" />
+            <Button onAction="#handleBrowseFile" text="%calibrationdialog.przegladaj" style="-fx-pref-height: 36px; -fx-font-weight: bold;" styleClass="accent" />
         </HBox>
     </GridPane>
 
     <!-- TABELA PUNKTÓW WZORCOWANIA -->
     <VBox spacing="10" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
         <HBox alignment="CENTER_LEFT" spacing="10">
-            <Label styleClass="text-bold" text="Punkty Wzorcowania" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+            <Label styleClass="text-bold" text="%calibrationdialog.punkty_wzorcowania" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
             <Region HBox.hgrow="ALWAYS" />
-            <Button onAction="#handleAddPoint" text="Dodaj Punkt" styleClass="button-sm" style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
+            <Button onAction="#handleAddPoint" text="%calibrationdialog.dodaj_punkt" styleClass="button-sm" style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
         </HBox>
         
         <TableView fx:id="pointsTable" VBox.vgrow="ALWAYS" editable="true" styleClass="audit-table">
             <columns>
-                <TableColumn fx:id="tempColumn" prefWidth="160" text="Temp. wzorcowa [°C]" style="-fx-alignment: CENTER-LEFT;" />
-                <TableColumn fx:id="errorColumn" prefWidth="160" text="Błąd systematyczny [°C]" style="-fx-alignment: CENTER-LEFT;" />
-                <TableColumn fx:id="uncertaintyColumn" prefWidth="160" text="Niepewność U [°C]" style="-fx-alignment: CENTER-LEFT;" />
-                <TableColumn fx:id="deletePointColumn" prefWidth="90" text="Usuń" style="-fx-alignment: CENTER;" />
+                <TableColumn fx:id="tempColumn" prefWidth="160" text="%calibrationdialog.temp_wzorcowa_c" style="-fx-alignment: CENTER-LEFT;" />
+                <TableColumn fx:id="errorColumn" prefWidth="160" text="%calibrationdialog.blad_systematyczny_c" style="-fx-alignment: CENTER-LEFT;" />
+                <TableColumn fx:id="uncertaintyColumn" prefWidth="160" text="%calibrationdialog.niepewnosc_u_c" style="-fx-alignment: CENTER-LEFT;" />
+                <TableColumn fx:id="deletePointColumn" prefWidth="90" text="%common.usun" style="-fx-alignment: CENTER;" />
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -67,7 +67,7 @@
 
     <!-- STOPKA PRZYCISKÓW -->
     <HBox alignment="CENTER_RIGHT" spacing="12">
-        <Button onAction="#handleCancel" text="Anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
-        <Button onAction="#handleSave" styleClass="accent" text="Zatwierdź Świadectwo" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
+        <Button onAction="#handleCancel" text="%common.anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
+        <Button onAction="#handleSave" styleClass="accent" text="%calibrationdialog.zatwierdz_swiadectwo" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
     </HBox>
 </VBox>

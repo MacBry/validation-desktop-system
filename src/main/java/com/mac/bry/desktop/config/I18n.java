@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
 
 /**
  * Centralny punkt internacjonalizacji UI.
@@ -35,6 +36,8 @@ public final class I18n {
     private I18n() {
     }
 
+    private static final String PREF_KEY = "ui.locale";
+
     /** Inicjalizacja locale przy starcie aplikacji (np. "pl", "en"). */
     public static void init(String languageTag) {
         if (languageTag == null || languageTag.isBlank()) {
@@ -42,6 +45,26 @@ public final class I18n {
         }
         locale = Locale.forLanguageTag(languageTag.trim());
         bundle = ResourceBundle.getBundle(BUNDLE_BASE, locale, NO_FALLBACK_CONTROL);
+    }
+
+    /**
+     * Inicjalizacja przy starcie z uwzględnieniem wyboru użytkownika:
+     * zapamiętana preferencja (przełącznik w UI) ma pierwszeństwo przed
+     * konfiguracją {@code app.locale} / zmienną APP_LOCALE.
+     */
+    public static void initFromPreferences(String configFallback) {
+        String saved = Preferences.userNodeForPackage(I18n.class).get(PREF_KEY, null);
+        init(saved != null ? saved : configFallback);
+    }
+
+    /**
+     * Przełączenie języka z UI: ustawia locale i zapisuje wybór trwale
+     * (java.util.prefs — rejestr/konfiguracja per użytkownik systemu).
+     * Widoki załadowane przed przełączeniem wymagają przeładowania.
+     */
+    public static void switchTo(String languageTag) {
+        init(languageTag);
+        Preferences.userNodeForPackage(I18n.class).put(PREF_KEY, locale.toLanguageTag());
     }
 
     public static Locale getLocale() {

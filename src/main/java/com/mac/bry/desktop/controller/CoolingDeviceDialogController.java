@@ -252,7 +252,7 @@ public class CoolingDeviceDialogController {
 
     private void openChamberDialog(CoolingChamber chamber, boolean isChamberEdit, boolean isChamberReadOnly) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/cooling_chamber_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/cooling_chamber_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 

@@ -9,7 +9,7 @@
         <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
     </padding>
 
-    <Label styleClass="title-2" text="Dane Modelu Rejestratora" />
+    <Label styleClass="title-2" text="%thermorecordermodeldialog.dane_modelu_rejestratora" />
     
     <GridPane hgap="15" vgap="15">
         <columnConstraints>
@@ -17,23 +17,23 @@
             <ColumnConstraints hgrow="ALWAYS" />
         </columnConstraints>
 
-        <Label text="Nazwa Modelu:" GridPane.rowIndex="0" />
+        <Label text="%thermorecordermodeldialog.nazwa_modelu" GridPane.rowIndex="0" />
         <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-        <Label text="Liczba kanałów:" GridPane.rowIndex="1" />
+        <Label text="%thermorecordermodeldialog.liczba_kanalow" GridPane.rowIndex="1" />
         <Spinner fx:id="channelsSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-        <Label text="Rozdzielczość [°C]:" GridPane.rowIndex="2" />
-        <TextField fx:id="resolutionField" promptText="np. 0.100" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+        <Label text="%common.rozdzielczosc_c" GridPane.rowIndex="2" />
+        <TextField fx:id="resolutionField" promptText="%thermorecordermodeldialog.np_0_100" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-        <Label text="Aktywny:" GridPane.rowIndex="3" />
+        <Label text="%thermorecordermodeldialog.aktywny" GridPane.rowIndex="3" />
         <CheckBox fx:id="activeCheckBox" GridPane.columnIndex="1" GridPane.rowIndex="3" />
     </GridPane>
 
     <Separator />
 
     <HBox alignment="CENTER_RIGHT" spacing="10">
-        <Button onAction="#handleCancel" text="Anuluj" />
-        <Button onAction="#handleSave" styleClass="accent" text="Zapisz" />
+        <Button onAction="#handleCancel" text="%common.anuluj" />
+        <Button onAction="#handleSave" styleClass="accent" text="%common.zapisz" />
     </HBox>
 </VBox>

@@ -27,13 +27,13 @@
          <children>
             <VBox HBox.hgrow="ALWAYS" spacing="5.0">
                <children>
-                  <Label fx:id="welcomeLabel" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Witaj w systemie, Użytkowniku!" />
-                  <Label fx:id="roleLabel" style="-fx-font-size: 13px; -fx-text-fill: #64748b;" text="Rola: Administrator" />
+                  <Label fx:id="welcomeLabel" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="%dashboard.witaj_w_systemie_uzytkowniku" />
+                  <Label fx:id="roleLabel" style="-fx-font-size: 13px; -fx-text-fill: #64748b;" text="%dashboard.rola_administrator" />
                </children>
             </VBox>
             <VBox alignment="CENTER_RIGHT" spacing="5.0">
                <children>
-                  <Label fx:id="dateLabel" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="17 Maja 2026" />
+                  <Label fx:id="dateLabel" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="%dashboard.17_maja_2026" />
                   <Label fx:id="timeLabel" style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="09:30" />
                </children>
             </VBox>
@@ -46,8 +46,8 @@
             <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
          </padding>
          <children>
-            <Label style="-fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-font-size: 16px;" text="⚠ UWAGA:" />
-            <Label fx:id="gxpAlertMessage" style="-fx-text-fill: #991b1b; -fx-font-size: 14px;" text="System GxP wykrył sprzęt wymagający rewalidacji!" wrapText="true" HBox.hgrow="ALWAYS" />
+            <Label style="-fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-font-size: 16px;" text="%dashboard.uwaga" />
+            <Label fx:id="gxpAlertMessage" style="-fx-text-fill: #991b1b; -fx-font-size: 14px;" text="%dashboard.system_gxp_wykryl_sprzet" wrapText="true" HBox.hgrow="ALWAYS" />
          </children>
       </HBox>
 
@@ -71,24 +71,24 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Urządzenia Pomiarowe" />
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.urzadzenia_pomiarowe" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="totalRecordersLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="rejestratorów" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="%dashboard.rejestratorow" />
                      </children>
                   </HBox>
                   <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 2 6; -fx-background-radius: 10;" text="Aktywne" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.aktywne" />
                               <Label fx:id="activeRecordersLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6; -fx-background-radius: 10;" text="W kalibracji" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #dbeafe; -fx-text-fill: #1d4ed8; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.w_kalibracji" />
                               <Label fx:id="calibRecordersLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
@@ -103,24 +103,24 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Status metrologiczny rejestratorów temperatury" wrapText="true" />
+                  <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.status_metrologiczny_rejestratorow_temperatury" wrapText="true" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="expiredCalibrationsLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #dc2626;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #dc2626;" text="przeterminowane" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #dc2626;" text="%dashboard.przeterminowane" />
                      </children>
                   </HBox>
                   <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #fef9c3; -fx-text-fill: #854d0e; -fx-padding: 2 6; -fx-background-radius: 10;" text="Wygasają do 30 dni" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #fef9c3; -fx-text-fill: #854d0e; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.wygasaja_do_30_dni" />
                               <Label fx:id="expiringSoonLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 2 6; -fx-background-radius: 10;" text="Ważne" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.wazne" />
                               <Label fx:id="validCalibrationsLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
@@ -135,16 +135,16 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Urządzenia Chłodnicze" />
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.urzadzenia_chlodnicze" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="totalDevicesLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="obiektów w spisie" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="%dashboard.obiektow_w_spisie" />
                      </children>
                   </HBox>
                   <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                      <children>
-                        <Label style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="Monitorowane chłodziarki, zamrażarki i cieplarki." wrapText="true" />
+                        <Label style="-fx-font-size: 12px; -fx-text-fill: #64748b;" text="%dashboard.monitorowane_chlodziarki_zamrazarki_i" wrapText="true" />
                      </children>
                   </VBox>
                </children>
@@ -156,30 +156,30 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Komory i Walidacja GxP" wrapText="true" />
+                  <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.komory_i_walidacja_gxp" wrapText="true" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="totalChambersLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="komór" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="%dashboard.komor" />
                      </children>
                   </HBox>
                   <VBox spacing="4.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 9px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 1 5; -fx-background-radius: 8;" text="Zatwierdzone GxP" />
+                              <Label style="-fx-font-size: 9px; -fx-background-color: #dcfce7; -fx-text-fill: #15803d; -fx-padding: 1 5; -fx-background-radius: 8;" text="%dashboard.zatwierdzone_gxp" />
                               <Label fx:id="validChambersLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 9px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 1 5; -fx-background-radius: 8;" text="Ostrzeżenia GxP" />
+                              <Label style="-fx-font-size: 9px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 1 5; -fx-background-radius: 8;" text="%dashboard.ostrzezenia_gxp" />
                               <Label fx:id="warningChambersLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 9px; -fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-padding: 1 5; -fx-background-radius: 8;" text="Brak kwalifikacji" />
+                              <Label style="-fx-font-size: 9px; -fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-padding: 1 5; -fx-background-radius: 8;" text="%dashboard.brak_kwalifikacji" />
                               <Label fx:id="notValidatedChambersLabel" style="-fx-font-size: 11px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
@@ -194,18 +194,18 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Konta Użytkowników" />
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.konta_uzytkownikow" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="totalUsersLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="aktywnych" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="%dashboard.aktywnych" />
                      </children>
                   </HBox>
                   <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 2 6; -fx-background-radius: 10;" text="Zablokowane" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.zablokowane" />
                               <Label fx:id="lockedUsersLabel" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #991b1b;" text="0" />
                            </children>
                         </HBox>
@@ -220,18 +220,18 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Struktura Organizacyjna" />
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.struktura_organizacyjna" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="totalDepartmentsLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="działów" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="%dashboard.dzialow" />
                      </children>
                   </HBox>
                   <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #f3e8ff; -fx-text-fill: #6b21a8; -fx-padding: 2 6; -fx-background-radius: 10;" text="Pracownie i laboratoria" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #f3e8ff; -fx-text-fill: #6b21a8; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.pracownie_i_laboratoria" />
                               <Label fx:id="totalLaboratoriesLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
@@ -246,24 +246,24 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Operacje Testo USB" />
+                  <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.operacje_testo_usb" />
                   <HBox alignment="BASELINE_LEFT" spacing="10.0">
                      <children>
                         <Label fx:id="totalUsbOperationsLabel" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="0" />
-                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="łącznych akcji" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #64748b;" text="%dashboard.lacznych_akcji" />
                      </children>
                   </HBox>
                   <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #ecfdf5; -fx-text-fill: #047857; -fx-padding: 2 6; -fx-background-radius: 10;" text="Odczytane" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #ecfdf5; -fx-text-fill: #047857; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.odczytane" />
                               <Label fx:id="usbReadLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
                            <children>
-                              <Label style="-fx-font-size: 11px; -fx-background-color: #f5f3ff; -fx-text-fill: #5b21b6; -fx-padding: 2 6; -fx-background-radius: 10;" text="Zaprogramowane" />
+                              <Label style="-fx-font-size: 11px; -fx-background-color: #f5f3ff; -fx-text-fill: #5b21b6; -fx-padding: 2 6; -fx-background-radius: 10;" text="%dashboard.zaprogramowane" />
                               <Label fx:id="usbProgramLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;" text="0" />
                            </children>
                         </HBox>
@@ -293,7 +293,7 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Stosunek Statusów Rejestratorów" />
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.stosunek_statusow_rejestratorow" />
                   <javafx.scene.chart.PieChart fx:id="recordersPieChart" legendSide="BOTTOM" labelsVisible="true" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
@@ -304,7 +304,7 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Podział Metrologiczny Wzorcowań" />
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.podzial_metrologiczny_wzorcowan" />
                   <javafx.scene.chart.PieChart fx:id="calibrationsPieChart" legendSide="BOTTOM" labelsVisible="true" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
@@ -315,7 +315,7 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Status Kont Użytkowników" />
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.status_kont_uzytkownikow" />
                   <javafx.scene.chart.PieChart fx:id="usersPieChart" legendSide="BOTTOM" labelsVisible="true" VBox.vgrow="ALWAYS" />
                </children>
             </VBox>
@@ -326,7 +326,7 @@
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </padding>
                <children>
-                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="Aktywność Rejestratorów Testo USB (7 dni)" />
+                  <Label style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #475569;" text="%dashboard.aktywnosc_rejestratorow_testo_usb" />
                   <javafx.scene.chart.BarChart fx:id="usbActivityChart" VBox.vgrow="ALWAYS" animated="false">
                     <xAxis>
                       <javafx.scene.chart.CategoryAxis fx:id="usbCategoryAxis" side="BOTTOM" />
@@ -346,13 +346,13 @@
             <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
          </padding>
          <children>
-            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Ostatnie 5 zdarzeń w systemie" />
+            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="%dashboard.ostatnie_5_zdarzen_w" />
             <TableView fx:id="accessLogsTable" styleClass="audit-table" VBox.vgrow="ALWAYS" prefHeight="190.0">
               <columns>
-                <TableColumn fx:id="logTimestampColumn" prefWidth="150.0" text="Czas" />
-                <TableColumn fx:id="logUsernameColumn" prefWidth="120.0" text="Użytkownik" />
-                <TableColumn fx:id="logActionColumn" prefWidth="130.0" text="Akcja" />
-                <TableColumn fx:id="logDetailsColumn" prefWidth="320.0" text="Szczegóły" />
+                <TableColumn fx:id="logTimestampColumn" prefWidth="150.0" text="%dashboard.czas" />
+                <TableColumn fx:id="logUsernameColumn" prefWidth="120.0" text="%common.uzytkownik" />
+                <TableColumn fx:id="logActionColumn" prefWidth="130.0" text="%dashboard.akcja" />
+                <TableColumn fx:id="logDetailsColumn" prefWidth="320.0" text="%common.szczegoly" />
               </columns>
             </TableView>
          </children>

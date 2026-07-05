@@ -30,7 +30,7 @@ class DashboardFxmlTest {
     @Test
     void testLoadDashboardFxml() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/dashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/dashboard.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             // Mockowanie fabryki kontrolerów, aby nie potrzebować kontekstu Springa do samego testu parsowania FXML
             loader.setControllerFactory(param -> {
                 try {

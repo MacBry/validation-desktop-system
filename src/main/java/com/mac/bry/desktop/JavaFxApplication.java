@@ -22,8 +22,8 @@ public class JavaFxApplication extends Application {
                 .sources(ValidationDesktopApplication.class)
                 .run(args);
 
-        // Locale UI z konfiguracji (app.locale / zmienna APP_LOCALE), domyślnie pl
-        com.mac.bry.desktop.config.I18n.init(
+        // Locale UI: zapamiętany wybór użytkownika > app.locale/APP_LOCALE > pl
+        com.mac.bry.desktop.config.I18n.initFromPreferences(
                 applicationContext.getEnvironment().getProperty("app.locale", "pl"));
     }
 

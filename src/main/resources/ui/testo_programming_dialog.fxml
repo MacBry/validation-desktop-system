@@ -19,8 +19,8 @@
    <children>
       <VBox spacing="5.0">
          <children>
-            <Label styleClass="title-2" text="Programowanie Rejestratora Testo" style="-fx-text-fill: #0f172a;" />
-            <Label styleClass="text-muted" text="Skonfiguruj parametry cyklu przed umieszczeniem logera w komorze." wrapText="true" style="-fx-text-fill: #64748b; -fx-font-size: 13px;" />
+            <Label styleClass="title-2" text="%testoprogrammingdialog.programowanie_rejestratora_testo" style="-fx-text-fill: #0f172a;" />
+            <Label styleClass="text-muted" text="%testoprogrammingdialog.skonfiguruj_parametry_cyklu_przed" wrapText="true" style="-fx-text-fill: #64748b; -fx-font-size: 13px;" />
          </children>
       </VBox>
       <Separator />
@@ -44,52 +44,52 @@
           <RowConstraints vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label text="Model rejestratora:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+            <Label text="%testoprogrammingdialog.model_rejestratora" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
             <ComboBox fx:id="deviceModelSelector" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
             
-            <Label fx:id="driveLabel" text="Dysk USB rejestratora:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+            <Label fx:id="driveLabel" text="%testoprogrammingdialog.dysk_usb_rejestratora" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
             <ComboBox fx:id="driveLetterSelector" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             
-            <Label text="Data rozpoczęcia (Start):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+            <Label text="%testoprogrammingdialog.data_rozpoczecia_start" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
             <DatePicker fx:id="startDatePicker" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             
-            <Label text="Godzina startu (HH:MM):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
-            <TextField fx:id="timeField" promptText="np. 14:00" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Label text="%testoprogrammingdialog.godzina_startu_hh_mm" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
+            <TextField fx:id="timeField" promptText="%testoprogrammingdialog.np_14_00" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
  
-            <Label fx:id="startModeLabel" text="Tryb uruchomienia:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="4" />
+            <Label fx:id="startModeLabel" text="%testoprogrammingdialog.tryb_uruchomienia" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="4" />
             <ComboBox fx:id="startModeSelector" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
  
-            <Label fx:id="startDelayLabel" text="Opóźnienie startu (min):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="5" />
+            <Label fx:id="startDelayLabel" text="%testoprogrammingdialog.opoznienie_startu_min" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="5" />
             <Spinner fx:id="startDelaySpinner" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="5" editable="true" />
  
-            <Label fx:id="commentLabel" text="Komentarz walidacji:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="6" />
-            <TextField fx:id="commentField" promptText="np. Walidacja komory" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            <Label fx:id="commentLabel" text="%testoprogrammingdialog.komentarz_walidacji" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="6" />
+            <TextField fx:id="commentField" promptText="%testoprogrammingdialog.np_walidacja_komory" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
             
-            <Label text="Interwał (w minutach):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="7" />
+            <Label text="%testoprogrammingdialog.interwal_w_minutach" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="7" />
             <Spinner fx:id="intervalSpinner" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="7" editable="true" />
             
-            <Label text="Liczba pomiarów:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="8" />
+            <Label text="%common.liczba_pomiarow" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="8" />
             <Spinner fx:id="countSpinner" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="8" editable="true" />
             
-            <Label text="Górny próg alarmu (°C):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="9" />
+            <Label text="%testoprogrammingdialog.gorny_prog_alarmu_c" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="9" />
             <Spinner fx:id="upperLimitSpinner" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="9" editable="true" />
             
-            <Label text="Dolny próg alarmu (°C):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="10" />
+            <Label text="%testoprogrammingdialog.dolny_prog_alarmu_c" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="10" />
             <Spinner fx:id="lowerLimitSpinner" prefWidth="250.0" style="-fx-pref-height: 38px;" GridPane.columnIndex="1" GridPane.rowIndex="10" editable="true" />
          </children>
       </GridPane>
       
       <VBox fx:id="messageContainer" managed="false" visible="false" spacing="5">
-          <Label fx:id="messageLabel" text="Wiadomość..." wrapText="true" />
+          <Label fx:id="messageLabel" text="%testoprogrammingdialog.wiadomosc" wrapText="true" />
       </VBox>
       
       <Separator />
       <HBox alignment="CENTER_RIGHT" spacing="10.0">
          <children>
             <ProgressIndicator fx:id="progressIndicator" prefHeight="24.0" prefWidth="24.0" visible="false" />
-            <Label fx:id="statusLabel" text="Programowanie w toku..." visible="false" style="-fx-text-fill: #64748b;" />
-            <Button mnemonicParsing="false" onAction="#handleCancel" styleClass="button-outlined" text="Anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
-            <Button fx:id="programButton" mnemonicParsing="false" onAction="#handleProgram" styleClass="accent" text="Programuj Loger" style="-fx-pref-height: 38px; -fx-pref-width: 160px; -fx-font-weight: bold;" />
+            <Label fx:id="statusLabel" text="%testoprogrammingdialog.programowanie_w_toku" visible="false" style="-fx-text-fill: #64748b;" />
+            <Button mnemonicParsing="false" onAction="#handleCancel" styleClass="button-outlined" text="%common.anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
+            <Button fx:id="programButton" mnemonicParsing="false" onAction="#handleProgram" styleClass="accent" text="%testoprogrammingdialog.programuj_loger" style="-fx-pref-height: 38px; -fx-pref-width: 160px; -fx-font-weight: bold;" />
          </children>
       </HBox>
    </children>

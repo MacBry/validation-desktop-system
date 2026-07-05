@@ -19,8 +19,8 @@
    <children>
       <VBox spacing="5.0">
          <children>
-            <Label styleClass="title-1" text="Historia Programowań Rejestratorów (GxP)" />
-            <Label styleClass="text-muted" text="Zestawienie parametrów konfiguracyjnych wgranych do rejestratorów USB. Zgodność Audit Trail z FDA 21 CFR Part 11.">
+            <Label styleClass="title-1" text="%testoprogramminghistory.historia_programowan_rejestratorow_gxp" />
+            <Label styleClass="text-muted" text="%testoprogramminghistory.zestawienie_parametrow_konfiguracyjnych_wgranych">
                <font>
                   <Font size="14.0" />
                </font>
@@ -30,17 +30,17 @@
       
       <HBox alignment="CENTER_LEFT" spacing="10.0">
          <children>
-            <TextField fx:id="searchField" prefHeight="35.0" prefWidth="300.0" promptText="Szukaj użytkownika lub szczegółów..." />
+            <TextField fx:id="searchField" prefHeight="35.0" prefWidth="300.0" promptText="%testoprogramminghistory.szukaj_uzytkownika_lub_szczegolow" />
             <Region HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" onAction="#handleRefresh" prefHeight="35.0" styleClass="button-outlined" text="Odśwież Listę" />
+            <Button mnemonicParsing="false" onAction="#handleRefresh" prefHeight="35.0" styleClass="button-outlined" text="%common.odswiez_liste" />
          </children>
       </HBox>
       
       <TableView fx:id="historyTable" prefHeight="400.0" prefWidth="740.0" VBox.vgrow="ALWAYS">
         <columns>
-          <TableColumn fx:id="colTimestamp" prefWidth="150.0" text="Data i Czas Akcji" />
-          <TableColumn fx:id="colUsername" prefWidth="120.0" text="Użytkownik" />
-          <TableColumn fx:id="colDetails" prefWidth="460.0" text="Zarejestrowane Parametry Konfiguracyjne (Start / Alarmy)" />
+          <TableColumn fx:id="colTimestamp" prefWidth="150.0" text="%testoprogramminghistory.data_i_czas_akcji" />
+          <TableColumn fx:id="colUsername" prefWidth="120.0" text="%common.uzytkownik" />
+          <TableColumn fx:id="colDetails" prefWidth="460.0" text="%testoprogramminghistory.zarejestrowane_parametry_konfiguracyjne_start" />
         </columns>
       </TableView>
    </children>

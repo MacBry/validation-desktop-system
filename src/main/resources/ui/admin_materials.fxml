@@ -17,26 +17,26 @@
             <children>
                 <HBox alignment="CENTER_LEFT" spacing="15">
                     <children>
-                        <Label text="Słownik Kategorii Przechowywanych Materiałów"
+                        <Label text="%adminmaterials.slownik_kategorii_przechowywanych_materialow"
                                style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #0f172a;" />
                         <Region HBox.hgrow="ALWAYS" />
                         <Button mnemonicParsing="false" onAction="#handleNewMaterial"
-                                text="+ Nowy Materiał" styleClass="accent"
+                                text="%adminmaterials.nowy_material" styleClass="accent"
                                 style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
                     </children>
                 </HBox>
 
                 <TableView fx:id="materialsTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
                     <columns>
-                        <TableColumn fx:id="materialNameCol" prefWidth="150.0" text="Nazwa" />
-                        <TableColumn fx:id="materialTempCol" prefWidth="140.0" text="Zakres Temp."
+                        <TableColumn fx:id="materialNameCol" prefWidth="150.0" text="%adminmaterials.nazwa" />
+                        <TableColumn fx:id="materialTempCol" prefWidth="140.0" text="%adminmaterials.zakres_temp"
                                      style="-fx-alignment: CENTER;" />
-                        <TableColumn fx:id="materialEaCol" prefWidth="120.0" text="Ea (kJ/mol)"
+                        <TableColumn fx:id="materialEaCol" prefWidth="120.0" text="%adminmaterials.ea_kj_mol"
                                      style="-fx-alignment: CENTER;" />
-                        <TableColumn fx:id="materialSourceCol" prefWidth="180.0" text="Standard / Norma" />
-                        <TableColumn fx:id="materialRequiresMappingCol" prefWidth="130.0" text="Wymaga Mapowania"
+                        <TableColumn fx:id="materialSourceCol" prefWidth="180.0" text="%adminmaterials.standard_norma" />
+                        <TableColumn fx:id="materialRequiresMappingCol" prefWidth="130.0" text="%adminmaterials.wymaga_mapowania"
                                      style="-fx-alignment: CENTER;" />
-                        <TableColumn fx:id="materialActiveCol" prefWidth="100.0" text="Status"
+                        <TableColumn fx:id="materialActiveCol" prefWidth="100.0" text="%common.status"
                                      style="-fx-alignment: CENTER;" />
                     </columns>
                     <columnResizePolicy>
@@ -51,34 +51,34 @@
               style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
                      -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
             <children>
-                <Label text="Szczegóły Materiału"
+                <Label text="%adminmaterials.szczegoly_materialu"
                        style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
                 <Label fx:id="selectedMaterialLabel"
-                       text="Wybierz materiał z listy lub dodaj nowy"
+                       text="%adminmaterials.wybierz_material_z_listy"
                        style="-fx-font-size: 13px; -fx-text-fill: #64748b;" />
 
                 <Separator />
 
                 <VBox spacing="10.0">
                     <children>
-                        <Label text="Nazwa materiału *:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <Label text="%adminmaterials.nazwa_materialu" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <TextField fx:id="materialNameField" style="-fx-pref-height: 36px;" />
 
-                        <Label text="Opis / Zastosowanie:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                        <Label text="%adminmaterials.opis_zastosowanie" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <TextField fx:id="materialDescField" style="-fx-pref-height: 36px;" />
 
                         <HBox spacing="10.0">
                             <children>
                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
                                     <children>
-                                        <Label text="Temp Min (°C):"
+                                        <Label text="%adminmaterials.temp_min_c"
                                                style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                                         <TextField fx:id="materialTempMinField" style="-fx-pref-height: 36px;" />
                                     </children>
                                 </VBox>
                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
                                     <children>
-                                        <Label text="Temp Max (°C):"
+                                        <Label text="%adminmaterials.temp_max_c"
                                                style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                                         <TextField fx:id="materialTempMaxField" style="-fx-pref-height: 36px;" />
                                     </children>
@@ -86,17 +86,17 @@
                             </children>
                         </HBox>
 
-                        <Label text="Energia Aktywacji Ea (kJ/mol):"
+                        <Label text="%adminmaterials.energia_aktywacji_ea_kj"
                                style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <TextField fx:id="materialEaField" style="-fx-pref-height: 36px;" />
 
-                        <Label text="Standard / Norma źródłowa:"
+                        <Label text="%adminmaterials.standard_norma_zrodlowa"
                                style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                         <TextField fx:id="materialSourceField" style="-fx-pref-height: 36px;" />
 
-                        <CheckBox fx:id="materialRequiresMappingCheckbox" text="Wymaga mapowania komory"
+                        <CheckBox fx:id="materialRequiresMappingCheckbox" text="%adminmaterials.wymaga_mapowania_komory"
                                   style="-fx-font-weight: bold; -fx-text-fill: #475569; -fx-padding: 5px 0px;" />
-                        <CheckBox fx:id="materialActiveCheckbox" text="Aktywny w słowniku"
+                        <CheckBox fx:id="materialActiveCheckbox" text="%adminmaterials.aktywny_w_slowniku"
                                   style="-fx-font-weight: bold; -fx-text-fill: #475569; -fx-padding: 5px 0px;" />
                     </children>
                 </VBox>
@@ -108,11 +108,11 @@
                         <Button mnemonicParsing="false" onAction="#handleMaterialAudit"
                                 styleClass="button-sm"
                                 style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
-                                text="Audit" />
+                                text="%common.audit" />
                         <Button mnemonicParsing="false" onAction="#handleSaveMaterial"
                                 styleClass="button-sm"
                                 style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold;"
-                                text="Zapisz" />
+                                text="%common.zapisz" />
                     </children>
                 </HBox>
                 <Label fx:id="materialStatusLabel" text="" wrapText="true"

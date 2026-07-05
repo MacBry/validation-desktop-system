@@ -11,7 +11,7 @@
     </padding>
 
     <!-- NAGŁÓWEK DIALOGU -->
-    <Label fx:id="titleLabel" styleClass="title-2" text="Nowy Użytkownik Systemu" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;" />
+    <Label fx:id="titleLabel" styleClass="title-2" text="%userdialog.nowy_uzytkownik_systemu" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;" />
     
     <!-- PANEL GŁÓWNY (GRID FORM) -->
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
@@ -20,21 +20,21 @@
                 <!-- DANE LOGOWANIA -->
                 <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
                     <children>
-                        <Label text="DANE LOGOWANIA I BEZPIECZEŃSTWA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                        <Label text="%userdialog.dane_logowania_i_bezpieczenstwa" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
                         <GridPane hgap="15" vgap="12">
                             <columnConstraints>
                                 <ColumnConstraints prefWidth="140" />
                                 <ColumnConstraints hgrow="ALWAYS" />
                             </columnConstraints>
                             <children>
-                                <Label text="Login (nazwa użytkownika):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
-                                <TextField fx:id="usernameField" promptText="np. j.kowalski" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                <Label text="%userdialog.login_nazwa_uzytkownika" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+                                <TextField fx:id="usernameField" promptText="%userdialog.np_j_kowalski" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                                <Label text="Tymczasowe hasło:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
-                                <PasswordField fx:id="passwordField" promptText="Wpisz hasło startowe" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                <Label text="%userdialog.tymczasowe_haslo" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+                                <PasswordField fx:id="passwordField" promptText="%userdialog.wpisz_haslo_startowe" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                                <Label text="E-mail:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
-                                <TextField fx:id="emailField" promptText="np. jan.kowalski@vcc.pl" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                <Label text="%userdialog.e_mail" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+                                <TextField fx:id="emailField" promptText="%common.np_jan_kowalski_vcc" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                             </children>
                         </GridPane>
                         
@@ -42,8 +42,8 @@
                         
                         <VBox spacing="8">
                             <children>
-                                <CheckBox fx:id="enabledCheckbox" text="Konto aktywne (zezwól na logowanie)" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                                <CheckBox fx:id="mustChangePasswordCheckbox" text="Wymuś zmianę hasła przy pierwszym logowaniu" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                                <CheckBox fx:id="enabledCheckbox" text="%userdialog.konto_aktywne_zezwol_na" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                                <CheckBox fx:id="mustChangePasswordCheckbox" text="%userdialog.wymus_zmiane_hasla_przy" selected="true" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
                             </children>
                         </VBox>
                     </children>
@@ -52,24 +52,24 @@
                 <!-- DANE OSOBOWE -->
                 <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
                     <children>
-                        <Label text="DANE OSOBOWE I JEDNOSTKA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                        <Label text="%userdialog.dane_osobowe_i_jednostka" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
                         <GridPane hgap="15" vgap="12">
                             <columnConstraints>
                                 <ColumnConstraints prefWidth="140" />
                                 <ColumnConstraints hgrow="ALWAYS" />
                             </columnConstraints>
                             <children>
-                                <Label text="Imię:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
-                                <TextField fx:id="firstNameField" promptText="Imię" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                <Label text="%userdialog.imie" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="0" />
+                                <TextField fx:id="firstNameField" promptText="%common.imie" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                                <Label text="Nazwisko:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
-                                <TextField fx:id="lastNameField" promptText="Nazwisko" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                <Label text="%userdialog.nazwisko" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="1" />
+                                <TextField fx:id="lastNameField" promptText="%common.nazwisko" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                                <Label text="Dział:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
-                                <ComboBox fx:id="deptComboBox" prefWidth="450.0" promptText="Wybierz dział..." style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                <Label text="%common.dzial2" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="2" />
+                                <ComboBox fx:id="deptComboBox" prefWidth="450.0" promptText="%common.wybierz_dzial" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                                <Label text="Pracownia:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
-                                <ComboBox fx:id="labComboBox" prefWidth="450.0" promptText="Wybierz pracownię..." style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                <Label text="%common.pracownia2" style="-fx-font-weight: bold; -fx-text-fill: #475569;" GridPane.rowIndex="3" />
+                                <ComboBox fx:id="labComboBox" prefWidth="450.0" promptText="%common.wybierz_pracownie" style="-fx-pref-height: 36px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                             </children>
                         </GridPane>
                     </children>
@@ -78,7 +78,7 @@
                 <!-- ROLE ZABEZPIECZEŃ -->
                 <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15px; -fx-background-radius: 8px; -fx-border-color: #cbd5e1; -fx-border-radius: 8px;">
                     <children>
-                        <Label text="ROLE I UPRAWNIENIA BEZPIECZEŃSTWA" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
+                        <Label text="%userdialog.role_i_uprawnienia_bezpieczenstwa" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-letter-spacing: 1px;" />
                         <ScrollPane fitToWidth="true" prefHeight="100.0" style="-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-radius: 6px;">
                            <content>
                               <VBox fx:id="rolesContainer" spacing="6.0" style="-fx-padding: 8px;" />
@@ -96,7 +96,7 @@
 
     <!-- STOPKA PRZYCISKÓW -->
     <HBox alignment="CENTER_RIGHT" spacing="12">
-        <Button onAction="#handleCancel" text="Anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
-        <Button onAction="#handleSave" styleClass="accent" text="Utwórz Użytkownika" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
+        <Button onAction="#handleCancel" text="%common.anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
+        <Button onAction="#handleSave" styleClass="accent" text="%userdialog.utworz_uzytkownika" style="-fx-pref-height: 38px; -fx-font-weight: bold;" />
     </HBox>
 </VBox>

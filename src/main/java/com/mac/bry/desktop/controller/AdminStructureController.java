@@ -133,7 +133,7 @@ public class AdminStructureController {
 
     private void openDeptDialog(Department dept, boolean isEdit) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/dept_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/dept_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
             DeptDialogController ctrl = loader.getController();
@@ -151,7 +151,7 @@ public class AdminStructureController {
 
     private void openLabDialog(Laboratory lab, boolean isEdit) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/lab_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/lab_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
             LabDialogController ctrl = loader.getController();
@@ -172,7 +172,7 @@ public class AdminStructureController {
 
     private void openAudit(Consumer<UserAuditController> init) {
         net.rgielen.fxweaver.core.FxControllerAndView<UserAuditController, javafx.scene.layout.VBox> cav =
-                fxWeaver.load(UserAuditController.class);
+                fxWeaver.load(UserAuditController.class, com.mac.bry.desktop.config.I18n.getBundle());
         init.accept(cav.getController());
         Stage stage = new Stage();
         stage.setTitle("Historia Audytu");

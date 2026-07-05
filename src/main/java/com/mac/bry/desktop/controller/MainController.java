@@ -50,6 +50,7 @@ public class MainController {
     @FXML private Button adminMaterialsButton;
     @FXML private Label sidebarUserLabel;
     @FXML private Label sidebarRoleLabel;
+    @FXML private javafx.scene.control.ComboBox<String> languageCombo;
 
     @FXML private VBox sectionMenuGlowne;
     @FXML private VBox sectionMenuGlowneItems;
@@ -77,6 +78,9 @@ public class MainController {
         if (contentArea.getChildren().size() > 0) {
             defaultDashboardView = (Parent) contentArea.getChildren().get(0);
         }
+
+        // Przełącznik języka — zmiana przeładowuje główne okno (powrót do dashboardu)
+        com.mac.bry.desktop.config.LanguageSwitcher.configure(languageCombo, this::reloadMainView);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
@@ -316,6 +320,19 @@ public class MainController {
             stage.centerOnScreen();
         } catch (IOException e) {
             log.error("Failed to load login.fxml during logout", e);
+        }
+    }
+
+    /** Przeładowanie głównego okna po zmianie języka (świeży bundle). */
+    private void reloadMainView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/main.fxml"), I18n.getBundle());
+            loader.setControllerFactory(applicationContext::getBean);
+            Parent root = loader.load();
+            Stage stage = (Stage) contentArea.getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (IOException e) {
+            log.error("Failed to reload main view after language switch", e);
         }
     }
 

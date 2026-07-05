@@ -175,7 +175,7 @@ public class AdminMaterialsController {
         MaterialType sel = materialsTable.getSelectionModel().getSelectedItem();
         if (sel == null) { showError("Brak zaznaczenia", "Wybierz materiał z listy."); return; }
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
             UserAuditController ctrl = loader.getController();

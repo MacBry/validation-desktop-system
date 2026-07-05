@@ -14,37 +14,37 @@
             <children>
                 <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4" style="-fx-background-color: #f0f9ff; -fx-background-radius: 8px; -fx-border-color: #0ea5e9; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
                     <children>
-                        <Label text="Maks. ΔT globalny" style="-fx-font-size: 11px; -fx-text-fill: #0369a1; -fx-font-weight: bold;" />
+                        <Label text="%tabspatial.maks_t_globalny" style="-fx-font-size: 11px; -fx-text-fill: #0369a1; -fx-font-weight: bold;" />
                         <Label fx:id="lblMaxDeltaGlobal" text="—" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0c4a6e;" />
-                        <Label text="°C" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                        <Label text="%tabspatial.c" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
                     </children>
                 </VBox>
                 <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4" style="-fx-background-color: #f0fdf4; -fx-background-radius: 8px; -fx-border-color: #22c55e; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
                     <children>
-                        <Label text="Śr. ΔT globalny" style="-fx-font-size: 11px; -fx-text-fill: #15803d; -fx-font-weight: bold;" />
+                        <Label text="%tabspatial.sr_t_globalny" style="-fx-font-size: 11px; -fx-text-fill: #15803d; -fx-font-weight: bold;" />
                         <Label fx:id="lblMeanDeltaGlobal" text="—" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #14532d;" />
-                        <Label text="°C" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                        <Label text="%tabspatial.c" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
                     </children>
                 </VBox>
                 <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4" style="-fx-background-color: #fff7ed; -fx-background-radius: 8px; -fx-border-color: #f97316; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
                     <children>
-                        <Label text="Maks. gradient pionowy" style="-fx-font-size: 11px; -fx-text-fill: #c2410c; -fx-font-weight: bold;" />
+                        <Label text="%tabspatial.maks_gradient_pionowy" style="-fx-font-size: 11px; -fx-text-fill: #c2410c; -fx-font-weight: bold;" />
                         <Label fx:id="lblMaxVerticalGradient" text="—" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #7c2d12;" />
-                        <Label text="°C  |GÓRA − DÓŁ|" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                        <Label text="%tabspatial.c_gora_dol" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
                     </children>
                 </VBox>
                 <VBox HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4" style="-fx-background-color: #fdf4ff; -fx-background-radius: 8px; -fx-border-color: #a855f7; -fx-border-width: 1.5px; -fx-padding: 12 8 12 8;">
                     <children>
-                        <Label text="Śr. gradient pionowy" style="-fx-font-size: 11px; -fx-text-fill: #7e22ce; -fx-font-weight: bold;" />
+                        <Label text="%tabspatial.sr_gradient_pionowy" style="-fx-font-size: 11px; -fx-text-fill: #7e22ce; -fx-font-weight: bold;" />
                         <Label fx:id="lblMeanVerticalGradient" text="—" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #581c87;" />
-                        <Label text="°C  |GÓRA − DÓŁ|" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
+                        <Label text="%tabspatial.c_gora_dol" style="-fx-font-size: 10px; -fx-text-fill: #64748b;" />
                     </children>
                 </VBox>
             </children>
         </HBox>
         <VBox VBox.vgrow="ALWAYS" spacing="4" style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
             <children>
-                <Label text="Rozstęp Przestrzenny ΔT w czasie — serie: Globalny · Poziom GÓRA · Poziom DÓŁ" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                <Label text="%tabspatial.rozstep_przestrzenny_t_w" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
                 <LineChart fx:id="deltaTimeChart" createSymbols="false" legendVisible="true" VBox.vgrow="ALWAYS" animated="false">
                     <xAxis>
                         <NumberAxis fx:id="deltaTimeAxis" side="BOTTOM" forceZeroInRange="false" label="Pomiar nr" />
@@ -57,16 +57,16 @@
         </VBox>
         <VBox VBox.vgrow="NEVER" spacing="4">
             <children>
-                <Label text="Podsumowanie statystyk jednorodności wg poziomów fizycznych:" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-fg-default;" />
+                <Label text="%tabspatial.podsumowanie_statystyk_jednorodnosci_wg" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-fg-default;" />
                 <TableView fx:id="levelSummaryTable" prefHeight="95" minHeight="95" styleClass="audit-table">
                     <columns>
-                        <TableColumn fx:id="colLevelName" text="Poziom" prefWidth="160" reorderable="false" />
-                        <TableColumn fx:id="colLevelMeanDelta" text="Śr. ΔT [°C]" prefWidth="180" style="-fx-alignment: CENTER;" reorderable="false" />
-                        <TableColumn fx:id="colLevelMaxDelta" text="Maks. ΔT [°C]" prefWidth="180" style="-fx-alignment: CENTER;" reorderable="false" />
+                        <TableColumn fx:id="colLevelName" text="%tabspatial.poziom" prefWidth="160" reorderable="false" />
+                        <TableColumn fx:id="colLevelMeanDelta" text="%tabspatial.sr_t_c" prefWidth="180" style="-fx-alignment: CENTER;" reorderable="false" />
+                        <TableColumn fx:id="colLevelMaxDelta" text="%tabspatial.maks_t_c" prefWidth="180" style="-fx-alignment: CENTER;" reorderable="false" />
                     </columns>
                     <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY" /></columnResizePolicy>
                     <placeholder>
-                        <Label text="Brak danych poziomowych — wymagane serie z obu poziomów (GÓRA i DÓŁ)." style="-fx-text-fill: -color-fg-muted;" />
+                        <Label text="%tabspatial.brak_danych_poziomowych_wymagane" style="-fx-text-fill: -color-fg-muted;" />
                     </placeholder>
                 </TableView>
             </children>

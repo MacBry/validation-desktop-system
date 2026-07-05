@@ -18,8 +18,8 @@
          <children>
             <VBox>
                <children>
-                  <Label fx:id="mainTitleLabel" styleClass="title-2" text="Historia Audytu" />
-                  <Label fx:id="userInfoLabel" style="-fx-text-fill: -color-fg-muted;" text="Użytkownik: [nazwa]" />
+                  <Label fx:id="mainTitleLabel" styleClass="title-2" text="%useraudit.historia_audytu" />
+                  <Label fx:id="userInfoLabel" style="-fx-text-fill: -color-fg-muted;" text="%useraudit.uzytkownik_nazwa" />
                </children>
             </VBox>
          </children>
@@ -27,20 +27,20 @@
       
       <TableView fx:id="auditTable" styleClass="striped" VBox.vgrow="ALWAYS">
         <columns>
-          <TableColumn fx:id="dateColumn" prefWidth="150.0" text="Data i Godzina" />
-          <TableColumn fx:id="adminColumn" prefWidth="120.0" text="Wykonawca" />
-          <TableColumn fx:id="typeColumn" prefWidth="100.0" text="Operacja" />
-          <TableColumn fx:id="fieldColumn" prefWidth="120.0" text="Pole" />
-          <TableColumn fx:id="oldValueColumn" prefWidth="180.0" text="Stara Wartość" />
-          <TableColumn fx:id="newValueColumn" prefWidth="180.0" text="Nowa Wartość" />
+          <TableColumn fx:id="dateColumn" prefWidth="150.0" text="%useraudit.data_i_godzina" />
+          <TableColumn fx:id="adminColumn" prefWidth="120.0" text="%useraudit.wykonawca" />
+          <TableColumn fx:id="typeColumn" prefWidth="100.0" text="%useraudit.operacja" />
+          <TableColumn fx:id="fieldColumn" prefWidth="120.0" text="%useraudit.pole" />
+          <TableColumn fx:id="oldValueColumn" prefWidth="180.0" text="%useraudit.stara_wartosc" />
+          <TableColumn fx:id="newValueColumn" prefWidth="180.0" text="%useraudit.nowa_wartosc" />
         </columns>
       </TableView>
       
       <HBox alignment="CENTER_RIGHT" spacing="10.0">
          <children>
-            <Button mnemonicParsing="false" onAction="#handleExportPdf" prefHeight="30.0" prefWidth="120.0" styleClass="danger" text="Eksport PDF" />
-            <Button mnemonicParsing="false" onAction="#handleExportCsv" prefHeight="30.0" prefWidth="120.0" styleClass="success" text="Eksport CSV" />
-            <Button mnemonicParsing="false" onAction="#handleClose" prefHeight="30.0" prefWidth="100.0" text="Zamknij" />
+            <Button mnemonicParsing="false" onAction="#handleExportPdf" prefHeight="30.0" prefWidth="120.0" styleClass="danger" text="%useraudit.eksport_pdf" />
+            <Button mnemonicParsing="false" onAction="#handleExportCsv" prefHeight="30.0" prefWidth="120.0" styleClass="success" text="%useraudit.eksport_csv" />
+            <Button mnemonicParsing="false" onAction="#handleClose" prefHeight="30.0" prefWidth="100.0" text="%common.zamknij" />
          </children>
       </HBox>
    </children>

@@ -19,25 +19,25 @@
          fx:controller="com.mac.bry.desktop.controller.AdminPanelController"
          stylesheets="@style.css">
     <tabs>
-        <Tab text="Użytkownicy">
+        <Tab text="%adminpanel.uzytkownicy">
             <content>
                 <fx:include source="admin_users.fxml" />
             </content>
         </Tab>
 
-        <Tab fx:id="structureTab" text="Struktura">
+        <Tab fx:id="structureTab" text="%adminpanel.struktura">
             <content>
                 <fx:include source="admin_structure.fxml" />
             </content>
         </Tab>
 
-        <Tab text="Logi Dostępu (Access Logs)">
+        <Tab text="%adminpanel.logi_dostepu_access_logs">
             <content>
                 <fx:include source="admin_logs.fxml" />
             </content>
         </Tab>
 
-        <Tab text="Słownik Materiałów">
+        <Tab text="%adminpanel.slownik_materialow">
             <content>
                 <fx:include source="admin_materials.fxml" />
             </content>

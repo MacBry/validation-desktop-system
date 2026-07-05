@@ -33,7 +33,7 @@ public class TestoRevalidationDialogHelper {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(TestoRevalidationDialogHelper.class.getResource("/ui/segment_annotation_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(TestoRevalidationDialogHelper.class.getResource("/ui/segment_annotation_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent view = loader.load();
 
@@ -64,7 +64,7 @@ public class TestoRevalidationDialogHelper {
         if (posData == null) return;
 
         try {
-            FXMLLoader loader = new FXMLLoader(TestoRevalidationDialogHelper.class.getResource("/ui/stats_diagnostics_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(TestoRevalidationDialogHelper.class.getResource("/ui/stats_diagnostics_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent view = loader.load();
 

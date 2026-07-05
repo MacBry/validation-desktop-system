@@ -95,7 +95,7 @@ public class ThermoRecorderController {
 
     private void handleShowCalibrationHistory(ThermoRecorder recorder) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/calibration_history.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/calibration_history.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 
@@ -116,7 +116,7 @@ public class ThermoRecorderController {
 
     private void handleShowAudit(ThermoRecorder recorder) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 
@@ -135,7 +135,7 @@ public class ThermoRecorderController {
 
     private void openRecorderDialog(ThermoRecorder recorder, boolean isEdit) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/thermo_recorder_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/thermo_recorder_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 

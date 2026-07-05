@@ -190,7 +190,7 @@ public class CalibrationHistoryController {
 
     private void openCalibrationDialog(Calibration calibration) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/calibration_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/calibration_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 
@@ -217,7 +217,7 @@ public class CalibrationHistoryController {
 
     private void handleShowAudit(Calibration calibration) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 

@@ -13,8 +13,8 @@
       <!-- NAGŁÓWEK -->
       <VBox spacing="5.0">
          <children>
-            <Label styleClass="title-2" text="Przegląd i Adnotacja Wykrytych Zdarzeń" style="-fx-text-fill: #0f172a;" />
-            <Label text="Human-in-the-loop (DP-001): potwierdź lub odrzuć segmenty wykryte algorytmicznie. Odrzucone segmenty są wykluczane ze statystyk warunkowych. Każda decyzja zapisuje operatora i czas." wrapText="true" style="-fx-text-fill: #64748b; -fx-font-size: 12px;" />
+            <Label styleClass="title-2" text="%segmentannotationdialog.przeglad_i_adnotacja_wykrytych" style="-fx-text-fill: #0f172a;" />
+            <Label text="%segmentannotationdialog.human_in_the_loop" wrapText="true" style="-fx-text-fill: #64748b; -fx-font-size: 12px;" />
          </children>
       </VBox>
 
@@ -23,8 +23,8 @@
       <!-- FILTR -->
       <HBox spacing="15.0" alignment="CENTER_LEFT">
          <children>
-            <Label text="Widok:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-            <CheckBox fx:id="chkOnlyEvents" text="Tylko zdarzenia (defrost / drzwi / ekskursje / zmiany nastaw)" selected="true" />
+            <Label text="%segmentannotationdialog.widok" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+            <CheckBox fx:id="chkOnlyEvents" text="%segmentannotationdialog.tylko_zdarzenia_defrost_drzwi" selected="true" />
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="lblCounter" text="" style="-fx-text-fill: #64748b; -fx-font-size: 12px;" />
          </children>
@@ -33,14 +33,14 @@
       <!-- TABELA SEGMENTÓW -->
       <TableView fx:id="segmentTable" VBox.vgrow="ALWAYS">
          <columns>
-            <TableColumn fx:id="colPosition" text="Pozycja" prefWidth="130.0" />
-            <TableColumn fx:id="colType" text="Typ" prefWidth="120.0" />
-            <TableColumn fx:id="colFrom" text="Od" prefWidth="120.0" />
-            <TableColumn fx:id="colTo" text="Do" prefWidth="120.0" />
-            <TableColumn fx:id="colDuration" text="Czas [min]" prefWidth="70.0" />
-            <TableColumn fx:id="colConfidence" text="Pewność" prefWidth="70.0" />
-            <TableColumn fx:id="colNote" text="Sygnatura / Nota" prefWidth="260.0" />
-            <TableColumn fx:id="colStatus" text="Status" prefWidth="140.0" />
+            <TableColumn fx:id="colPosition" text="%common.pozycja" prefWidth="130.0" />
+            <TableColumn fx:id="colType" text="%segmentannotationdialog.typ" prefWidth="120.0" />
+            <TableColumn fx:id="colFrom" text="%segmentannotationdialog.od" prefWidth="120.0" />
+            <TableColumn fx:id="colTo" text="%segmentannotationdialog.do" prefWidth="120.0" />
+            <TableColumn fx:id="colDuration" text="%segmentannotationdialog.czas_min" prefWidth="70.0" />
+            <TableColumn fx:id="colConfidence" text="%segmentannotationdialog.pewnosc" prefWidth="70.0" />
+            <TableColumn fx:id="colNote" text="%segmentannotationdialog.sygnatura_nota" prefWidth="260.0" />
+            <TableColumn fx:id="colStatus" text="%common.status" prefWidth="140.0" />
          </columns>
          <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN" /></columnResizePolicy>
       </TableView>
@@ -48,12 +48,12 @@
       <!-- PRZYCISKI AKCJI -->
       <HBox spacing="10.0" alignment="CENTER_RIGHT">
          <children>
-            <Label fx:id="lblSelectionHint" text="Zaznacz segment, aby go potwierdzić lub odrzucić." style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
-            <Button fx:id="btnAccept" mnemonicParsing="false" onAction="#handleAccept" text="✓ Potwierdź" disable="true" style="-fx-pref-height: 36px; -fx-pref-width: 130px; -fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
-            <Button fx:id="btnReject" mnemonicParsing="false" onAction="#handleReject" text="✕ Odrzuć" disable="true" style="-fx-pref-height: 36px; -fx-pref-width: 130px; -fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold;" />
+            <Label fx:id="lblSelectionHint" text="%segmentannotationdialog.zaznacz_segment_aby_go" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
+            <Button fx:id="btnAccept" mnemonicParsing="false" onAction="#handleAccept" text="%segmentannotationdialog.potwierdz" disable="true" style="-fx-pref-height: 36px; -fx-pref-width: 130px; -fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;" />
+            <Button fx:id="btnReject" mnemonicParsing="false" onAction="#handleReject" text="%segmentannotationdialog.odrzuc" disable="true" style="-fx-pref-height: 36px; -fx-pref-width: 130px; -fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold;" />
             <Separator orientation="VERTICAL" />
-            <Button fx:id="btnAcceptAll" mnemonicParsing="false" onAction="#handleAcceptAll" text="Potwierdź wszystkie" style="-fx-pref-height: 36px;" />
-            <Button mnemonicParsing="false" onAction="#handleClose" text="Zamknij" style="-fx-pref-height: 36px; -fx-pref-width: 100px;" />
+            <Button fx:id="btnAcceptAll" mnemonicParsing="false" onAction="#handleAcceptAll" text="%segmentannotationdialog.potwierdz_wszystkie" style="-fx-pref-height: 36px;" />
+            <Button mnemonicParsing="false" onAction="#handleClose" text="%common.zamknij" style="-fx-pref-height: 36px; -fx-pref-width: 100px;" />
          </children>
       </HBox>
    </children>

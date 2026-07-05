@@ -13,8 +13,8 @@
       <!-- TYTUŁ OKNA -->
       <VBox spacing="5.0">
          <children>
-            <Label fx:id="dialogTitleLabel" styleClass="title-2" text="Konfiguracja Komory Chłodniczej" style="-fx-text-fill: #0f172a;" />
-            <Label fx:id="dialogSubtitleLabel" text="Wprowadź parametry techniczne i zakresy temperaturowe komory." style="-fx-text-fill: #64748b; -fx-font-size: 13px;" />
+            <Label fx:id="dialogTitleLabel" styleClass="title-2" text="%coolingchamberdialog.konfiguracja_komory_chlodniczej" style="-fx-text-fill: #0f172a;" />
+            <Label fx:id="dialogSubtitleLabel" text="%coolingchamberdialog.wprowadz_parametry_techniczne_i" style="-fx-text-fill: #64748b; -fx-font-size: 13px;" />
          </children>
       </VBox>
       
@@ -30,58 +30,58 @@
             <!-- Rząd 0: Nazwa Komory i Typ Komory -->
             <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
                <children>
-                  <Label text="Nazwa Komory *:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <TextField fx:id="chamberNameField" promptText="np. Komora Górna (Chłodziarka)" style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.nazwa_komory" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <TextField fx:id="chamberNameField" promptText="%coolingchamberdialog.np_komora_gorna_chlodziarka" style="-fx-pref-height: 38px;" />
                </children>
             </VBox>
             <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
                <children>
-                  <Label text="Typ Komory *:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <ComboBox fx:id="chamberTypeCombo" prefWidth="300.0" promptText="Wybierz typ komory..." style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.typ_komory" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <ComboBox fx:id="chamberTypeCombo" prefWidth="300.0" promptText="%coolingchamberdialog.wybierz_typ_komory" style="-fx-pref-height: 38px;" />
                </children>
             </VBox>
 
             <!-- Rząd 1: Przechowywany Materiał i Objętość (m³) -->
             <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
                <children>
-                  <Label text="Przechowywany Materiał:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <ComboBox fx:id="materialTypeCombo" prefWidth="300.0" promptText="Wybierz materiał..." style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.przechowywany_material" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <ComboBox fx:id="materialTypeCombo" prefWidth="300.0" promptText="%coolingchamberdialog.wybierz_material" style="-fx-pref-height: 38px;" />
                </children>
             </VBox>
             <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                <children>
-                  <Label text="Objętość komory (m³):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <TextField fx:id="volumeField" promptText="np. 1.25" style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.objetosc_komory_m3" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <TextField fx:id="volumeField" promptText="%coolingchamberdialog.np_1_25" style="-fx-pref-height: 38px;" />
                </children>
             </VBox>
 
             <!-- Rząd 2: Temp Min i Temp Max -->
             <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
                <children>
-                  <Label text="Robocza Temp. Minimalna (°C):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <TextField fx:id="tempMinField" promptText="np. 2.0" style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.robocza_temp_minimalna_c" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <TextField fx:id="tempMinField" promptText="%coolingchamberdialog.np_2_0" style="-fx-pref-height: 38px;" />
                </children>
             </VBox>
             <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                <children>
-                  <Label text="Robocza Temp. Maksymalna (°C):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <TextField fx:id="tempMaxField" promptText="np. 8.0" style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.robocza_temp_maksymalna_c" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <TextField fx:id="tempMaxField" promptText="%coolingchamberdialog.np_8_0" style="-fx-pref-height: 38px;" />
                </children>
             </VBox>
 
             <!-- Rząd 3: Źródło nawiewu / ewaporator (IMPL-EXC002) -->
             <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="3">
                <children>
-                  <Label text="Źródło nawiewu / ewaporator:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <ComboBox fx:id="airflowSourceCombo" prefWidth="300.0" promptText="Wybierz konfigurację nawiewu..." style="-fx-pref-height: 38px;" />
-                  <Label text="Upewnij się, że deklaracja odpowiada fizycznej konfiguracji komory." style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" wrapText="true" />
+                  <Label text="%coolingchamberdialog.zrodlo_nawiewu_ewaporator" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <ComboBox fx:id="airflowSourceCombo" prefWidth="300.0" promptText="%coolingchamberdialog.wybierz_konfiguracje_nawiewu" style="-fx-pref-height: 38px;" />
+                  <Label text="%coolingchamberdialog.upewnij_sie_ze_deklaracja" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;" wrapText="true" />
                </children>
             </VBox>
 
             <!-- Rząd 4: Pozycje CUSTOM (widoczne tylko dla konfiguracji ręcznej) -->
             <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.columnSpan="2">
                <children>
-                  <Label fx:id="customPositionsLabel" text="Pozycje bliskiego pola źródła (CUSTOM):" style="-fx-font-weight: bold; -fx-text-fill: #475569;" visible="false" managed="false" />
+                  <Label fx:id="customPositionsLabel" text="%coolingchamberdialog.pozycje_bliskiego_pola_zrodla" style="-fx-font-weight: bold; -fx-text-fill: #475569;" visible="false" managed="false" />
                   <FlowPane fx:id="customPositionsPane" hgap="15.0" vgap="8.0" visible="false" managed="false" />
                </children>
             </VBox>
@@ -89,8 +89,8 @@
             <!-- Rząd 5: Kategoria Indicator -->
             <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2">
                <children>
-                  <Label text="Klasyfikacja Kubatury PDA:" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
-                  <Label fx:id="volumeCategoryBadge" text="BRAK DANYCH" style="-fx-background-color: #cbd5e1; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 8px 15px; -fx-background-radius: 6px; -fx-alignment: CENTER;" />
+                  <Label text="%coolingchamberdialog.klasyfikacja_kubatury_pda" style="-fx-font-weight: bold; -fx-text-fill: #475569;" />
+                  <Label fx:id="volumeCategoryBadge" text="%coolingchamberdialog.brak_danych" style="-fx-background-color: #cbd5e1; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-padding: 8px 15px; -fx-background-radius: 6px; -fx-alignment: CENTER;" />
                </children>
             </VBox>
          </children>
@@ -99,18 +99,18 @@
       <!-- SEKCJA INFO METROLOGICZNEGO (PREMIUM CARD) -->
       <VBox spacing="10.0" style="-fx-background-color: #eff6ff; -fx-border-color: #bfdbfe; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 15px; -fx-border-width: 1px;">
          <children>
-            <Label text="💡 Wymagania Metrologiczne Walidacji Przestrzennej (PDA TR-64):" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a; -fx-font-size: 13px;" />
+            <Label text="%coolingchamberdialog.wymagania_metrologiczne_walidacji_przestrzennej" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a; -fx-font-size: 13px;" />
             <GridPane hgap="10.0" vgap="5.0">
                <columnConstraints>
                   <ColumnConstraints prefWidth="180.0" />
                   <ColumnConstraints hgrow="ALWAYS" />
                </columnConstraints>
                <children>
-                  <Label text="Kategoria komory:" style="-fx-font-weight: bold; -fx-text-fill: #1e40af;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                  <Label fx:id="pdaCategoryLabel" text="Wprowadź pojemność, aby zobaczyć sugerowaną klasę." style="-fx-text-fill: #1e40af;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <Label text="%coolingchamberdialog.kategoria_komory" style="-fx-font-weight: bold; -fx-text-fill: #1e40af;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                  <Label fx:id="pdaCategoryLabel" text="%coolingchamberdialog.wprowadz_pojemnosc_aby_zobaczyc" style="-fx-text-fill: #1e40af;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                   
-                  <Label text="Min. punkty pomiarowe:" style="-fx-font-weight: bold; -fx-text-fill: #1e40af;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                  <Label fx:id="pdaSensorLabel" text="Brak wytycznych czujników." style="-fx-text-fill: #1e40af;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Label text="%coolingchamberdialog.min_punkty_pomiarowe" style="-fx-font-weight: bold; -fx-text-fill: #1e40af;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                  <Label fx:id="pdaSensorLabel" text="%coolingchamberdialog.brak_wytycznych_czujnikow" style="-fx-text-fill: #1e40af;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                </children>
             </GridPane>
          </children>
@@ -119,8 +119,8 @@
       <!-- STOPKA - PRZYCISKI AKCJI -->
       <HBox alignment="CENTER_RIGHT" spacing="10.0">
          <children>
-            <Button mnemonicParsing="false" onAction="#handleCancel" text="Anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
-            <Button fx:id="saveButton" mnemonicParsing="false" onAction="#handleSave" text="Zatwierdź" styleClass="accent" style="-fx-pref-height: 38px; -fx-pref-width: 130px; -fx-font-weight: bold;" />
+            <Button mnemonicParsing="false" onAction="#handleCancel" text="%common.anuluj" style="-fx-pref-height: 38px; -fx-pref-width: 100px;" />
+            <Button fx:id="saveButton" mnemonicParsing="false" onAction="#handleSave" text="%coolingchamberdialog.zatwierdz" styleClass="accent" style="-fx-pref-height: 38px; -fx-pref-width: 130px; -fx-font-weight: bold;" />
          </children>
       </HBox>
    </children>

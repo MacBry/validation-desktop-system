@@ -17,12 +17,12 @@
               style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
                      -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
             <children>
-                <Label text="Działy Organizacyjne"
+                <Label text="%adminstructure.dzialy_organizacyjne"
                        style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #0f172a;" />
                 <TableView fx:id="deptTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
                     <columns>
-                        <TableColumn fx:id="deptNameColumn" prefWidth="250.0" text="Nazwa Działu" />
-                        <TableColumn fx:id="deptAbbrColumn" prefWidth="110.0" text="Skrót"
+                        <TableColumn fx:id="deptNameColumn" prefWidth="250.0" text="%adminstructure.nazwa_dzialu" />
+                        <TableColumn fx:id="deptAbbrColumn" prefWidth="110.0" text="%adminstructure.skrot"
                                      style="-fx-alignment: CENTER;" />
                     </columns>
                     <columnResizePolicy>
@@ -32,15 +32,15 @@
                 <HBox spacing="6.0">
                     <Button onAction="#handleAddDept" styleClass="button-sm"
                             style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;"
-                            text="+ Dodaj" />
+                            text="%adminstructure.dodaj" />
                     <Button onAction="#handleEditDept" styleClass="button-sm"
-                            style="-fx-pref-height: 30px;" text="Edytuj" />
+                            style="-fx-pref-height: 30px;" text="%common.edytuj" />
                     <Button onAction="#handleShowDeptAudit" styleClass="button-sm"
                             style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
-                            text="Audit" />
+                            text="%common.audit" />
                     <Button onAction="#handleDeleteDept" styleClass="button-sm"
                             style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;"
-                            text="Usuń" />
+                            text="%common.usun" />
                 </HBox>
             </children>
         </VBox>
@@ -50,12 +50,12 @@
               style="-fx-background-color: white; -fx-background-radius: 12px; -fx-padding: 20px;
                      -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
             <children>
-                <Label fx:id="labsTitleLabel" text="Pracownie Organizacyjne"
+                <Label fx:id="labsTitleLabel" text="%adminstructure.pracownie_organizacyjne"
                        style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #0f172a;" />
                 <TableView fx:id="labsTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
                     <columns>
-                        <TableColumn fx:id="labNameColumn" prefWidth="280.0" text="Nazwa Pracowni" />
-                        <TableColumn fx:id="labAbbrColumn" prefWidth="110.0" text="Skrót"
+                        <TableColumn fx:id="labNameColumn" prefWidth="280.0" text="%adminstructure.nazwa_pracowni" />
+                        <TableColumn fx:id="labAbbrColumn" prefWidth="110.0" text="%adminstructure.skrot"
                                      style="-fx-alignment: CENTER;" />
                     </columns>
                     <columnResizePolicy>
@@ -66,15 +66,15 @@
                     <Button fx:id="addLabButton" disable="true" onAction="#handleAddLab"
                             styleClass="button-sm"
                             style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold;"
-                            text="+ Dodaj Pracownię" />
+                            text="%adminstructure.dodaj_pracownie" />
                     <Button fx:id="editLabButton" disable="true" onAction="#handleEditLab"
-                            styleClass="button-sm" style="-fx-pref-height: 30px;" text="Edytuj" />
+                            styleClass="button-sm" style="-fx-pref-height: 30px;" text="%common.edytuj" />
                     <Button onAction="#handleShowLabAudit" styleClass="button-sm"
                             style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold;"
-                            text="Audit" />
+                            text="%common.audit" />
                     <Button onAction="#handleDeleteLab" styleClass="button-sm"
                             style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;"
-                            text="Usuń" />
+                            text="%common.usun" />
                 </HBox>
             </children>
         </VBox>

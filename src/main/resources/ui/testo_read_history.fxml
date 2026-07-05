@@ -19,8 +19,8 @@
    <children>
       <VBox spacing="5.0">
          <children>
-            <Label styleClass="title-1" text="Historia Odczytów Rejestratorów (GxP)" />
-            <Label styleClass="text-muted" text="Pełen rejestr audytowy (Audit Trail) wczytywania paczek pomiarowych z logerów Testo.">
+            <Label styleClass="title-1" text="%testoreadhistory.historia_odczytow_rejestratorow_gxp" />
+            <Label styleClass="text-muted" text="%testoreadhistory.pelen_rejestr_audytowy_audit">
                <font>
                   <Font size="14.0" />
                </font>
@@ -30,17 +30,17 @@
       
       <HBox alignment="CENTER_LEFT" spacing="10.0">
          <children>
-            <TextField fx:id="searchField" prefHeight="35.0" prefWidth="300.0" promptText="Szukaj po modelu, numerze SN, lub loginu..." />
+            <TextField fx:id="searchField" prefHeight="35.0" prefWidth="300.0" promptText="%testoreadhistory.szukaj_po_modelu_numerze" />
             <Region HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" onAction="#handleRefresh" prefHeight="35.0" styleClass="button-outlined" text="Odśwież Listę" />
+            <Button mnemonicParsing="false" onAction="#handleRefresh" prefHeight="35.0" styleClass="button-outlined" text="%common.odswiez_liste" />
          </children>
       </HBox>
       
       <TableView fx:id="historyTable" prefHeight="400.0" prefWidth="740.0" VBox.vgrow="ALWAYS">
         <columns>
-          <TableColumn fx:id="colTimestamp" prefWidth="160.0" text="Data i Czas Odczytu" />
-          <TableColumn fx:id="colUsername" prefWidth="140.0" text="Operator" />
-          <TableColumn fx:id="colDetails" prefWidth="430.0" text="Szczegóły pobranej paczki (Model, SN, Ilość Rekordów)" />
+          <TableColumn fx:id="colTimestamp" prefWidth="160.0" text="%testoreadhistory.data_i_czas_odczytu" />
+          <TableColumn fx:id="colUsername" prefWidth="140.0" text="%testoreadhistory.operator" />
+          <TableColumn fx:id="colDetails" prefWidth="430.0" text="%testoreadhistory.szczegoly_pobranej_paczki_model" />
         </columns>
       </TableView>
    </children>

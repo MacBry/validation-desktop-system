@@ -264,7 +264,7 @@ public class AdminUsersController {
     @FXML
     private void handleCreateUser(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
             UserDialogController ctrl = loader.getController();
@@ -283,7 +283,7 @@ public class AdminUsersController {
 
     private void openAudit(Consumer<UserAuditController> init) {
         net.rgielen.fxweaver.core.FxControllerAndView<UserAuditController, VBox> cav =
-                fxWeaver.load(UserAuditController.class);
+                fxWeaver.load(UserAuditController.class, com.mac.bry.desktop.config.I18n.getBundle());
         init.accept(cav.getController());
         Stage stage = new Stage();
         stage.setTitle("Historia Audytu");

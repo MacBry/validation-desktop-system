@@ -10,7 +10,7 @@
         <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
     </padding>
 
-    <Label styleClass="title-2" text="Dane Rejestratora" />
+    <Label styleClass="title-2" text="%thermorecorderdialog.dane_rejestratora" />
     
     <GridPane hgap="15" vgap="15">
         <columnConstraints>
@@ -18,29 +18,29 @@
             <ColumnConstraints hgrow="ALWAYS" />
         </columnConstraints>
 
-        <Label text="Numer Seryjny:" GridPane.rowIndex="0" />
+        <Label text="%thermorecorderdialog.numer_seryjny" GridPane.rowIndex="0" />
         <TextField fx:id="snField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-        <Label text="Model:" GridPane.rowIndex="1" />
+        <Label text="%common.model2" GridPane.rowIndex="1" />
         <ComboBox fx:id="modelComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-        <Label text="Status:" GridPane.rowIndex="2" />
+        <Label text="%common.status2" GridPane.rowIndex="2" />
         <ComboBox fx:id="statusComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-        <Label text="Rozdzielczość [°C]:" GridPane.rowIndex="3" />
-        <TextField fx:id="resolutionField" promptText="np. 0.1" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+        <Label text="%common.rozdzielczosc_c" GridPane.rowIndex="3" />
+        <TextField fx:id="resolutionField" promptText="%thermorecorderdialog.np_0_1" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-        <Label text="Dział:" GridPane.rowIndex="4" />
+        <Label text="%common.dzial2" GridPane.rowIndex="4" />
         <ComboBox fx:id="deptComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-        <Label text="Pracownia:" GridPane.rowIndex="5" />
+        <Label text="%common.pracownia2" GridPane.rowIndex="5" />
         <ComboBox fx:id="labComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5" />
     </GridPane>
 
     <Separator />
 
     <HBox alignment="CENTER_RIGHT" spacing="10">
-        <Button onAction="#handleCancel" text="Anuluj" />
-        <Button onAction="#handleSave" styleClass="accent" text="Zapisz" />
+        <Button onAction="#handleCancel" text="%common.anuluj" />
+        <Button onAction="#handleSave" styleClass="accent" text="%common.zapisz" />
     </HBox>
 </VBox>

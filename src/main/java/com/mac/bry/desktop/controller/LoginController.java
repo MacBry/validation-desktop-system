@@ -70,9 +70,27 @@ public class LoginController {
     @FXML private TextField resetEmailField;
     @FXML private Label resetMessageLabel;
 
+    // Przełącznik języka UI
+    @FXML private javafx.scene.control.ComboBox<String> languageCombo;
+
     @FXML
     public void initialize() {
         log.info("LoginController initialized");
+        com.mac.bry.desktop.config.LanguageSwitcher.configure(languageCombo, this::reloadLoginView);
+    }
+
+    /** Przeładowanie ekranu logowania po zmianie języka. */
+    private void reloadLoginView() {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"),
+                    com.mac.bry.desktop.config.I18n.getBundle());
+            fxmlLoader.setControllerFactory(applicationContext::getBean);
+            Parent root = fxmlLoader.load();
+            Stage stage = (Stage) languageCombo.getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (IOException e) {
+            log.error("Failed to reload login view after language switch", e);
+        }
     }
 
     @FXML
@@ -332,7 +350,7 @@ public class LoginController {
 
     private void loadForcePasswordChangeView(User user) {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/force_password_change.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/force_password_change.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             fxmlLoader.setControllerFactory(applicationContext::getBean);
             Parent root = fxmlLoader.load();
             

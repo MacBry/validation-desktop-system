@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Region?>
@@ -84,6 +85,7 @@
             
             <VBox spacing="5.0" styleClass="sidebar-user-area">
                <children>
+                  <ComboBox fx:id="languageCombo" prefWidth="220.0" style="-fx-font-size: 11px;" />
                   <Label fx:id="sidebarUserLabel" styleClass="sidebar-user-label" text="%main.user.loggedIn" />
                   <Label fx:id="sidebarRoleLabel" styleClass="sidebar-role-label" text="" wrapText="true" />
                   <Button mnemonicParsing="false" onAction="#showUserProfile" prefWidth="220.0" styleClass="accent" text="%main.user.editProfile">

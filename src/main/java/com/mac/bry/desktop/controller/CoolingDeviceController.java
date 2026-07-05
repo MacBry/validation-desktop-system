@@ -223,7 +223,7 @@ public class CoolingDeviceController {
 
     private void handleShowAudit(CoolingDevice device) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/user_audit.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 
@@ -248,7 +248,7 @@ public class CoolingDeviceController {
 
     private void openDeviceDialog(CoolingDevice device, boolean isEdit, boolean readOnly) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/cooling_device_dialog.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/cooling_device_dialog.fxml"), com.mac.bry.desktop.config.I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
 

@@ -31,12 +31,12 @@
     <!-- NAGŁÓWEK KREATORA -->
     <VBox spacing="5.0">
         <children>
-            <Label fx:id="lblWizardTitle" styleClass="title-1" text="Kreator Rewalidacji Komór Chłodniczych GxP">
+            <Label fx:id="lblWizardTitle" styleClass="title-1" text="%testorevalidation.kreator_rewalidacji_komor_chlodniczych">
                 <font>
                     <Font name="System Bold" size="24.0" />
                 </font>
             </Label>
-            <Label fx:id="lblWizardSubtitle" style="-fx-text-fill: -color-fg-muted;" text="Procedura rozkładu temperatur za pomocą siatki 8 sensorów (zgodnie z PDA TR-64)" />
+            <Label fx:id="lblWizardSubtitle" style="-fx-text-fill: -color-fg-muted;" text="%testorevalidation.procedura_rozkladu_temperatur_za" />
         </children>
     </VBox>
 
@@ -45,30 +45,30 @@
         <tabs>
             
             <!-- KROK 1: WYBÓR URZĄDZENIA I KOMORY -->
-            <Tab text="Krok 1: Urządzenie">
+            <Tab text="%testorevalidation.krok_1_urzadzenie">
                 <content>
                     <VBox spacing="20.0">
                         <padding>
                             <Insets top="15.0" />
                         </padding>
                         <children>
-                            <Label fx:id="lblStep1Header" text="Krok 1: Wybór Urządzenia i Komory" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
+                            <Label fx:id="lblStep1Header" text="%testorevalidation.krok_1_wybor_urzadzenia" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
                             
                             <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                                 <children>
                                     <!-- Lewy Panel: Formularz Wyboru -->
                                     <VBox spacing="15.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 20; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;" HBox.hgrow="ALWAYS">
                                         <children>
-                                            <Label text="Wybierz Urządzenie z Ewidencji" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
+                                            <Label text="%testorevalidation.wybierz_urzadzenie_z_ewidencji" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
                                             
                                             <VBox spacing="5.0">
-                                                <Label text="Urządzenie Chłodnicze:" />
-                                                <ComboBox fx:id="deviceComboBox" maxWidth="1.7976931348623157E308" promptText="Wybierz urządzenie chłodnicze..." />
+                                                <Label text="%testorevalidation.urzadzenie_chlodnicze" />
+                                                <ComboBox fx:id="deviceComboBox" maxWidth="1.7976931348623157E308" promptText="%testorevalidation.wybierz_urzadzenie_chlodnicze" />
                                             </VBox>
 
                                             <VBox spacing="5.0">
-                                                <Label text="Komora Urządzenia:" />
-                                                <ComboBox fx:id="chamberComboBox" maxWidth="1.7976931348623157E308" promptText="Wybierz komorę chłodniczą..." disable="true" />
+                                                <Label text="%testorevalidation.komora_urzadzenia" />
+                                                <ComboBox fx:id="chamberComboBox" maxWidth="1.7976931348623157E308" promptText="%testorevalidation.wybierz_komore_chlodnicza" disable="true" />
                                             </VBox>
 
                                             <!-- procedureTypeComboBox ukryty — typ procedury wybierany z paska bocznego -->
@@ -76,8 +76,8 @@
 
                                             <!-- Deklaracja trybu runu (DP-001 §4.5) -->
                                             <VBox spacing="5.0">
-                                                <Label text="Tryb runu (polityka werdyktu):" />
-                                                <ComboBox fx:id="runModeComboBox" maxWidth="1.7976931348623157E308" promptText="Wybierz tryb runu..." />
+                                                <Label text="%testorevalidation.tryb_runu_polityka_werdyktu" />
+                                                <ComboBox fx:id="runModeComboBox" maxWidth="1.7976931348623157E308" promptText="%testorevalidation.wybierz_tryb_runu" />
                                                 <Label fx:id="lblRunModeHint" wrapText="true" style="-fx-text-fill: -color-fg-muted; -fx-font-size: 11px;" />
                                             </VBox>
                                         </children>
@@ -86,7 +86,7 @@
                                     <!-- Prawy Panel: Podgląd Parametrów Komory -->
                                     <VBox spacing="15.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 20; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;" HBox.hgrow="ALWAYS">
                                         <children>
-                                            <Label text="Parametry Techniczne i Walidacyjne Komory" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
+                                            <Label text="%testorevalidation.parametry_techniczne_i_walidacyjne" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
                                             
                                             <GridPane hgap="10.0" vgap="10.0">
                                                 <columnConstraints>
@@ -94,29 +94,29 @@
                                                     <ColumnConstraints hgrow="ALWAYS" />
                                                 </columnConstraints>
                                                 <children>
-                                                    <Label text="Nazwa Komory:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                                    <TextField fx:id="chamberNameField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                                    <Label text="%testorevalidation.nazwa_komory" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                    <TextField fx:id="chamberNameField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                                                     
-                                                    <Label text="Typ Komory:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                                    <TextField fx:id="chamberTypeField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                    <Label text="%testorevalidation.typ_komory" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                    <TextField fx:id="chamberTypeField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                                                     
-                                                    <Label text="Zakres Temperatur pracy:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                                    <TextField fx:id="chamberRangeField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                    <Label text="%testorevalidation.zakres_temperatur_pracy" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                                    <TextField fx:id="chamberRangeField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                     
-                                                    <Label text="Kubatura komory:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                                    <TextField fx:id="chamberVolumeField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                    <Label text="%testorevalidation.kubatura_komory" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                                                    <TextField fx:id="chamberVolumeField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-                                            <Label text="Rekomendacja PDA TR-64:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-                                                    <TextField fx:id="chamberRecommendationField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="4" style="-fx-font-weight: bold; -fx-text-fill: -color-success-emphasis;" />
+                                            <Label text="%testorevalidation.rekomendacja_pda_tr_64" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                                                    <TextField fx:id="chamberRecommendationField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="4" style="-fx-font-weight: bold; -fx-text-fill: -color-success-emphasis;" />
 
-                                                    <Label text="Wymaga Mapowania:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-                                                    <TextField fx:id="chamberMappingRequiredField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                                    <Label text="%testorevalidation.wymaga_mapowania" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                                                    <TextField fx:id="chamberMappingRequiredField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="5" />
 
-                                                    <Label text="Ostatnie Mapowanie:" GridPane.columnIndex="0" GridPane.rowIndex="6" />
-                                                    <TextField fx:id="chamberLastMappingDateField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                                    <Label text="%testorevalidation.ostatnie_mapowanie" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                                                    <TextField fx:id="chamberLastMappingDateField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="6" />
 
-                                                    <Label text="Hotspot / Coldspot:" GridPane.columnIndex="0" GridPane.rowIndex="7" />
-                                                    <TextField fx:id="chamberMappingSpotsField" editable="false" promptText="brak wyboru..." GridPane.columnIndex="1" GridPane.rowIndex="7" />
+                                                    <Label text="%testorevalidation.hotspot_coldspot" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+                                                    <TextField fx:id="chamberMappingSpotsField" editable="false" promptText="%testorevalidation.brak_wyboru" GridPane.columnIndex="1" GridPane.rowIndex="7" />
                                                 </children>
                                             </GridPane>
                                         </children>
@@ -129,7 +129,7 @@
 
                             <HBox spacing="10.0" alignment="CENTER_RIGHT">
                                 <children>
-                                    <Button fx:id="btnStep1Next" mnemonicParsing="false" onAction="#handleStep1Next" styleClass="accent" text="Krok 2: Siatka Sensorów ➡️" disable="true" />
+                                    <Button fx:id="btnStep1Next" mnemonicParsing="false" onAction="#handleStep1Next" styleClass="accent" text="%testorevalidation.krok_2_siatka_sensorow" disable="true" />
                                 </children>
                             </HBox>
                         </children>
@@ -138,14 +138,14 @@
             </Tab>
 
             <!-- KROK 2: INTERAKTYWNE MAPOWANIE SIATKI ODCZYTÓW USB -->
-            <Tab text="Krok 2: Siatka Sensorów">
+            <Tab text="%testorevalidation.krok_2_siatka_sensorow2">
                 <content>
                     <VBox spacing="15.0">
                         <padding>
                             <Insets top="15.0" />
                         </padding>
                         <children>
-                            <Label text="Krok 2: Rozmieszczenie i Odczyt Rejestratorów" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
+                            <Label text="%testorevalidation.krok_2_rozmieszczenie_i" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
                             
                             <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                                 <children>
@@ -157,7 +157,7 @@
                                             <!-- SIATKA POZIOMU GÓRNEGO -->
                                             <VBox spacing="10.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 15; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;" VBox.vgrow="ALWAYS">
                                                 <children>
-                                                    <Label text="🟦 POZIOM GÓRNY KOMORY (GÓRA - 2x2)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                                    <Label text="%testorevalidation.poziom_gorny_komory_gora" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
                                                     <GridPane hgap="15.0" vgap="15.0" VBox.vgrow="ALWAYS">
                                                         <columnConstraints>
                                                             <ColumnConstraints hgrow="ALWAYS" percentWidth="50.0" />
@@ -168,10 +168,10 @@
                                                             <RowConstraints vgrow="ALWAYS" percentHeight="50.0" />
                                                         </rowConstraints>
                                                         <children>
-                                                            <Button fx:id="btnTopFrontLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="G-PL&#10;(Góra Przód Lewy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                                            <Button fx:id="btnTopFrontRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="G-PP&#10;(Góra Przód Prawy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                                            <Button fx:id="btnTopBackLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="G-TL&#10;(Góra Tył Lewy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                                            <Button fx:id="btnTopBackRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="G-TP&#10;(Góra Tył Prawy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                            <Button fx:id="btnTopFrontLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.g_pl_10_gora" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                            <Button fx:id="btnTopFrontRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.g_pp_10_gora" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                                            <Button fx:id="btnTopBackLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.g_tl_10_gora" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                            <Button fx:id="btnTopBackRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.g_tp_10_gora" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                                                         </children>
                                                     </GridPane>
                                                 </children>
@@ -180,7 +180,7 @@
                                             <!-- SIATKA POZIOMU DOLNEGO -->
                                             <VBox spacing="10.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 15; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;" VBox.vgrow="ALWAYS">
                                                 <children>
-                                                    <Label text="🟩 POZIOM DOLNY KOMORY (DÓŁ - 2x2)" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-success-emphasis;" />
+                                                    <Label text="%testorevalidation.poziom_dolny_komory_dol" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-success-emphasis;" />
                                                     <GridPane hgap="15.0" vgap="15.0" VBox.vgrow="ALWAYS">
                                                         <columnConstraints>
                                                             <ColumnConstraints hgrow="ALWAYS" percentWidth="50.0" />
@@ -191,10 +191,10 @@
                                                             <RowConstraints vgrow="ALWAYS" percentHeight="50.0" />
                                                         </rowConstraints>
                                                         <children>
-                                                            <Button fx:id="btnBottomFrontLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="D-PL&#10;(Dół Przód Lewy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                                            <Button fx:id="btnBottomFrontRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="D-PP&#10;(Dół Przód Prawy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                                            <Button fx:id="btnBottomBackLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="D-TL&#10;(Dół Tył Lewy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                                            <Button fx:id="btnBottomBackRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="D-TP&#10;(Dół Tył Prawy)" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                            <Button fx:id="btnBottomFrontLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.d_pl_10_dol" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                            <Button fx:id="btnBottomFrontRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.d_pp_10_dol" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                                            <Button fx:id="btnBottomBackLeft" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.d_tl_10_dol" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                            <Button fx:id="btnBottomBackRight" maxWidth="1.7976931348623157E308" maxHeight="1.7976931348623157E308" onAction="#handleGridClick" text="%testorevalidation.d_tp_10_dol" textAlignment="CENTER" style="-fx-font-weight: bold; -fx-cursor: hand;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                                                         </children>
                                                     </GridPane>
                                                 </children>
@@ -205,23 +205,23 @@
                                     <!-- Prawy Panel: Kontrola Sczytywania USB z kołyski / Symulacji / PDF -->
                                     <VBox fx:id="usbImportPanel" spacing="15.0" prefWidth="350.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 20; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;" disable="true">
                                         <children>
-                                            <Label text="📥 Wgrywanie Serii Pomiarowej" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
+                                            <Label text="%testorevalidation.wgrywanie_serii_pomiarowej" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
 
-                                            <Label fx:id="lblSelectedPosition" text="Wybrana pozycja: brak" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: -color-accent-emphasis;" />
+                                            <Label fx:id="lblSelectedPosition" text="%testorevalidation.wybrana_pozycja_brak" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: -color-accent-emphasis;" />
 
                                             <!-- Separator sekcji: Testo 174T -->
                                             <VBox spacing="6.0" style="-fx-background-color: -color-bg-default; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-subtle; -fx-border-width: 1px; -fx-border-radius: 6px;">
                                                 <children>
-                                                    <Label text="Testo 174T — Odczyt USB" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -color-fg-muted;" />
-                                                    <Button fx:id="btnReadUsb" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleReadPositionUsb" styleClass="accent" text="🔌 Odczytaj z kołyski USB (174T)" />
+                                                    <Label text="%testorevalidation.testo_174t_odczyt_usb" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -color-fg-muted;" />
+                                                    <Button fx:id="btnReadUsb" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleReadPositionUsb" styleClass="accent" text="%testorevalidation.odczytaj_z_kolyski_usb" />
                                                 </children>
                                             </VBox>
 
                                             <!-- Separator sekcji: Testo 184T -->
                                             <VBox spacing="6.0" style="-fx-background-color: -color-bg-default; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-subtle; -fx-border-width: 1px; -fx-border-radius: 6px;">
                                                 <children>
-                                                    <Label text="Testo 184T — Import PDF" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -color-fg-muted;" />
-                                                    <Button fx:id="btnReadPdf184" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleReadPdf184" text="📄 Importuj raport PDF (184T)" />
+                                                    <Label text="%testorevalidation.testo_184t_import_pdf" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -color-fg-muted;" />
+                                                    <Button fx:id="btnReadPdf184" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleReadPdf184" text="%testorevalidation.importuj_raport_pdf_184t" />
                                                 </children>
                                             </VBox>
 
@@ -232,7 +232,7 @@
                                                 </children>
                                             </HBox>
 
-                                            <Label text="Szczegóły wczytanego sensora:" style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                            <Label text="%testorevalidation.szczegoly_wczytanego_sensora" style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                             
                                             <GridPane hgap="8.0" vgap="8.0">
                                                 <columnConstraints>
@@ -240,27 +240,27 @@
                                                     <ColumnConstraints hgrow="ALWAYS" />
                                                 </columnConstraints>
                                                 <children>
-                                                    <Label text="Model:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                                    <TextField fx:id="txtSensorModel" editable="false" promptText="oczekiwanie..." GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                                    <Label text="%common.model2" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                                    <TextField fx:id="txtSensorModel" editable="false" promptText="%testorevalidation.oczekiwanie" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                                                    <Label text="Numer seryjny:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                                    <TextField fx:id="txtSensorSn" editable="false" promptText="oczekiwanie..." GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                    <Label text="%common.numer_seryjny" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                                    <TextField fx:id="txtSensorSn" editable="false" promptText="%testorevalidation.oczekiwanie" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                                                    <Label text="Stan baterii:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                                    <TextField fx:id="txtSensorBattery" editable="false" promptText="oczekiwanie..." GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                    <Label text="%testorevalidation.stan_baterii" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                                    <TextField fx:id="txtSensorBattery" editable="false" promptText="%testorevalidation.oczekiwanie" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                                                    <Label text="Świadectwo:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                                    <TextField fx:id="txtSensorCert" editable="false" promptText="oczekiwanie..." GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                    <Label text="%testorevalidation.swiadectwo" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                                                    <TextField fx:id="txtSensorCert" editable="false" promptText="%testorevalidation.oczekiwanie" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-                                                    <Label text="Ważność certyfikatu:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-                                                    <TextField fx:id="txtSensorCertValid" editable="false" promptText="oczekiwanie..." GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                                    <Label text="%testorevalidation.waznosc_certyfikatu" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                                                    <TextField fx:id="txtSensorCertValid" editable="false" promptText="%testorevalidation.oczekiwanie" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-                                                    <Label text="Liczba punktów:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-                                                    <TextField fx:id="txtSensorPointCount" editable="false" promptText="oczekiwanie..." GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                                    <Label text="%testorevalidation.liczba_punktow" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                                                    <TextField fx:id="txtSensorPointCount" editable="false" promptText="%testorevalidation.oczekiwanie" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                                                 </children>
                                             </GridPane>
                                             
-                                            <Label fx:id="lblReadStatus" text="Wybierz pozycję na siatce i kliknij odczyt." style="-fx-text-fill: -color-fg-muted;" wrapText="true" />
+                                            <Label fx:id="lblReadStatus" text="%testorevalidation.wybierz_pozycje_na_siatce" style="-fx-text-fill: -color-fg-muted;" wrapText="true" />
                                         </children>
                                     </VBox>
                                 </children>
@@ -268,10 +268,10 @@
 
                             <HBox spacing="10.0" alignment="CENTER_RIGHT">
                                 <children>
-                                    <Button mnemonicParsing="false" onAction="#handleStep2Back" text="⬅️ Krok 1: Wstecz" />
+                                    <Button mnemonicParsing="false" onAction="#handleStep2Back" text="%testorevalidation.krok_1_wstecz" />
                                     <Region HBox.hgrow="ALWAYS" />
-                                    <Label fx:id="lblMappingSummary" text="Wgrano: 0 z 8 serii pomiarowych." style="-fx-font-weight: bold; -fx-text-fill: -color-fg-muted;" />
-                                    <Button fx:id="btnStep2Next" mnemonicParsing="false" onAction="#handleStep2Next" styleClass="accent" text="Krok 3: Analiza i Raport ➡️" disable="true" />
+                                    <Label fx:id="lblMappingSummary" text="%testorevalidation.wgrano_0_z_8" style="-fx-font-weight: bold; -fx-text-fill: -color-fg-muted;" />
+                                    <Button fx:id="btnStep2Next" mnemonicParsing="false" onAction="#handleStep2Next" styleClass="accent" text="%testorevalidation.krok_3_analiza_i" disable="true" />
                                 </children>
                             </HBox>
                         </children>
@@ -280,14 +280,14 @@
             </Tab>
 
             <!-- KROK 3: PODSUMOWANIE SERII, MULTI-KANAŁOWY WYKRES I PDF -->
-            <Tab text="Krok 3: Raport">
+            <Tab text="%testorevalidation.krok_3_raport">
                 <content>
                     <VBox spacing="15.0">
                         <padding>
                             <Insets top="15.0" />
                         </padding>
                         <children>
-                            <Label text="Krok 3: Kompilacja Metrologiczna, Analiza i Generowanie Raportu GxP" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
+                            <Label text="%testorevalidation.krok_3_kompilacja_metrologiczna" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -color-accent-emphasis;" />
                             
                             <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                                 <children>
@@ -299,7 +299,7 @@
                                             <!-- MULTI-KANAŁOWY WYKRES -->
                                             <VBox spacing="5.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 15; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
                                                 <children>
-                                                    <Label text="Wielokanałowy Rozkład Temperatur w Komorze (°C) - Podgląd" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -color-accent-emphasis;" />
+                                                    <Label text="%testorevalidation.wielokanalowy_rozklad_temperatur_w" style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -color-accent-emphasis;" />
                                                     <LineChart fx:id="multiChannelChart" prefHeight="260.0" legendVisible="true" createSymbols="true" styleClass="premium-line-chart">
                                                         <xAxis>
                                                             <NumberAxis fx:id="xAxisTime" side="BOTTOM" forceZeroInRange="false" minorTickVisible="false" />
@@ -314,19 +314,19 @@
                                             <!-- PODSUMOWANIE SENSORÓW I METROLOGII (TABPANE) -->
                                             <TabPane fx:id="summaryTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
                                                 <tabs>
-                                                    <Tab text="Traceability Sensorów">
+                                                    <Tab text="%testorevalidation.traceability_sensorow">
                                                         <content>
                                                             <VBox spacing="10.0" style="-fx-padding: 10 0 0 0;">
                                                                 <children>
                                                                     <TableView fx:id="summaryTableView" VBox.vgrow="ALWAYS" styleClass="audit-table">
                                                                         <columns>
-                                                                            <TableColumn fx:id="colPosName" prefWidth="150.0" text="Fizyczna Pozycja" reorderable="false" />
-                                                                            <TableColumn fx:id="colPosSn" prefWidth="120.0" text="Rejestrator S/N" reorderable="false" />
-                                                                            <TableColumn fx:id="colPosModel" prefWidth="140.0" text="Model" reorderable="false" />
-                                                                            <TableColumn fx:id="colPosCert" prefWidth="150.0" text="Certyfikat Wzorcowania" reorderable="false" />
-                                                                            <TableColumn fx:id="colPosCertValid" prefWidth="140.0" text="Ważność Certyfikatu" reorderable="false" />
-                                                                            <TableColumn fx:id="colPosCount" prefWidth="100.0" text="Pomiary" reorderable="false" />
-                                                                            <TableColumn fx:id="colPosStatus" prefWidth="110.0" text="Status" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosName" prefWidth="150.0" text="%common.fizyczna_pozycja" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosSn" prefWidth="120.0" text="%testorevalidation.rejestrator_s_n" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosModel" prefWidth="140.0" text="%common.model" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosCert" prefWidth="150.0" text="%testorevalidation.certyfikat_wzorcowania" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosCertValid" prefWidth="140.0" text="%testorevalidation.waznosc_certyfikatu2" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosCount" prefWidth="100.0" text="%common.pomiary" reorderable="false" />
+                                                                            <TableColumn fx:id="colPosStatus" prefWidth="110.0" text="%common.status" reorderable="false" />
                                                                         </columns>
                                                                         <columnResizePolicy>
                                                                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -336,21 +336,21 @@
                                                             </VBox>
                                                         </content>
                                                     </Tab>
-                                                    <Tab text="Analiza Metrologiczna GxP">
+                                                    <Tab text="%testorevalidation.analiza_metrologiczna_gxp">
                                                         <content>
                                                             <VBox spacing="10.0" style="-fx-padding: 10 0 0 0;">
                                                                 <children>
                                                                     <TableView fx:id="metrologicalTableView" VBox.vgrow="ALWAYS" styleClass="audit-table">
                                                                         <columns>
-                                                                            <TableColumn fx:id="colMetroPos" prefWidth="120.0" text="Pozycja" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroSn" prefWidth="110.0" text="S/N" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroMin" prefWidth="80.0" text="T min [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroMax" prefWidth="80.0" text="T max [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroAvg" prefWidth="80.0" text="T avg [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroMkt" prefWidth="80.0" text="MKT [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroUnc" prefWidth="90.0" text="Niepewność U" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroSpikes" prefWidth="80.0" text="Szpilki" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                            <TableColumn fx:id="colMetroDrift" prefWidth="110.0" text="Klasyfikacja" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroPos" prefWidth="120.0" text="%common.pozycja" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroSn" prefWidth="110.0" text="%common.s_n" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroMin" prefWidth="80.0" text="%common.t_min_c" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroMax" prefWidth="80.0" text="%common.t_max_c" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroAvg" prefWidth="80.0" text="%common.t_avg_c" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroMkt" prefWidth="80.0" text="%common.mkt_c" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroUnc" prefWidth="90.0" text="%common.niepewnosc_u" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroSpikes" prefWidth="80.0" text="%common.szpilki" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                            <TableColumn fx:id="colMetroDrift" prefWidth="110.0" text="%common.klasyfikacja" style="-fx-alignment: CENTER;" reorderable="false" />
                                                                         </columns>
                                                                         <columnResizePolicy>
                                                                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -360,22 +360,22 @@
                                                             </VBox>
                                                         </content>
                                                     </Tab>
-                                                     <Tab text="Analiza Statystyczna i SPC">
+                                                     <Tab text="%testorevalidation.analiza_statystyczna_i_spc">
                                                          <content>
                                                              <VBox spacing="10.0" style="-fx-padding: 10 0 0 0;">
                                                                  <children>
                                                                      <TableView fx:id="statsTableView" VBox.vgrow="ALWAYS" styleClass="audit-table">
                                                                          <columns>
-                                                                             <TableColumn fx:id="colStatsPos" prefWidth="120.0" text="Pozycja" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsMedian" prefWidth="85.0" text="Mediana [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsStdDev" prefWidth="90.0" text="Odchylenie [°C]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsRsd" prefWidth="85.0" text="RSD [%]" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsSkewness" prefWidth="80.0" text="Skośność" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsKurtosis" prefWidth="80.0" text="Kurtoza" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsCp" prefWidth="70.0" text="Cp" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsCpk" prefWidth="70.0" text="Cpk" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsJbPVal" prefWidth="100.0" text="Normalność (p)" style="-fx-alignment: CENTER;" reorderable="false" />
-                                                                             <TableColumn fx:id="colStatsAction" prefWidth="120.0" text="Diagnostyka" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsPos" prefWidth="120.0" text="%common.pozycja" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsMedian" prefWidth="85.0" text="%testorevalidation.mediana_c" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsStdDev" prefWidth="90.0" text="%testorevalidation.odchylenie_c" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsRsd" prefWidth="85.0" text="%testorevalidation.rsd" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsSkewness" prefWidth="80.0" text="%testorevalidation.skosnosc" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsKurtosis" prefWidth="80.0" text="%testorevalidation.kurtoza" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsCp" prefWidth="70.0" text="%testorevalidation.cp" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsCpk" prefWidth="70.0" text="%testorevalidation.cpk" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsJbPVal" prefWidth="100.0" text="%testorevalidation.normalnosc_p" style="-fx-alignment: CENTER;" reorderable="false" />
+                                                                             <TableColumn fx:id="colStatsAction" prefWidth="120.0" text="%testorevalidation.diagnostyka" style="-fx-alignment: CENTER;" reorderable="false" />
                                                                          </columns>
                                                                          <columnResizePolicy>
                                                                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -385,12 +385,12 @@
                                                              </VBox>
                                                          </content>
                                                       </Tab>
-                                                      <Tab text="Jednorodność Przestrzenna (ΔT)">
+                                                      <Tab text="%testorevalidation.jednorodnosc_przestrzenna_t">
                                                            <content>
                                                                <fx:include source="tab_spatial.fxml" fx:id="spatialTab" />
                                                            </content>
                                                        </Tab>
-                                                       <Tab text="Testowanie Hipotez GxP">
+                                                       <Tab text="%testorevalidation.testowanie_hipotez_gxp">
                                                            <content>
                                                                <fx:include source="tab_hypothesis.fxml" fx:id="hypothesisTab" />
                                                            </content>
@@ -403,28 +403,28 @@
                                      <!-- Prawy Panel: Testy Walidacyjne Spójności & GxP Meta -->
                                      <VBox spacing="15.0" prefWidth="350.0" style="-fx-background-color: -color-bg-overlay; -fx-padding: 20; -fx-background-radius: 8px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
                                          <children>
-                                            <Label text="Procedury Walidacyjne Spójności" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
+                                            <Label text="%testorevalidation.procedury_walidacyjne_spojnosci" style="-fx-font-weight: bold; -fx-font-size: 13px;" />
                                             
                                             <VBox spacing="12.0" style="-fx-background-color: -color-bg-default; -fx-padding: 15; -fx-background-radius: 6px;">
                                                 <children>
                                                     <VBox spacing="3.0">
-                                                        <Label text="Test 1: Identyczny Interwał (3h)" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
-                                                        <Label fx:id="lblTestInterval" text="Weryfikacja..." style="-fx-font-weight: bold;" />
+                                                        <Label text="%testorevalidation.test_1_identyczny_interwal" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+                                                        <Label fx:id="lblTestInterval" text="%testorevalidation.weryfikacja" style="-fx-font-weight: bold;" />
                                                     </VBox>
                                                     
                                                     <VBox spacing="3.0">
-                                                        <Label text="Test 2: Identyczna Liczba Punktów" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
-                                                        <Label fx:id="lblTestPoints" text="Weryfikacja..." style="-fx-font-weight: bold;" />
+                                                        <Label text="%testorevalidation.test_2_identyczna_liczba" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+                                                        <Label fx:id="lblTestPoints" text="%testorevalidation.weryfikacja" style="-fx-font-weight: bold;" />
                                                     </VBox>
                                                     
                                                     <VBox spacing="3.0">
-                                                        <Label text="Test 3: Identyczny Start Pomiara" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
-                                                        <Label fx:id="lblTestStart" text="Weryfikacja..." style="-fx-font-weight: bold;" />
+                                                        <Label text="%testorevalidation.test_3_identyczny_start" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+                                                        <Label fx:id="lblTestStart" text="%testorevalidation.weryfikacja" style="-fx-font-weight: bold;" />
                                                     </VBox>
 
                                                     <VBox spacing="3.0">
-                                                        <Label text="Test 4: Ważność Świadectw Wzorcowania" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
-                                                        <Label fx:id="lblTestCertificates" text="Weryfikacja..." style="-fx-font-weight: bold;" />
+                                                        <Label text="%testorevalidation.test_4_waznosc_swiadectw" style="-fx-font-size: 11px; -fx-font-weight: bold;" />
+                                                        <Label fx:id="lblTestCertificates" text="%testorevalidation.weryfikacja" style="-fx-font-weight: bold;" />
                                                     </VBox>
                                                 </children>
                                             </VBox>
@@ -433,13 +433,13 @@
                                             <VBox fx:id="mappingResultBox" spacing="10.0" managed="false" visible="false"
                                                   style="-fx-background-color: -color-bg-default; -fx-padding: 15; -fx-background-radius: 6px; -fx-border-color: #dc6803; -fx-border-width: 1px; -fx-border-radius: 6px;">
                                                 <children>
-                                                    <Label text="🗺️ Wyniki Analizy Mapowania PDA TR-64"
+                                                    <Label text="%testorevalidation.wyniki_analizy_mapowania_pda"
                                                            style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #dc6803;" />
 
                                                     <!-- HOTSPOT -->
                                                     <VBox spacing="5.0" style="-fx-background-color: rgba(220,104,3,0.08); -fx-padding: 10; -fx-background-radius: 4px;">
                                                         <children>
-                                                            <Label text="🔴 HOTSPOT — Punkt Najcieplejszy"
+                                                            <Label text="%testorevalidation.hotspot_punkt_najcieplejszy"
                                                                    style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #dc6803;" />
                                                             <GridPane hgap="8.0" vgap="4.0">
                                                                 <columnConstraints>
@@ -447,13 +447,13 @@
                                                                     <ColumnConstraints hgrow="ALWAYS" />
                                                                 </columnConstraints>
                                                                 <children>
-                                                                    <Label text="Lokalizacja:" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                                                    <Label text="%testorevalidation.lokalizacja" GridPane.columnIndex="0" GridPane.rowIndex="0"
                                                                            style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                                                     <Label fx:id="lblHotspotLocation" text="—"
                                                                            GridPane.columnIndex="1" GridPane.rowIndex="0"
                                                                            style="-fx-font-weight: bold; -fx-font-size: 11px;"
                                                                            wrapText="true" />
-                                                                    <Label text="T max:" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                                                    <Label text="%testorevalidation.t_max" GridPane.columnIndex="0" GridPane.rowIndex="1"
                                                                            style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                                                     <Label fx:id="lblHotspotTemp" text="—"
                                                                            GridPane.columnIndex="1" GridPane.rowIndex="1"
@@ -466,7 +466,7 @@
                                                     <!-- COLDSPOT -->
                                                     <VBox spacing="5.0" style="-fx-background-color: rgba(30,106,180,0.08); -fx-padding: 10; -fx-background-radius: 4px;">
                                                         <children>
-                                                            <Label text="🔵 COLDSPOT — Punkt Najzimniejszy"
+                                                            <Label text="%testorevalidation.coldspot_punkt_najzimniejszy"
                                                                    style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #1e6ab4;" />
                                                             <GridPane hgap="8.0" vgap="4.0">
                                                                 <columnConstraints>
@@ -474,13 +474,13 @@
                                                                     <ColumnConstraints hgrow="ALWAYS" />
                                                                 </columnConstraints>
                                                                 <children>
-                                                                    <Label text="Lokalizacja:" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                                                    <Label text="%testorevalidation.lokalizacja" GridPane.columnIndex="0" GridPane.rowIndex="0"
                                                                            style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                                                     <Label fx:id="lblColdspotLocation" text="—"
                                                                            GridPane.columnIndex="1" GridPane.rowIndex="0"
                                                                            style="-fx-font-weight: bold; -fx-font-size: 11px;"
                                                                            wrapText="true" />
-                                                                    <Label text="T min:" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                                                    <Label text="%testorevalidation.t_min" GridPane.columnIndex="0" GridPane.rowIndex="1"
                                                                            style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                                                     <Label fx:id="lblColdspotTemp" text="—"
                                                                            GridPane.columnIndex="1" GridPane.rowIndex="1"
@@ -493,7 +493,7 @@
                                                     <!-- ROZPIĘTOŚĆ -->
                                                     <HBox spacing="8.0" alignment="CENTER_LEFT">
                                                         <children>
-                                                            <Label text="Rozpiętość ΔT:" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                                            <Label text="%testorevalidation.rozpietosc_t" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                                             <Label fx:id="lblMappingDeltaT" text="—"
                                                                    style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: -color-fg-default;" />
                                                         </children>
@@ -501,13 +501,13 @@
                                                 </children>
                                             </VBox>
 
-                                            <Label text="Bezpieczeństwo i Integralność GxP" style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                            <Label text="%testorevalidation.bezpieczenstwo_i_integralnosc_gxp" style="-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                             
-                                            <Label text="Skompilowany raport będzie zawierać kryptograficzną sumę kontrolną SHA-256 z kompletnej macierzy pomiarowej wszystkich wgranych narożników komory chłodniczej, co gwarantuje pełną zgodność z wytycznymi FDA 21 CFR Part 11." style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" wrapText="true" />
+                                            <Label text="%testorevalidation.skompilowany_raport_bedzie_zawierac" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" wrapText="true" />
                                             
                                             <Region VBox.vgrow="ALWAYS" />
                                             
-                                            <Label fx:id="lblValidationSummary" text="Weryfikacja spójności danych..." style="-fx-font-weight: bold; -fx-text-fill: -color-success-emphasis;" wrapText="true" />
+                                            <Label fx:id="lblValidationSummary" text="%testorevalidation.weryfikacja_spojnosci_danych" style="-fx-font-weight: bold; -fx-text-fill: -color-success-emphasis;" wrapText="true" />
                                         </children>
                                     </VBox>
                                 </children>
@@ -515,10 +515,10 @@
 
                             <HBox spacing="10.0" alignment="CENTER_RIGHT">
                                 <children>
-                                    <Button mnemonicParsing="false" onAction="#handleStep3Back" text="⬅️ Krok 2: Wstecz" />
+                                    <Button mnemonicParsing="false" onAction="#handleStep3Back" text="%testorevalidation.krok_2_wstecz" />
                                     <Region HBox.hgrow="ALWAYS" />
-                                    <Button fx:id="btnAnnotateSegments" mnemonicParsing="false" onAction="#handleAnnotateSegments" text="🔍 Przegląd Zdarzeń (adnotacje)" />
-                                    <Button fx:id="btnSaveAndGenerate" mnemonicParsing="false" onAction="#handleSaveAndGeneratePdf" styleClass="accent" text="📊 Zapisz Sesję i Generuj Komplet Dokumentów (ZIP)" />
+                                    <Button fx:id="btnAnnotateSegments" mnemonicParsing="false" onAction="#handleAnnotateSegments" text="%testorevalidation.przeglad_zdarzen_adnotacje" />
+                                    <Button fx:id="btnSaveAndGenerate" mnemonicParsing="false" onAction="#handleSaveAndGeneratePdf" styleClass="accent" text="%testorevalidation.zapisz_sesje_i_generuj" />
                                 </children>
                             </HBox>
                         </children>

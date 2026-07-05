@@ -14,23 +14,23 @@
     <children>
         <HBox alignment="CENTER_LEFT" spacing="20">
             <VBox HBox.hgrow="ALWAYS">
-                <Label text="Dziennik Zdarzeń Systemowych"
+                <Label text="%adminlogs.dziennik_zdarzen_systemowych"
                        style="-fx-font-weight: bold; -fx-font-size: 22px; -fx-text-fill: #0f172a;" />
                 <Label styleClass="text-muted"
-                       text="Historia logowań, zmian uprawnień oraz krytycznych zdarzeń bezpieczeństwa." />
+                       text="%adminlogs.historia_logowan_zmian_uprawnien" />
             </VBox>
             <Button mnemonicParsing="false" onAction="#refreshAccessLogs"
-                    text="Odśwież Dziennik"
+                    text="%adminlogs.odswiez_dziennik"
                     style="-fx-pref-height: 38px; -fx-font-weight: bold;"
                     styleClass="accent" />
         </HBox>
 
         <TableView fx:id="accessLogsTable" VBox.vgrow="ALWAYS" styleClass="audit-table">
             <columns>
-                <TableColumn fx:id="logTimestampColumn" prefWidth="180.0" text="Czas zdarzenia" />
-                <TableColumn fx:id="logUsernameColumn" prefWidth="130.0" text="Użytkownik" />
-                <TableColumn fx:id="logActionColumn" prefWidth="160.0" text="Zdarzenie" />
-                <TableColumn fx:id="logDetailsColumn" prefWidth="500.0" text="Szczegółowe dane zdarzenia" />
+                <TableColumn fx:id="logTimestampColumn" prefWidth="180.0" text="%adminlogs.czas_zdarzenia" />
+                <TableColumn fx:id="logUsernameColumn" prefWidth="130.0" text="%common.uzytkownik" />
+                <TableColumn fx:id="logActionColumn" prefWidth="160.0" text="%adminlogs.zdarzenie" />
+                <TableColumn fx:id="logDetailsColumn" prefWidth="500.0" text="%adminlogs.szczegolowe_dane_zdarzenia" />
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
