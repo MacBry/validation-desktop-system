@@ -17,6 +17,7 @@ import com.mac.bry.desktop.model.regime.MeasurementSegment;
 import com.mac.bry.desktop.model.regime.SegmentType;
 import com.mac.bry.desktop.repository.ValidationPlanNumberRepository;
 import com.mac.bry.desktop.service.pdf.PdfStyleHelper;
+import com.mac.bry.desktop.service.regime.CausalHypothesisGenerator;
 import com.mac.bry.desktop.service.stats.HypothesisTestingService;
 import com.mac.bry.desktop.service.stats.SpcEngine;
 
@@ -231,6 +232,29 @@ public class RegimeAwareSectionRenderer implements PdfSectionRenderer {
                 eventTable.addCell(PdfStyleHelper.createCell(seg.getNote() != null ? seg.getNote() : "–", PdfStyleHelper.getCellFont(), Color.WHITE, Element.ALIGN_LEFT));
             }
             document.add(eventTable);
+
+            // 4. Hipotezy przyczynowe (DP-001 §4.6, Faza 5) — zdania sterowane
+            //    policzonymi cechami sygnału zamiast szablonowego akapitu hipotez
+            Paragraph subHeaderHypotheses = new Paragraph(
+                    "Hipotezy przyczynowe (interpretacja czasowo-przyczynowa)", PdfStyleHelper.getLabelFont());
+            subHeaderHypotheses.setSpacingAfter(6);
+            document.add(subHeaderHypotheses);
+
+            List<String> hypotheses = new CausalHypothesisGenerator().generateHypotheses(eventSegments);
+            com.lowagie.text.List hypothesisList = new com.lowagie.text.List(false, 12);
+            for (String hypothesis : hypotheses) {
+                hypothesisList.add(new com.lowagie.text.ListItem(hypothesis, PdfStyleHelper.getCellFont()));
+            }
+            document.add(hypothesisList);
+
+            Paragraph hypothesesFootnote = new Paragraph(
+                    "Hipotezy wygenerowane deterministycznie z cech sygnału (czas, amplituda, czas powrotu, "
+                            + "sygnatura przestrzenna). Zdarzenia oznaczone [ODRZUCONE] zostały zweryfikowane "
+                            + "negatywnie przez operatora i wykluczone ze statystyk warunkowych.",
+                    PdfStyleHelper.getFooterFont());
+            hypothesesFootnote.setSpacingBefore(6);
+            hypothesesFootnote.setSpacingAfter(15);
+            document.add(hypothesesFootnote);
         }
 
         // Nowa strona na kolejną sekcję
