@@ -91,11 +91,17 @@ public class RevalidationReportPdfRenderer {
         for (RevalidationSession.GridPosition pos : activePositions) {
             RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
             if (d != null && d.getSeries() != null) {
-                var detection = regimeDetectionService.detect(d.getSeries(), allChannels);
-                session.getDetectedSegmentsMap().put(pos, detection.getSegments());
+                // Reuse segmentów z sesji, jeśli operator już je przeglądał (Faza 4) —
+                // ponowna detekcja nadpisałaby adnotacje human-in-the-loop
+                var segments = session.getDetectedSegmentsMap().get(pos);
+                if (segments == null) {
+                    var detection = regimeDetectionService.detect(d.getSeries(), allChannels);
+                    segments = detection.getSegments();
+                    session.getDetectedSegmentsMap().put(pos, segments);
+                }
 
                 var conditionalDto = regimeAwareStatsService.calculateConditionalStatistics(
-                        d.getSeries(), detection.getSegments(), session.getRunMode(), lsl, usl);
+                        d.getSeries(), segments, session.getRunMode(), lsl, usl);
                 session.getConditionalStatsMap().put(pos, conditionalDto);
             }
         }

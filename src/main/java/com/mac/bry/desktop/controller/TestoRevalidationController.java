@@ -708,6 +708,16 @@ public class TestoRevalidationController {
         com.mac.bry.desktop.controller.helper.TestoRevalidationDialogHelper.showDiagnosticsDialog(row, session, applicationContext, statsTableView.getScene().getWindow());
     }
 
+    /**
+     * Otwiera dialog przeglądu i adnotacji wykrytych segmentów (DP-001 Faza 4).
+     * Adnotacje operatora są zachowywane w sesji i respektowane przy generowaniu raportu.
+     */
+    @FXML
+    private void handleAnnotateSegments() {
+        com.mac.bry.desktop.controller.helper.TestoRevalidationDialogHelper.showSegmentAnnotationDialog(
+                session, applicationContext, statsTableView.getScene().getWindow());
+    }
+
     private void buildSummaryAndValidation() {
         try {
             summaryRows.clear(); metrologicalRows.clear(); statsRows.clear(); multiChannelChart.getData().clear();

@@ -517,6 +517,7 @@
                                 <children>
                                     <Button mnemonicParsing="false" onAction="#handleStep3Back" text="⬅️ Krok 2: Wstecz" />
                                     <Region HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="btnAnnotateSegments" mnemonicParsing="false" onAction="#handleAnnotateSegments" text="🔍 Przegląd Zdarzeń (adnotacje)" />
                                     <Button fx:id="btnSaveAndGenerate" mnemonicParsing="false" onAction="#handleSaveAndGeneratePdf" styleClass="accent" text="📊 Zapisz Sesję i Generuj Komplet Dokumentów (ZIP)" />
                                 </children>
                             </HBox>

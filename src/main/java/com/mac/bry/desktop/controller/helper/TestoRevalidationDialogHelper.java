@@ -18,6 +18,44 @@ public class TestoRevalidationDialogHelper {
 
     private static final Logger log = LoggerFactory.getLogger(TestoRevalidationDialogHelper.class);
 
+    /**
+     * Otwiera dialog przeglądu i adnotacji segmentów (DP-001 Faza 4, human-in-the-loop).
+     * Detekcja uruchamiana wewnątrz kontrolera dialogu; istniejące adnotacje zachowywane.
+     */
+    public static void showSegmentAnnotationDialog(RevalidationSession session, ApplicationContext applicationContext, Window ownerWindow) {
+        if (session == null || session.getAssignedPositions().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Brak danych");
+            alert.setHeaderText(null);
+            alert.setContentText("Brak wczytanych serii pomiarowych — wczytaj dane rejestratorów w kroku 2.");
+            alert.showAndWait();
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(TestoRevalidationDialogHelper.class.getResource("/ui/segment_annotation_dialog.fxml"));
+            loader.setControllerFactory(applicationContext::getBean);
+            Parent view = loader.load();
+
+            com.mac.bry.desktop.controller.SegmentAnnotationDialogController controller = loader.getController();
+            controller.setSession(session);
+
+            Stage stage = new Stage();
+            stage.setTitle("Przegląd zdarzeń — adnotacje operatora (human-in-the-loop)");
+            stage.setScene(new Scene(view));
+            stage.initOwner(ownerWindow);
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.showAndWait();
+        } catch (Exception e) {
+            log.error("Failed to load segment annotation dialog", e);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Błąd ładowania widoku");
+            alert.setHeaderText("Nie udało się załadować okna adnotacji segmentów.");
+            alert.setContentText(e.getMessage() != null ? e.getMessage() : e.toString());
+            alert.showAndWait();
+        }
+    }
+
     public static void showDiagnosticsDialog(StatsRow row, RevalidationSession session, ApplicationContext applicationContext, Window ownerWindow) {
         if (session == null || row == null) return;
 
