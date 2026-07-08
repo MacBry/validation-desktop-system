@@ -45,15 +45,15 @@ public class OlsSegmentor {
      */
     public List<MeasurementSegment> segment(ThermoMeasurementSeries series) {
         List<ThermoMeasurementPoint> points = series.getMeasurements();
+        int window = resolveWindowPoints(series);
 
-        if (points == null || points.size() < props.getOlsWindowMinutes() * 2) {
-            log.warn("OlsSegmentor: seria {} ma zbyt mało punktów ({}) do segmentacji",
-                    series.getId(), points == null ? 0 : points.size());
+        if (points == null || points.size() < window * 2) {
+            log.warn("OlsSegmentor: seria {} ma zbyt mało punktów ({}) do segmentacji (wymagane: {})",
+                    series.getId(), points == null ? 0 : points.size(), window * 2);
             return List.of();
         }
 
         int n = points.size();
-        int window = props.getOlsWindowMinutes();
         boolean[] steadyMask = new boolean[n];
 
         // Krok 1: klasyfikacja każdego punktu jako STEADY lub nie
@@ -66,7 +66,7 @@ public class OlsSegmentor {
         }
 
         // Krok 2: RLE — łączenie sąsiednich punktów tej samej klasy w segmenty
-        List<MeasurementSegment> rawSegments = buildRawSegments(points, steadyMask, series);
+        List<MeasurementSegment> rawSegments = buildRawSegments(points, steadyMask, series, window);
 
         // Krok 3: filtrowanie zbyt krótkich STEADY_STATE → reklasyfikacja na EQUILIBRATION
         return mergeShortSteadySegments(rawSegments, series);
@@ -118,11 +118,11 @@ public class OlsSegmentor {
     private List<MeasurementSegment> buildRawSegments(
             List<ThermoMeasurementPoint> points,
             boolean[] steadyMask,
-            ThermoMeasurementSeries series) {
+            ThermoMeasurementSeries series,
+            int window) {
 
         List<MeasurementSegment> result = new ArrayList<>();
         int n = points.size();
-        int window = props.getOlsWindowMinutes();
 
         // Pierwsze `window` punktów zawsze = EQUILIBRATION (brak danych OLS)
         // Ale musimy uważać na przerwy czasowe w tym początkowym fragmencie
@@ -253,5 +253,13 @@ public class OlsSegmentor {
                 .source(DetectionSource.ALGORITHM)
                 .accepted(true)
                 .build();
+    }
+
+    private int resolveWindowPoints(ThermoMeasurementSeries series) {
+        Integer interval = series.getLoggingIntervalMinutes();
+        if (interval == null || interval <= 0) {
+            interval = 1;
+        }
+        return Math.max(3, (int) Math.ceil((double) props.getOlsWindowMinutes() / interval));
     }
 }
