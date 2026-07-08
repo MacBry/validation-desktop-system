@@ -82,11 +82,11 @@ public class LoginController {
     /** Przeładowanie ekranu logowania po zmianie języka. */
     private void reloadLoginView() {
         try {
+            Stage stage = (Stage) languageCombo.getScene().getWindow();
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ui/login.fxml"),
                     com.mac.bry.desktop.config.I18n.getBundle());
             fxmlLoader.setControllerFactory(applicationContext::getBean);
             Parent root = fxmlLoader.load();
-            Stage stage = (Stage) languageCombo.getScene().getWindow();
             stage.getScene().setRoot(root);
         } catch (IOException e) {
             log.error("Failed to reload login view after language switch", e);
