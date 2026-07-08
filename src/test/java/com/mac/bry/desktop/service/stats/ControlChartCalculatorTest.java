@@ -10,26 +10,24 @@ import static org.assertj.core.api.Assertions.within;
 class ControlChartCalculatorTest {
 
     @Test
-    @DisplayName("should calculate correct I-MR limits on stable values")
-    void shouldCalculateCorrectImrLimits() {
+    @DisplayName("should calculate correct Shewhart and I-MR limits on stable values")
+    void shouldCalculateCorrectImrAndShewhartLimits() {
         double[] values = { 5.0, 5.2, 4.8, 5.1, 4.9 };
-        // n = 5
-        // individualValues: 5.0, 5.2, 4.8, 5.1, 4.9
-        // sum = 25.0 -> mean = 5.0
-        // MR:
-        // |5.2 - 5.0| = 0.2
-        // |4.8 - 5.2| = 0.4
-        // |5.1 - 4.8| = 0.3
-        // |4.9 - 5.1| = 0.2
-        // movingRanges: 0.2, 0.4, 0.3, 0.2
-        // sumMR = 1.1 -> meanMR = 1.1 / 4 = 0.275
-        // sigmaEst = 0.275 / 1.128 = 0.243794
-        // iUcl = 5.0 + 3 * 0.243794 = 5.73138
-        // iLcl = 5.0 - 3 * 0.243794 = 4.26861
-        // mrUcl = 3.268 * 0.275 = 0.8987
 
         ControlChartData data = ControlChartCalculator.calculateShewhartLimits(values);
 
+        // 1. Walidacja Klasycznej Karty Shewharta (X-bar & S)
+        assertThat(data.getSubgroupMeans()).containsExactly(5.0);
+        // stdDev dla próbki: sqrt(0.1 / 4) = sqrt(0.025) = 0.15811388
+        double expectedS = Math.sqrt(0.025);
+        assertThat(data.getSubgroupStdDevs().get(0)).isCloseTo(expectedS, within(1e-5));
+        assertThat(data.getXBarCentralLine()).isCloseTo(5.0, within(1e-5));
+        assertThat(data.getXBarUcl()).isCloseTo(5.0 + 1.427 * expectedS, within(1e-5));
+        assertThat(data.getXBarLcl()).isCloseTo(5.0 - 1.427 * expectedS, within(1e-5));
+        assertThat(data.getSUcl()).isCloseTo(2.089 * expectedS, within(1e-5));
+        assertThat(data.getSLcl()).isEqualTo(0.0);
+
+        // 2. Walidacja Karty I-MR
         assertThat(data.getIndividualValues()).containsExactly(5.0, 5.2, 4.8, 5.1, 4.9);
         assertThat(data.getICentralLine()).isCloseTo(5.0, within(1e-5));
         
@@ -54,5 +52,7 @@ class ControlChartCalculatorTest {
         ControlChartData data = ControlChartCalculator.calculateShewhartLimits(values);
         assertThat(data.getIndividualValues()).isEmpty();
         assertThat(data.getICentralLine()).isEqualTo(0.0);
+        assertThat(data.getSubgroupMeans()).isEmpty();
+        assertThat(data.getXBarCentralLine()).isEqualTo(0.0);
     }
 }

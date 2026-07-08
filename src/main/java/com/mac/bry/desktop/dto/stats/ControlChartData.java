@@ -6,20 +6,29 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO zawierające dane dla karty kontrolnej I-MR (Individual-Moving Range)
- * służącej do oceny stabilności autokorelowanych pomiarów indywidualnych.
+ * DTO zawierające komplet danych dla analizy SPC dwoma modelami:
+ * 1. Klasyczną kartą Shewharta X-bar & S (dla podgrup n = 5).
+ * 2. Kartą I-MR (Individual-Moving Range) dla pomiarów indywidualnych.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ControlChartData {
-    // Karta I (Wartości Indywidualne)
+    // === Karta Shewharta X-bar & S (podgrupy n = 5) ===
+    private List<Double> subgroupMeans;
+    private List<Double> subgroupStdDevs;
+    private double xBarCentralLine;
+    private double xBarUcl;
+    private double xBarLcl;
+    private double sCentralLine;
+    private double sUcl;
+    private double sLcl;
+
+    // === Karta I-MR (pomiary indywidualne) ===
     private List<Double> individualValues;
     private double iCentralLine;
     private double iUcl;
     private double iLcl;
-    
-    // Karta MR (Ruchomy Rozstęp)
     private List<Double> movingRanges;
     private double mrCentralLine;
     private double mrUcl;

@@ -7,7 +7,7 @@
 
 <VBox spacing="15" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.mac.bry.desktop.controller.StatsDiagnosticsDialogController"
-      prefWidth="960" prefHeight="740" styleClass="content-area" stylesheets="@style.css">
+      prefWidth="960" prefHeight="780" styleClass="content-area" stylesheets="@style.css">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -28,8 +28,8 @@
     <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
         <tabs>
 
-            <!-- ZAKŁADKA 1: KARTY KONTROLNE SHEWHARTA -->
-            <Tab text="%statsdiagnosticsdialog.karty_kontrolne_shewharta_spc">
+            <!-- ZAKŁADKA 1: KARTY KONTROLNE SHEWHARTA (X-bar & S) -->
+            <Tab text="Karty Shewharta (X-bar &amp; S)">
                 <content>
                     <VBox spacing="10.0" style="-fx-padding: 15 0 0 0;">
                         <children>
@@ -60,25 +60,75 @@
                                         </children>
                                     </VBox>
                                 </children>
-                            </HBox>
-                            <VBox spacing="5.0" VBox.vgrow="NEVER" style="-fx-padding: 5 0 0 0;">
-                                <children>
-                                    <Label text="%statsdiagnosticsdialog.weryfikacja_regul_stabilnosci_nelsona"
-                                           style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
-                                    <ListView fx:id="lstNelsonViolations" prefHeight="120.0" minHeight="120.0" styleClass="audit-table">
-                                        <placeholder>
-                                            <Label text="%statsdiagnosticsdialog.wszystkie_reguly_stabilnosci_nelsona"
-                                                   style="-fx-text-fill: #16a34a; -fx-font-weight: bold;" />
-                                        </placeholder>
-                                    </ListView>
-                                </children>
-                            </VBox>
+                             </HBox>
+                             <VBox spacing="5.0" VBox.vgrow="NEVER" style="-fx-padding: 5 0 0 0;">
+                                 <children>
+                                     <Label text="%statsdiagnosticsdialog.weryfikacja_regul_stabilnosci_nelsona"
+                                            style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                     <ListView fx:id="lstNelsonViolations" prefHeight="100.0" minHeight="100.0" styleClass="audit-table">
+                                         <placeholder>
+                                             <Label text="%statsdiagnosticsdialog.wszystkie_reguly_stabilnosci_nelsona"
+                                                    style="-fx-text-fill: #16a34a; -fx-font-weight: bold;" />
+                                         </placeholder>
+                                     </ListView>
+                                 </children>
+                             </VBox>
                         </children>
                     </VBox>
                 </content>
             </Tab>
 
-            <!-- ZAKŁADKA 2: CYKLE ODSZRANIANIA (DEFROST) -->
+            <!-- ZAKŁADKA 2: KARTY KONTROLNE I-MR -->
+            <Tab text="Karty I-MR (Indywidualne)">
+                <content>
+                    <VBox spacing="10.0" style="-fx-padding: 15 0 0 0;">
+                        <children>
+                            <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                                <children>
+                                    <!-- Wykres I -->
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS"
+                                          style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                                        <children>
+                                            <Label text="Karta I (Wartości indywidualne)"
+                                                   style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                            <LineChart fx:id="iChart" createSymbols="true" legendVisible="false" VBox.vgrow="ALWAYS">
+                                                <xAxis><NumberAxis side="BOTTOM" forceZeroInRange="false" label="Pomiar nr" /></xAxis>
+                                                <yAxis><NumberAxis side="LEFT" forceZeroInRange="false" label="Temperatura [°C]" /></yAxis>
+                                            </LineChart>
+                                        </children>
+                                    </VBox>
+                                    <!-- Wykres MR -->
+                                    <VBox spacing="5.0" HBox.hgrow="ALWAYS"
+                                          style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 6px; -fx-border-color: -color-border-default; -fx-border-width: 1px;">
+                                        <children>
+                                            <Label text="Karta MR (Ruchomy rozstęp)"
+                                                   style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-success-emphasis;" />
+                                            <LineChart fx:id="mrChart" createSymbols="true" legendVisible="false" VBox.vgrow="ALWAYS">
+                                                <xAxis><NumberAxis side="BOTTOM" forceZeroInRange="false" label="Para pomiarowa nr" /></xAxis>
+                                                <yAxis><NumberAxis side="LEFT" forceZeroInRange="false" label="Rozstęp MR [°C]" /></yAxis>
+                                            </LineChart>
+                                        </children>
+                                    </VBox>
+                                </children>
+                             </HBox>
+                             <VBox spacing="5.0" VBox.vgrow="NEVER" style="-fx-padding: 5 0 0 0;">
+                                 <children>
+                                     <Label text="Weryfikacja reguł stabilności Nelsona (Karta I-MR):"
+                                            style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: -color-accent-emphasis;" />
+                                     <ListView fx:id="lstNelsonViolationsImr" prefHeight="100.0" minHeight="100.0" styleClass="audit-table">
+                                         <placeholder>
+                                             <Label text="✓ Wszystkie reguły stabilności Nelsona są spełnione (brak naruszeń)."
+                                                    style="-fx-text-fill: #16a34a; -fx-font-weight: bold;" />
+                                         </placeholder>
+                                     </ListView>
+                                 </children>
+                             </VBox>
+                        </children>
+                    </VBox>
+                </content>
+            </Tab>
+
+            <!-- ZAKŁADKA 3: CYKLE ODSZRANIANIA (DEFROST) -->
             <Tab text="%statsdiagnosticsdialog.wykryte_cykle_odszraniania_defrost">
                 <content>
                     <VBox spacing="10.0" style="-fx-padding: 15 0 0 0;">
@@ -102,8 +152,6 @@
                     </VBox>
                 </content>
             </Tab>
-
-
 
         </tabs>
     </TabPane>

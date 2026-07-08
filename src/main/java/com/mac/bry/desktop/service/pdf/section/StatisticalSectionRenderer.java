@@ -291,10 +291,12 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
         }
 
         // 5. Weryfikacja reguł stabilności Nelsona
-        conclusions.add(new Chunk("5. Weryfikacja Stabilności Procesu (Karty I-MR & Nelson Rules):\n", PdfStyleHelper.getLabelFont()));
+        conclusions.add(new Chunk("5. Weryfikacja Stabilności Procesu (Karty Shewharta / I-MR & Nelson Rules):\n", PdfStyleHelper.getLabelFont()));
         
         int totalXBarViolations = 0;
         int totalSViolations = 0;
+        int totalIViolations = 0;
+        int totalMrViolations = 0;
         for (RevalidationSession.GridPosition pos : activePositions) {
             RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
             double[] values = d.getSeries().getMeasurements() != null ? d.getSeries().getMeasurements().stream()
@@ -303,15 +305,23 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
             ControlChartData spcData = ControlChartCalculator.calculateShewhartLimits(values);
             totalXBarViolations += NelsonRulesDetector.detectXBarViolations(spcData).size();
             totalSViolations += NelsonRulesDetector.detectSViolations(spcData).size();
+            totalIViolations += NelsonRulesDetector.detectIndividualViolations(spcData).size();
+            totalMrViolations += NelsonRulesDetector.detectMovingRangeViolations(spcData).size();
         }
 
-        String nelsonConclusionsText;
+        StringBuilder sbNelson = new StringBuilder();
         if (totalXBarViolations == 0 && totalSViolations == 0) {
-            nelsonConclusionsText = "Analiza kart kontrolnych I-MR (Individual & Moving Range) nie wykazała żadnych naruszeń stabilności procesu na podstawie reguł Nelsona. Świadczy to o stabilności stochastycznej i braku przyczyn systemowych (zakłóceń) wpływających na temperaturę komory.";
+            sbNelson.append("Karty Shewharta (X-bar & S, n=5): brak naruszeń stabilności.\n");
         } else {
-            nelsonConclusionsText = String.format("OSTRZEŻENIE: Wykryto łącznie %d naruszeń reguł Nelsona dla karty wartości indywidualnych (I) oraz %d przekroczeń granic na karcie ruchomego rozstępu (MR). Wskazuje to na obecność zmienności o charakterze nielosowym (przyczyn systemowych, np. cykle defrostu, wahania obciążenia komory lub niestabilność układu sterowania). Szczegółowy wykaz przedstawiono w Sekcji 4.3.", totalXBarViolations, totalSViolations);
+            sbNelson.append(String.format("OSTRZEŻENIE (Shewhart X-bar & S): Wykryto %d naruszeń na karcie X-bar oraz %d na karcie S.\n", totalXBarViolations, totalSViolations));
         }
-        conclusions.add(new Chunk(nelsonConclusionsText, PdfStyleHelper.getValueFont()));
+
+        if (totalIViolations == 0 && totalMrViolations == 0) {
+            sbNelson.append("Karty I-MR (pomiar indywidualny): brak naruszeń stabilności.");
+        } else {
+            sbNelson.append(String.format("OSTRZEŻENIE (Karty I-MR): Wykryto %d naruszeń na karcie I oraz %d na karcie MR (wczesne trendy / dryfty). Szczegóły w Sekcji 4.3.", totalIViolations, totalMrViolations));
+        }
+        conclusions.add(new Chunk(sbNelson.toString(), PdfStyleHelper.getValueFont()));
 
         PdfPTable conclusionsBox = new PdfPTable(1);
         conclusionsBox.setWidthPercentage(100);
