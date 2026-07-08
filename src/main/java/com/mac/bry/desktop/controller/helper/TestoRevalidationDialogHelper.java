@@ -70,8 +70,8 @@ public class TestoRevalidationDialogHelper {
 
             StatsDiagnosticsDialogController controller = loader.getController();
 
-            Double minLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMinOperatingTemp() : 2.0;
-            Double maxLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMaxOperatingTemp() : 8.0;
+            Double minLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getEffectiveMinTempLimit() : 2.0;
+            Double maxLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getEffectiveMaxTempLimit() : 8.0;
 
             controller.setSensorData(posData.getSeries(), row.getPositionName(), minLimit, maxLimit);
 

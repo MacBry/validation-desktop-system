@@ -79,9 +79,9 @@ public class StatisticsAggregationService {
         boolean isCapable = false;
         boolean isAcceptable = false;
 
-        if (chamber != null && chamber.getMinOperatingTemp() != null && chamber.getMaxOperatingTemp() != null) {
-            lsl = chamber.getMinOperatingTemp();
-            usl = chamber.getMaxOperatingTemp();
+        if (chamber != null && chamber.getEffectiveMinTempLimit() != null && chamber.getEffectiveMaxTempLimit() != null) {
+            lsl = chamber.getEffectiveMinTempLimit();
+            usl = chamber.getEffectiveMaxTempLimit();
             CapabilityIndexes capability = SpcEngine.calculateCapability(values, lsl, usl);
             cp = capability.getCp();
             cpk = capability.getCpk();

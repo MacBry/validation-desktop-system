@@ -28,7 +28,7 @@ public class ShewhartSectionRenderer implements PdfSectionRenderer {
                               HypothesisTestingService hypothesisTestingService, ValidationPlanNumberRepository validationPlanNumberRepository,
                               File chartImageFile, String checksum) throws DocumentException {
 
-        Paragraph section4_3 = new Paragraph("4.3. Weryfikacja Stabilności Procesu (Karty Shewharta i Reguły Nelsona)", PdfStyleHelper.getSectionFont());
+        Paragraph section4_3 = new Paragraph("4.3. Weryfikacja Stabilności Procesu (Karty I-MR i Reguły Nelsona)", PdfStyleHelper.getSectionFont());
         section4_3.setSpacingAfter(8);
         document.add(section4_3);
 
@@ -39,7 +39,7 @@ public class ShewhartSectionRenderer implements PdfSectionRenderer {
 
         // Nagłówki
         String[] shewhartHeaders = {
-            "Pozycja", "X-bar CL", "X-bar LCL/UCL", "S CL", "S UCL", "Naruszenia Nelsona (X-Bar)", "Naruszenia S"
+            "Pozycja", "I CL", "I LCL/UCL", "MR CL", "MR UCL", "Naruszenia Nelsona (Karta I)", "Naruszenia MR"
         };
         for (String header : shewhartHeaders) {
             PdfPCell cell = new PdfPCell(new Phrase(header, PdfStyleHelper.getHeaderFont()));
@@ -67,7 +67,7 @@ public class ShewhartSectionRenderer implements PdfSectionRenderer {
             if (!xbarViolations.isEmpty()) {
                 List<String> codes = new ArrayList<>();
                 for (NelsonRulesDetector.Violation v : xbarViolations) {
-                    codes.add("Reguła " + v.getRuleNumber() + " (Podgr. " + v.getSubgroupIndex() + ")");
+                    codes.add("Reguła " + v.getRuleNumber() + " (Punkt " + v.getSubgroupIndex() + ")");
                 }
                 xbarViolationsStr = String.join("\n", codes);
             }
@@ -76,16 +76,16 @@ public class ShewhartSectionRenderer implements PdfSectionRenderer {
             if (!sViolations.isEmpty()) {
                 List<String> codes = new ArrayList<>();
                 for (NelsonRulesDetector.Violation v : sViolations) {
-                    codes.add("UCL/LCL (Podgr. " + v.getSubgroupIndex() + ")");
+                    codes.add("UCL/LCL (Para " + (v.getSubgroupIndex() - 1) + "-" + v.getSubgroupIndex() + ")");
                 }
                 sViolationsStr = String.join("\n", codes);
             }
 
             shewhartTable.addCell(PdfStyleHelper.createCell(pos.getLabel(), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_LEFT));
-            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.2f°C", spcData.getXBarCentralLine()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
-            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.2f / %.2f", spcData.getXBarLcl(), spcData.getXBarUcl()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
-            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.3f°C", spcData.getSCentralLine()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
-            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.3f°C", spcData.getSUcl()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.2f°C", spcData.getICentralLine()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.2f / %.2f", spcData.getILcl(), spcData.getIUcl()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.3f°C", spcData.getMrCentralLine()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
+            shewhartTable.addCell(PdfStyleHelper.createCell(String.format("%.3f°C", spcData.getMrUcl()), PdfStyleHelper.getCellFont(), java.awt.Color.WHITE, Element.ALIGN_CENTER));
 
             java.awt.Color xbarBg = xbarViolations.isEmpty() ? java.awt.Color.WHITE : new java.awt.Color(254, 242, 242);
             java.awt.Color sBg = sViolations.isEmpty() ? java.awt.Color.WHITE : new java.awt.Color(254, 242, 242);

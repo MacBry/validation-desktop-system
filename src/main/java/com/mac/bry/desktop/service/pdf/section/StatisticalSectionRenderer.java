@@ -58,8 +58,8 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
         }
 
         CoolingChamber chamber = session.getCoolingChamber();
-        Double lsl = (chamber != null) ? chamber.getMinOperatingTemp() : null;
-        Double usl = (chamber != null) ? chamber.getMaxOperatingTemp() : null;
+        Double lsl = (chamber != null) ? chamber.getEffectiveMinTempLimit() : null;
+        Double usl = (chamber != null) ? chamber.getEffectiveMaxTempLimit() : null;
 
         List<Double> allCpk = new ArrayList<>();
         List<Double> allStdDev = new ArrayList<>();
@@ -291,7 +291,7 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
         }
 
         // 5. Weryfikacja reguł stabilności Nelsona
-        conclusions.add(new Chunk("5. Weryfikacja Stabilności Procesu (Karty Shewharta & Nelson Rules):\n", PdfStyleHelper.getLabelFont()));
+        conclusions.add(new Chunk("5. Weryfikacja Stabilności Procesu (Karty I-MR & Nelson Rules):\n", PdfStyleHelper.getLabelFont()));
         
         int totalXBarViolations = 0;
         int totalSViolations = 0;
@@ -307,9 +307,9 @@ public class StatisticalSectionRenderer implements PdfSectionRenderer {
 
         String nelsonConclusionsText;
         if (totalXBarViolations == 0 && totalSViolations == 0) {
-            nelsonConclusionsText = "Analiza kart kontrolnych Shewharta (X-bar & S) nie wykazała żadnych naruszeń stabilności procesu na podstawie reguł Nelsona. Świadczy to o stabilności stochastycznej i braku przyczyn systemowych (zakłóceń) wpływających na temperaturę komory.";
+            nelsonConclusionsText = "Analiza kart kontrolnych I-MR (Individual & Moving Range) nie wykazała żadnych naruszeń stabilności procesu na podstawie reguł Nelsona. Świadczy to o stabilności stochastycznej i braku przyczyn systemowych (zakłóceń) wpływających na temperaturę komory.";
         } else {
-            nelsonConclusionsText = String.format("OSTRZEŻENIE: Wykryto łącznie %d naruszeń reguł Nelsona dla karty X-bar oraz %d przekroczeń granic na karcie S. Wskazuje to na obecność zmienności o charakterze nielosowym (przyczyn systemowych, np. cykle defrostu, wahania obciążenia komory lub niestabilność układu sterowania). Szczegółowy wykaz przedstawiono w Sekcji 4.3.", totalXBarViolations, totalSViolations);
+            nelsonConclusionsText = String.format("OSTRZEŻENIE: Wykryto łącznie %d naruszeń reguł Nelsona dla karty wartości indywidualnych (I) oraz %d przekroczeń granic na karcie ruchomego rozstępu (MR). Wskazuje to na obecność zmienności o charakterze nielosowym (przyczyn systemowych, np. cykle defrostu, wahania obciążenia komory lub niestabilność układu sterowania). Szczegółowy wykaz przedstawiono w Sekcji 4.3.", totalXBarViolations, totalSViolations);
         }
         conclusions.add(new Chunk(nelsonConclusionsText, PdfStyleHelper.getValueFont()));
 

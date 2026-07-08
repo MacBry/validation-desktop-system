@@ -120,14 +120,14 @@ public class StatsDiagnosticsDialogController {
         ObservableList<String> nelsonItems = FXCollections.observableArrayList();
         for (NelsonRulesDetector.Violation v : xbarViolations) {
             String interpretation = com.mac.bry.desktop.service.stats.NelsonRulesInterpreter.getXBarInterpretation(v.getRuleNumber());
-            String msg = String.format("[Karta X-Bar] Podgrupa %d: %s\n> Interpretacja: %s\n", v.getSubgroupIndex(), v.getDescription(), interpretation);
-            log.info("Dodawanie naruszenia X-bar: {}", msg);
+            String msg = String.format("[Karta I] Punkt %d: %s\n> Interpretacja: %s\n", v.getSubgroupIndex(), v.getDescription(), interpretation);
+            log.info("Dodawanie naruszenia I: {}", msg);
             nelsonItems.add(msg);
         }
         for (NelsonRulesDetector.Violation v : sViolations) {
             String interpretation = com.mac.bry.desktop.service.stats.NelsonRulesInterpreter.getSChartInterpretation(v.getRuleNumber());
-            String msg = String.format("[Karta S] Podgrupa %d: %s\n> Interpretacja: %s\n", v.getSubgroupIndex(), v.getDescription(), interpretation);
-            log.info("Dodawanie naruszenia S: {}", msg);
+            String msg = String.format("[Karta MR] Para %d-%d: %s\n> Interpretacja: %s\n", v.getSubgroupIndex() - 1, v.getSubgroupIndex(), v.getDescription(), interpretation);
+            log.info("Dodawanie naruszenia MR: {}", msg);
             nelsonItems.add(msg);
         }
 
@@ -177,21 +177,21 @@ public class StatsDiagnosticsDialogController {
         xBarChart.getData().clear();
 
         XYChart.Series<Number, Number> meanSeries = new XYChart.Series<>();
-        meanSeries.setName("Średnie podgrup");
+        meanSeries.setName("Wartości indywidualne");
         XYChart.Series<Number, Number> uclSeries = new XYChart.Series<>();
         uclSeries.setName("UCL (Górna Granica)");
         XYChart.Series<Number, Number> lclSeries = new XYChart.Series<>();
         lclSeries.setName("LCL (Dolna Granica)");
         XYChart.Series<Number, Number> clSeries = new XYChart.Series<>();
-        clSeries.setName("CL (Średnia globalna)");
+        clSeries.setName("CL (Średnia)");
 
-        List<Double> means = data.getSubgroupMeans();
-        for (int i = 0; i < means.size(); i++) {
+        List<Double> values = data.getIndividualValues();
+        for (int i = 0; i < values.size(); i++) {
             int x = i + 1;
-            meanSeries.getData().add(new XYChart.Data<>(x, means.get(i)));
-            uclSeries.getData().add(new XYChart.Data<>(x, data.getXBarUcl()));
-            lclSeries.getData().add(new XYChart.Data<>(x, data.getXBarLcl()));
-            clSeries.getData().add(new XYChart.Data<>(x, data.getXBarCentralLine()));
+            meanSeries.getData().add(new XYChart.Data<>(x, values.get(i)));
+            uclSeries.getData().add(new XYChart.Data<>(x, data.getIUcl()));
+            lclSeries.getData().add(new XYChart.Data<>(x, data.getILcl()));
+            clSeries.getData().add(new XYChart.Data<>(x, data.getICentralLine()));
         }
 
         xBarChart.getData().addAll(List.of(clSeries, uclSeries, lclSeries, meanSeries));
@@ -201,7 +201,7 @@ public class StatsDiagnosticsDialogController {
         sChart.getData().clear();
 
         XYChart.Series<Number, Number> sSeries = new XYChart.Series<>();
-        sSeries.setName("Odchylenia podgrup");
+        sSeries.setName("Ruchomy rozstęp (MR)");
         XYChart.Series<Number, Number> uclSeries = new XYChart.Series<>();
         uclSeries.setName("UCL");
         XYChart.Series<Number, Number> lclSeries = new XYChart.Series<>();
@@ -209,13 +209,13 @@ public class StatsDiagnosticsDialogController {
         XYChart.Series<Number, Number> clSeries = new XYChart.Series<>();
         clSeries.setName("CL");
 
-        List<Double> stdDevs = data.getSubgroupStdDevs();
-        for (int i = 0; i < stdDevs.size(); i++) {
-            int x = i + 1;
-            sSeries.getData().add(new XYChart.Data<>(x, stdDevs.get(i)));
-            uclSeries.getData().add(new XYChart.Data<>(x, data.getSCentralLine() * 2.089)); // B4 * sCL
-            lclSeries.getData().add(new XYChart.Data<>(x, 0.0));                            // B3 = 0.0
-            clSeries.getData().add(new XYChart.Data<>(x, data.getSCentralLine()));
+        List<Double> mrValues = data.getMovingRanges();
+        for (int i = 0; i < mrValues.size(); i++) {
+            int x = i + 2; // MR_1 jest rysowany od x=2 (dla pary 1-2)
+            sSeries.getData().add(new XYChart.Data<>(x, mrValues.get(i)));
+            uclSeries.getData().add(new XYChart.Data<>(x, data.getMrUcl()));
+            lclSeries.getData().add(new XYChart.Data<>(x, data.getMrLcl()));
+            clSeries.getData().add(new XYChart.Data<>(x, data.getMrCentralLine()));
         }
 
         sChart.getData().addAll(List.of(clSeries, uclSeries, lclSeries, sSeries));

@@ -67,8 +67,8 @@ public class RevalidationReportPdfRenderer {
 
         // 1b. Pre-compute skorygowanych statystyk wzorcowania per pozycja
         CoolingChamber chamber = session.getCoolingChamber();
-        Double lsl = (chamber != null) ? chamber.getMinOperatingTemp() : null;
-        Double usl = (chamber != null) ? chamber.getMaxOperatingTemp() : null;
+        Double lsl = (chamber != null) ? chamber.getEffectiveMinTempLimit() : null;
+        Double usl = (chamber != null) ? chamber.getEffectiveMaxTempLimit() : null;
         for (RevalidationSession.GridPosition pos : activePositions) {
             RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);
             if (d != null && d.getSeries() != null) {

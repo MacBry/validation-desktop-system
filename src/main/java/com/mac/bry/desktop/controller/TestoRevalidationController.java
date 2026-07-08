@@ -723,10 +723,10 @@ public class TestoRevalidationController {
             summaryRows.clear(); metrologicalRows.clear(); statsRows.clear(); multiChannelChart.getData().clear();
             if (session == null || session.getAssignedPositions().isEmpty()) return;
 
-            double lsl = session.getCoolingChamber() != null && session.getCoolingChamber().getMinOperatingTemp() != null
-                    ? session.getCoolingChamber().getMinOperatingTemp() : 2.0;
-            double usl = session.getCoolingChamber() != null && session.getCoolingChamber().getMaxOperatingTemp() != null
-                    ? session.getCoolingChamber().getMaxOperatingTemp() : 8.0;
+            double lsl = session.getCoolingChamber() != null && session.getCoolingChamber().getEffectiveMinTempLimit() != null
+                    ? session.getCoolingChamber().getEffectiveMinTempLimit() : 2.0;
+            double usl = session.getCoolingChamber() != null && session.getCoolingChamber().getEffectiveMaxTempLimit() != null
+                    ? session.getCoolingChamber().getEffectiveMaxTempLimit() : 8.0;
 
             session.getAssignedPositions().forEach((pos, data) -> {
                 if (data == null) return;

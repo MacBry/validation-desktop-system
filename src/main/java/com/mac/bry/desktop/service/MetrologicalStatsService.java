@@ -53,13 +53,13 @@ public class MetrologicalStatsService {
         double min = Double.POSITIVE_INFINITY;
         double max = Double.NEGATIVE_INFINITY;
 
-        // Limity czasowe z komory chłodniczej
+        // Limity czasowe z komory chłodniczej (efektywne pod kątem przechowywanego produktu)
         Double minLimit = null;
         Double maxLimit = null;
         CoolingChamber chamber = series.getCoolingChamber();
         if (chamber != null) {
-            minLimit = chamber.getMinOperatingTemp();
-            maxLimit = chamber.getMaxOperatingTemp();
+            minLimit = chamber.getEffectiveMinTempLimit();
+            maxLimit = chamber.getEffectiveMaxTempLimit();
         }
 
         // Energia aktywacji (MKT Arrheniusa)

@@ -118,8 +118,8 @@ public class RegimeAwareSectionRenderer implements PdfSectionRenderer {
         }
 
         CoolingChamber chamber = session.getCoolingChamber();
-        Double lsl = (chamber != null) ? chamber.getMinOperatingTemp() : null;
-        Double usl = (chamber != null) ? chamber.getMaxOperatingTemp() : null;
+        Double lsl = (chamber != null) ? chamber.getEffectiveMinTempLimit() : null;
+        Double usl = (chamber != null) ? chamber.getEffectiveMaxTempLimit() : null;
 
         for (RevalidationSession.GridPosition pos : activePositions) {
             RevalidationSession.PositionData d = session.getAssignedPositions().get(pos);

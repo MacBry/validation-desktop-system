@@ -93,6 +93,20 @@ public class CoolingChamber {
         return maxOperatingTemp != null ? String.format("%.1f°C", maxOperatingTemp) : "–";
     }
 
+    public Double getEffectiveMinTempLimit() {
+        if (materialType != null && materialType.getMinStorageTemp() != null) {
+            return materialType.getMinStorageTemp();
+        }
+        return minOperatingTemp;
+    }
+
+    public Double getEffectiveMaxTempLimit() {
+        if (materialType != null && materialType.getMaxStorageTemp() != null) {
+            return materialType.getMaxStorageTemp();
+        }
+        return maxOperatingTemp;
+    }
+
     public String getMaterialName() {
         return materialType != null ? materialType.getName() : "–";
     }

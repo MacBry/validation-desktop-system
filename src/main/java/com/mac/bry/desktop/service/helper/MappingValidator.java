@@ -62,8 +62,8 @@ public class MappingValidator {
 
         // 3. Budowanie listy SensorStats dla serwisu detekcji
         List<SensorStats> sensorStatsList = new ArrayList<>();
-        Double minLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMinOperatingTemp() : null;
-        Double maxLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMaxOperatingTemp() : null;
+        Double minLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getEffectiveMinTempLimit() : null;
+        Double maxLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getEffectiveMaxTempLimit() : null;
 
         for (RevalidationSession.GridPosition pos : RevalidationSession.GridPosition.values()) {
             ThermoMeasurementSeries series = assigned.get(pos).getSeries();

@@ -108,8 +108,8 @@ public class Appendix3DataMapper extends AbstractAppendixDataMapper {
             CoolingChamber chamber = session.getCoolingChamber();
             ChamberType type = chamber.getChamberType();
             String mat = chamber.getMaterialName() != null ? chamber.getMaterialName() : "";
-            Double min = chamber.getMinOperatingTemp();
-            Double max = chamber.getMaxOperatingTemp();
+            Double min = chamber.getEffectiveMinTempLimit();
+            Double max = chamber.getEffectiveMaxTempLimit();
 
             if ((type == ChamberType.FRIDGE || type == ChamberType.COLD_ROOM) 
                     && (mat.toUpperCase().contains("KKCZ") || (min != null && min == 2.0 && max != null && max == 6.0))) {
@@ -158,8 +158,8 @@ public class Appendix3DataMapper extends AbstractAppendixDataMapper {
         int activeCount = 0;
         boolean revalidationSuccess = true;
         List<String> violations = new ArrayList<>();
-        Double minTempLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMinOperatingTemp() : null;
-        Double maxTempLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getMaxOperatingTemp() : null;
+        Double minTempLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getEffectiveMinTempLimit() : null;
+        Double maxTempLimit = session.getCoolingChamber() != null ? session.getCoolingChamber().getEffectiveMaxTempLimit() : null;
 
         for (GridPosition pos : GridPosition.values()) {
             int idx = pos.ordinal() + 1;
