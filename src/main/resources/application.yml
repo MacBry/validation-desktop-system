@@ -68,7 +68,7 @@ testo:
 
 regime:
   detection:
-    enabled: false
+    enabled: true
     ols-window-minutes: 30
     ols-eps-slope: 0.01
     ols-band-width: 1.5
