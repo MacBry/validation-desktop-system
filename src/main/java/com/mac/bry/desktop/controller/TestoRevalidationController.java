@@ -2,6 +2,7 @@ package com.mac.bry.desktop.controller;
 
 import com.mac.bry.desktop.model.*;
 import com.mac.bry.desktop.service.TestoRevalidationFacade;
+import com.mac.bry.desktop.service.SimulationProfile;
 import com.mac.bry.desktop.controller.helper.TestoRevalidationTableHelper;
 import com.mac.bry.desktop.service.stats.SensorStatsEngine;
 import com.mac.bry.desktop.service.stats.SpcEngine;
@@ -620,18 +621,36 @@ public class TestoRevalidationController {
         ButtonType btnCancel = new ButtonType("Anuluj", ButtonBar.ButtonData.CANCEL_CLOSE);
         dialog.getButtonTypes().setAll(btnSim, btnCancel);
         dialog.showAndWait().ifPresent(choice -> {
-            if (choice == btnSim) runSimulationReadout();
-            else lblReadStatus.setText("Status: Brak fizycznego połączenia USB.");
+            if (choice == btnSim) {
+                promptAndRunSimulation();
+            } else {
+                lblReadStatus.setText("Status: Brak fizycznego połączenia USB.");
+            }
         });
     }
 
-    private void runSimulationReadout() {
+    private void promptAndRunSimulation() {
+        List<SimulationProfile> profiles = List.of(
+                SimulationProfile.STABLE,
+                SimulationProfile.DRIFT,
+                SimulationProfile.SPIKES,
+                SimulationProfile.DRIFT_AND_SPIKES
+        );
+        ChoiceDialog<SimulationProfile> choiceDialog = new ChoiceDialog<>(SimulationProfile.STABLE, profiles);
+        choiceDialog.setTitle("Profil Symulacji");
+        choiceDialog.setHeaderText("Wybierz profil symulacji do załadowania dla: " + selectedPosition.getLabel());
+        choiceDialog.setContentText("Profil:");
+        
+        choiceDialog.showAndWait().ifPresent(this::runSimulationReadout);
+    }
+
+    private void runSimulationReadout(SimulationProfile profile) {
         setProgressVisible(true);
-        lblReadStatus.setText("Status: Generowanie symulacji 3D lodówki...");
+        lblReadStatus.setText("Status: Generowanie symulacji (" + profile.getDisplayName() + ")...");
         Task<RevalidationSession.PositionData> task = new Task<>() {
             @Override protected RevalidationSession.PositionData call() throws Exception {
                 Thread.sleep(1200);
-                return facade.readPositionData(session, selectedPosition, true);
+                return facade.readPositionData(session, selectedPosition, true, profile);
             }
         };
         progressBar.progressProperty().bind(task.progressProperty());

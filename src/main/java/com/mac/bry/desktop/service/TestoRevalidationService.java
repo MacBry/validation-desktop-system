@@ -38,6 +38,7 @@ public class TestoRevalidationService {
     private final Testo184UsbImportService testo184UsbImportService;
     private final MetrologicalStatsService metrologicalStatsService;
     private final CoolingChamberRepository coolingChamberRepository;
+    private final TestoSimulationService testoSimulationService;
 
     /**
      * Inicjalizuje nową sesję rewalidacji w pamięci.
@@ -159,20 +160,25 @@ public class TestoRevalidationService {
                 .build();
     }
 
-    /**
-     * Wczytuje dane pomiarowe dla konkretnego narożnika komory.
-     * Obsługuje odczyt rzeczywisty z USB (z rygorem GxP) oraz zautomatyzowaną symulację metrologiczną.
-     */
     @Transactional
     public RevalidationSession.PositionData readPositionData(
             RevalidationSession session, 
             RevalidationSession.GridPosition position, 
             boolean simulationMode) {
+        return readPositionData(session, position, simulationMode, SimulationProfile.STABLE);
+    }
+
+    @Transactional
+    public RevalidationSession.PositionData readPositionData(
+            RevalidationSession session, 
+            RevalidationSession.GridPosition position, 
+            boolean simulationMode,
+            SimulationProfile profile) {
         
-        log.info("Rozpoczęcie odczytu danych dla narożnika: {} (Tryb symulacji: {})", position.getLabel(), simulationMode);
+        log.info("Rozpoczęcie odczytu danych dla narożnika: {} (Tryb symulacji: {}, Profil: {})", position.getLabel(), simulationMode, profile);
         
         if (simulationMode) {
-            return generateSimulatedPositionData(session, position);
+            return generateSimulatedPositionData(session, position, profile);
         } else {
             return readRealPositionData(session, position);
         }
@@ -270,7 +276,8 @@ public class TestoRevalidationService {
      */
     private RevalidationSession.PositionData generateSimulatedPositionData(
             RevalidationSession session, 
-            RevalidationSession.GridPosition position) {
+            RevalidationSession.GridPosition position,
+            SimulationProfile profile) {
 
         int index = position.ordinal() + 1;
         String serialNumber = "SN-174-T00" + index + "-SIM";
@@ -375,25 +382,10 @@ public class TestoRevalidationService {
             case BOTTOM_BACK_RIGHT: baselineTemp = 5.0; break;
         }
 
-        Random r = new Random(index * 1337L); // Stały zarodek, aby seria była powtarzalna i estetyczna
-        double currentTemp = baselineTemp;
-
-        for (int i = 1; i <= 40; i++) {
-            // Drobna losowa fluktuacja wokół punktu
-            double drift = (r.nextDouble() - 0.5) * 0.3;
-            currentTemp += drift;
-
-            // Zabezpieczenie przed skrajnościami
-            if (currentTemp < baselineTemp - 0.6) currentTemp = baselineTemp - 0.4;
-            if (currentTemp > baselineTemp + 0.6) currentTemp = baselineTemp + 0.4;
-
-            double roundedTemp = Math.round(currentTemp * 10.0) / 10.0;
-
-            series.addMeasurement(ThermoMeasurementPoint.builder()
-                    .measurementIndex(i)
-                    .timestampLocal(startTimeLocal.plusHours((i - 1) * 3))
-                    .rawCelsius(roundedTemp)
-                    .build());
+        List<ThermoMeasurementPoint> simPoints = testoSimulationService.generateSimulationPoints(
+                40, 180, profile, baselineTemp, index, startTimeLocal);
+        for (ThermoMeasurementPoint pt : simPoints) {
+            series.addMeasurement(pt);
         }
 
         // Automatyczne wyliczenie zaawansowanych statystyk GxP & GUM

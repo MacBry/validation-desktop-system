@@ -49,6 +49,10 @@ public class TestoRevalidationFacade {
         return revalidationService.readPositionData(session, pos, simulate);
     }
 
+    public RevalidationSession.PositionData readPositionData(RevalidationSession session, RevalidationSession.GridPosition pos, boolean simulate, SimulationProfile profile) throws Exception {
+        return revalidationService.readPositionData(session, pos, simulate, profile);
+    }
+
     public RevalidationSession.PositionData readPositionDataFromPdf(RevalidationSession session, RevalidationSession.GridPosition pos, File pdfFile) throws Exception {
         return revalidationService.readPositionDataFromPdf(session, pos, pdfFile);
     }

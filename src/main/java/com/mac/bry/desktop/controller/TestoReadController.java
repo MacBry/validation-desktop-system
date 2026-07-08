@@ -4,6 +4,7 @@ import com.mac.bry.desktop.model.ThermoMeasurementPoint;
 import com.mac.bry.desktop.service.TestoPdfReportService;
 import com.mac.bry.desktop.service.TestoUsbImportService;
 import com.mac.bry.desktop.service.TestoSimulationService;
+import com.mac.bry.desktop.service.SimulationProfile;
 import com.mac.bry.desktop.service.TestoCsvExportService;
 import com.mac.bry.desktop.service.JavaFxChartRenderer;
 import com.mac.bry.desktop.controller.helper.TestoReadTableHelper;
@@ -243,28 +244,39 @@ public class TestoReadController {
         new Thread(task).start();
     }
 
-    /**
-     * Wygodny i realistyczny tryb symulacji pomiarów metrologicznych.
-     */
     private void runSimulation() {
-        pointsList.clear();
-        List<ThermoMeasurementPoint> simPoints = testoSimulationService.generateSimulationPoints(200, 10);
-        pointsList.addAll(simPoints);
+        List<SimulationProfile> profiles = List.of(
+                SimulationProfile.STABLE,
+                SimulationProfile.DRIFT,
+                SimulationProfile.SPIKES,
+                SimulationProfile.DRIFT_AND_SPIKES
+        );
+        ChoiceDialog<SimulationProfile> choiceDialog = new ChoiceDialog<>(SimulationProfile.STABLE, profiles);
+        choiceDialog.setTitle("Profil Symulacji");
+        choiceDialog.setHeaderText("Wybierz profil symulacji do załadowania");
+        choiceDialog.setContentText("Profil:");
 
-        modelField.setText("Testo 174T (Symulacja)");
-        serialNumberField.setText("SN-174-20485912-SIM");
-        batteryLevelField.setText("98%");
-        intervalField.setText("10 minut");
-        delayField.setText("Brak opóźnienia");
-        countField.setText(String.valueOf(pointsList.size()));
+        choiceDialog.showAndWait().ifPresent(profile -> {
+            pointsList.clear();
+            List<ThermoMeasurementPoint> simPoints = testoSimulationService.generateSimulationPoints(
+                    200, 10, profile, 4.8, 1, LocalDateTime.now().minusHours(33));
+            pointsList.addAll(simPoints);
 
-        // Renderowanie interaktywnego wykresu JavaFX
-        updateChart();
+            modelField.setText("Testo 174T (Symulacja: " + profile.getDisplayName() + ")");
+            serialNumberField.setText("SN-174-20485912-SIM");
+            batteryLevelField.setText("98%");
+            intervalField.setText("10 minut");
+            delayField.setText("Brak opóźnienia");
+            countField.setText(String.valueOf(pointsList.size()));
 
-        exportCsvButton.setDisable(false);
-        reportPdfButton.setDisable(false);
-        statusLabel.setText("Status: Uruchomiono tryb demonstracyjny. Wygenerowano " + pointsList.size() + " punktów pomiarowych.");
-        log.info("Uruchomiono symulację temperatury lodówki (" + pointsList.size() + " punktów).");
+            // Renderowanie interaktywnego wykresu JavaFX
+            updateChart();
+
+            exportCsvButton.setDisable(false);
+            reportPdfButton.setDisable(false);
+            statusLabel.setText("Status: Uruchomiono symulację: " + profile.getDisplayName());
+            log.info("Uruchomiono symulację: " + profile.getDisplayName() + " (" + pointsList.size() + " punktów).");
+        });
     }
 
     private void updateChart() {
