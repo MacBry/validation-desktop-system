@@ -259,6 +259,11 @@ public class MainController {
     }
 
     @FXML
+    public void showChamberTrends(ActionEvent event) {
+        loadView("/ui/chamber_trends.fxml");
+    }
+
+    @FXML
     public void showAdminUsers(ActionEvent event) {
         loadAdminTab(0);
     }
@@ -326,10 +331,10 @@ public class MainController {
     /** Przeładowanie głównego okna po zmianie języka (świeży bundle). */
     private void reloadMainView() {
         try {
+            Stage stage = (Stage) contentArea.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/main.fxml"), I18n.getBundle());
             loader.setControllerFactory(applicationContext::getBean);
             Parent root = loader.load();
-            Stage stage = (Stage) contentArea.getScene().getWindow();
             stage.getScene().setRoot(root);
         } catch (IOException e) {
             log.error("Failed to reload main view after language switch", e);
