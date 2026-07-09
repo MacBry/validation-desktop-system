@@ -61,6 +61,7 @@
                         <Button mnemonicParsing="false" onAction="#showPeriodicRevalidation" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.periodicRevalidation" />
                         <Button mnemonicParsing="false" onAction="#showChamberMapping" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.chamberMapping" />
                         <Button mnemonicParsing="false" onAction="#showProceduresList" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.proceduresList" />
+                        <Button mnemonicParsing="false" onAction="#showChamberTrends" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.chamberTrends" />
                      </children>
                   </VBox>
                </children>
