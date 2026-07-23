@@ -92,7 +92,7 @@ public class TestoUsbImportService {
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 while ((bytesRead = is.read(buffer)) != -1) {
-                    jsonOutput.append(new String(buffer, 0, bytesRead));
+                    jsonOutput.append(new String(buffer, 0, bytesRead, java.nio.charset.StandardCharsets.UTF_8));
                 }
             }
 

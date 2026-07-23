@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Filtr wykluczeń SpotBugs (Faza 2 CI/CD).
+  Cel: wprowadzić analizę statyczną na przechodzącej bazie, wyciszając wzorce
+  typowe dla JPA/JavaFX/Springa, które nie są realnymi defektami w tym projekcie.
+  Progi można zaostrzać stopniowo (ratchet) w kolejnych iteracjach.
+-->
+<FindBugsFilter>
+
+    <!-- Ekspozycja wewnętrznej reprezentacji: nieunikniona dla encji JPA i DTO
+         (kolekcje/daty przekazywane przez referencję). -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Encje domenowe (JPA) - pola mutowalne wymagane przez Hibernate. -->
+    <Match>
+        <Class name="~.*\.security\.model\..*"/>
+    </Match>
+    <Match>
+        <Class name="~.*\.model\..*"/>
+    </Match>
+
+    <!-- Kontrolery JavaFX - wstrzykiwane pola @FXML, wzorce UI. -->
+    <Match>
+        <Class name="~.*\.controller\..*"/>
+    </Match>
+
+    <!-- Testy nie podlegają bramce analizy statycznej. -->
+    <Match>
+        <Class name="~.*Test$"/>
+    </Match>
+    <Match>
+        <Class name="~.*IntegrationTest$"/>
+    </Match>
+
+    <!-- Backup H2: polecenie 'BACKUP TO <ścieżka>' nie przyjmuje parametrów wiązanych.
+         Ścieżka pochodzi z konfiguracji (backupDir) + znacznika czasu, NIE z danych użytkownika,
+         a apostrofy są escapowane. To nie jest wektor SQL injection. -->
+    <Match>
+        <Class name="com.mac.bry.desktop.service.DatabaseBackupService"/>
+        <Bug pattern="SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE"/>
+    </Match>
+
+    <!-- Symulacja deterministyczna: Random jest celowo seedowany per wywołanie (odtwarzalność
+         danych demonstracyjnych/walidacyjnych), więc wzorzec "użyty raz" jest zamierzony. -->
+    <Match>
+        <Class name="com.mac.bry.desktop.service.TestoSimulationService"/>
+        <Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/>
+    </Match>
+
+</FindBugsFilter>

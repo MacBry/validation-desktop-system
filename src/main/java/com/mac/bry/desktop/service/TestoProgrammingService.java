@@ -68,7 +68,7 @@ public class TestoProgrammingService {
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 while ((bytesRead = is.read(buffer)) != -1) {
-                    output.append(new String(buffer, 0, bytesRead));
+                    output.append(new String(buffer, 0, bytesRead, java.nio.charset.StandardCharsets.UTF_8));
                 }
             }
 
