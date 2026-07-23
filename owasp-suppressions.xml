@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Plik supresji OWASP Dependency-Check.
+  Dodawaj tu wpisy dla potwierdzonych false-positive lub podatności nie dotyczących
+  sposobu użycia zależności w tym projekcie. Każdy wpis powinien mieć uzasadnienie i CVE.
+
+  Przykład:
+  <suppress>
+      <notes>FP: podatność dotyczy komponentu serwerowego, nie używanego w tej aplikacji.</notes>
+      <packageUrl regex="true">^pkg:maven/com\.example/.*$</packageUrl>
+      <cve>CVE-YYYY-NNNNN</cve>
+  </suppress>
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>

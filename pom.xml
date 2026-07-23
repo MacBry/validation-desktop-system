@@ -270,4 +270,38 @@
         </plugins>
     </build>
 
+    <profiles>
+        <!-- OWASP Dependency-Check - Faza 4 CI/CD.
+             Uruchamiany OSOBNO (nie w zwykłym `verify`), bo jest ciężki i wolny:
+                 mvn -Psecurity-scan org.owasp:dependency-check-maven:check
+             W CI odpalany nocnym harmonogramem z cache bazy NVD.
+             Klucz NVD czytany ze zmiennej środowiskowej NVD_API_KEY (sekret CI) - NIE trzymamy
+             go w repozytorium. -->
+        <profile>
+            <id>security-scan</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>12.2.2</version>
+                        <configuration>
+                            <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                            <!-- Blokuje build przy podatności High/Critical (CVSS >= 7.0).
+                                 Dla samych krytycznych ustaw 9.0. -->
+                            <failBuildOnCVSS>7.0</failBuildOnCVSS>
+                            <formats>
+                                <format>HTML</format>
+                                <format>JSON</format>
+                            </formats>
+                            <suppressionFiles>
+                                <suppressionFile>owasp-suppressions.xml</suppressionFile>
+                            </suppressionFiles>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
