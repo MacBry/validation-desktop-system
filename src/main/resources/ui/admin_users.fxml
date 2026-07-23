@@ -153,6 +153,10 @@
                                 text="%common.audit" />
                         <Button mnemonicParsing="false" onAction="#handleResetPassword"
                                 styleClass="button-sm" text="%adminusers.reset_hasla" />
+                        <Button mnemonicParsing="false" onAction="#handleForceLogout"
+                                styleClass="button-sm"
+                                style="-fx-background-color: #b45309; -fx-text-fill: white; -fx-font-weight: bold;"
+                                text="%adminusers.force_logout" />
                         <Button mnemonicParsing="false" onAction="#handleSaveUser"
                                 styleClass="button-sm"
                                 style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold;"

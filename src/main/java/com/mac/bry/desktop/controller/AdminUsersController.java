@@ -223,6 +223,17 @@ public class AdminUsersController {
     }
 
     @FXML
+    public void handleForceLogout(ActionEvent event) {
+        if (selectedUser == null) return;
+        if (confirm("Wymusić zakończenie aktywnej sesji użytkownika " + selectedUser.getUsername() + "?")) {
+            boolean hadSession = userService.forceLogout(selectedUser.getId());
+            info("Sesja", hadSession
+                    ? "Sesja użytkownika została zakończona."
+                    : "Użytkownik nie miał aktywnej sesji.");
+        }
+    }
+
+    @FXML
     public void handleShowAudit(ActionEvent event) {
         if (selectedUser == null) return;
         openAudit(ctrl -> ctrl.initData(selectedUser));
