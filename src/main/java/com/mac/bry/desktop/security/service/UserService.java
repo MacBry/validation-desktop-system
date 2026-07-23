@@ -57,8 +57,12 @@ public class UserService {
         return userPasswordService.changePasswordWithOld(userId, oldPassword, newPassword);
     }
 
-    public boolean resetPassword(String email) {
-        return userPasswordService.resetPassword(email);
+    public boolean initiatePasswordReset(String email) {
+        return userPasswordService.initiatePasswordReset(email);
+    }
+
+    public UserPasswordService.PasswordResetResult resetPasswordWithToken(String email, String rawToken, String newPassword) {
+        return userPasswordService.resetPasswordWithToken(email, rawToken, newPassword);
     }
 
     public boolean isPasswordInHistory(Long userId, String rawPassword) {

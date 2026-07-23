@@ -216,9 +216,10 @@ public class AdminUsersController {
     @FXML
     public void handleResetPassword(ActionEvent event) {
         if (selectedUser == null) return;
-        if (confirm("Zresetować hasło dla " + selectedUser.getUsername() + "?\nNowe hasło zostanie wysłane e-mailem.")) {
-            userService.resetPassword(selectedUser.getEmail());
-            info("Sukces", "Hasło zresetowane i wysłane na: " + selectedUser.getEmail());
+        if (confirm("Zlecić reset hasła dla " + selectedUser.getUsername() + "?\n"
+                + "Na adres e-mail użytkownika zostanie wysłany jednorazowy token; nowe hasło ustawi samodzielnie.")) {
+            userService.initiatePasswordReset(selectedUser.getEmail());
+            info("Sukces", "Token resetu został wysłany na: " + selectedUser.getEmail());
         }
     }
 

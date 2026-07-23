@@ -43,9 +43,8 @@ public class PasswordHistoryIntegrationTest {
         user.setEnabled(true);
         user = userRepository.saveAndFlush(user);
         testUserId = user.getId();
-        
-        // Ręcznie dodajemy początkowe hasło do historii (normalnie robi to migracja lub UserService)
-        historyRepository.save(new com.mac.bry.desktop.security.model.UserPasswordHistory(user, encoded));
+        // Uwaga: hasła początkowego NIE dodajemy ręcznie do historii - po naprawie 3.5
+        // mechanizm zapisuje poprzedni hash przy pierwszej zmianie.
     }
 
     @Test
@@ -63,36 +62,52 @@ public class PasswordHistoryIntegrationTest {
 
     @Test
     void shouldAllowPasswordIfOutsideTop5() {
-        // Symulujemy 5 zmian haseł
+        // Store-old: przy pierwszej zmianie do historii trafia InitialPass. Aby wypadło ono
+        // poza okno Top-5, potrzeba 6 kolejnych zmian (Initial + 5 nowszych wpisów).
         String currentPass = "InitialPass123!";
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i <= 6; i++) {
             String nextPass = "PasswordNumber" + i + "!";
             userService.changePasswordWithOld(testUserId, currentPass, nextPass);
             currentPass = nextPass;
         }
-        
-        // Teraz w historii mamy: Password5 (current), Password4, Password3, Password2, Password1, InitialPass
-        // InitialPass jest na 6. miejscu (wypadło z Top 5)
-        
+
+        // Historia (od najnowszego): P5,P4,P3,P2,P1  -> InitialPass jest już poza Top-5.
         assertDoesNotThrow(() -> {
-            userService.changePasswordWithOld(testUserId, "PasswordNumber5!", "InitialPass123!");
+            userService.changePasswordWithOld(testUserId, "PasswordNumber6!", "InitialPass123!");
         });
     }
 
     @Test
-    void shouldTrackPasswordFromReset() {
-        // 1. Reset hasła (generuje losowe, zapisuje do historii)
-        userService.resetPassword("pass@history.com");
-        
-        // Ponieważ reset generuje losowe hasło, trudno je zgadnąć, 
-        // ale możemy sprawdzić czy zmiana na InitialPass123! jest zablokowana
-        
-        User user = userRepository.findById(testUserId).orElseThrow();
-        // Próba zmiany (wymuszonej) na InitialPass123!
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            userService.changeUserPassword(testUserId, "InitialPass123!");
-        });
-        
+    void shouldBlockReuseOfCurrentPassword() {
+        // Kluczowa część naprawy 3.5: bieżące hasło (jeszcze nie w historii) nie może być
+        // ustawione ponownie - blokuje je jawna kontrola względem user.getPassword().
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                userService.changePasswordWithOld(testUserId, "InitialPass123!", "InitialPass123!"));
         assertTrue(exception.getMessage().contains("użyte w przeszłości"));
+    }
+
+    @Test
+    void shouldBlockReuseOfInitialPasswordAfterOneChange() {
+        // Po jednej zmianie hasło początkowe trafia do historii i nie może zostać przywrócone.
+        userService.changePasswordWithOld(testUserId, "InitialPass123!", "NextPassword2@");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                userService.changePasswordWithOld(testUserId, "NextPassword2@", "InitialPass123!"));
+        assertTrue(exception.getMessage().contains("użyte w przeszłości"));
+    }
+
+    @Test
+    void shouldNotChangePasswordWhenInitiatingReset() {
+        // Model tokenowy: zlecenie resetu NIE zmienia hasła ani nie zaśmieca historii -
+        // jedynie generuje token (skrót w bazie). Stare hasło nadal działa.
+        User before = userRepository.findById(testUserId).orElseThrow();
+        String passwordBefore = before.getPassword();
+
+        userService.initiatePasswordReset("pass@history.com");
+
+        User after = userRepository.findById(testUserId).orElseThrow();
+        assertEquals(passwordBefore, after.getPassword(), "Zlecenie resetu nie może zmieniać hasła");
+        assertNotNull(after.getPasswordResetTokenHash(), "Powinien zostać ustawiony skrót tokenu resetu");
+        assertNotNull(after.getPasswordResetTokenExpiresAt(), "Token resetu powinien mieć czas ważności");
     }
 }
