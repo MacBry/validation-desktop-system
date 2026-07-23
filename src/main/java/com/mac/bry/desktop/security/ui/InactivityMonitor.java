@@ -59,8 +59,15 @@ public class InactivityMonitor {
 
     private void updateDatabaseActivity() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof com.mac.bry.desktop.security.model.User) {
-            Long userId = ((com.mac.bry.desktop.security.model.User) auth.getPrincipal()).getId();
+        if (auth != null && auth.getPrincipal() instanceof User user) {
+            Long userId = user.getId();
+            // Walidacja sesji: jeśli token został zdalnie wyczyszczony (wymuszone wylogowanie
+            // przez administratora) lub nadpisany (przejęcie sesji), zakończ tę sesję.
+            if (!userService.isSessionValid(userId, user.getSessionToken())) {
+                log.warn("Sesja użytkownika ID {} została zakończona zdalnie. Automatyczne wylogowanie.", userId);
+                logoutUser();
+                return;
+            }
             userService.updateActivity(userId);
             log.debug("Odświeżono aktywność sesji w bazie dla użytkownika ID: {}", userId);
         } else {

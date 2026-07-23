@@ -102,28 +102,35 @@ public class LoginController {
             // Sprawdzenie czy konto nie wygasło (90 dni bezczynności)
             userService.checkAccountExpiration(username);
 
-            // Pkt 3: Blokada jednoczesnych logowań
-            if (userService.isAlreadyLoggedIn(username)) {
-                loginErrorLabel.setText("Użytkownik jest już zalogowany na innym stanowisku.");
-                loginErrorLabel.setVisible(true);
-                return;
-            }
-
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password)
             );
 
+            // Pkt 3: Blokada jednoczesnych logowań - po potwierdzeniu tożsamości,
+            // aby nie ujawniać stanu sesji przed weryfikacją hasła.
+            if (userService.isAlreadyLoggedIn(username)) {
+                SecurityContextHolder.clearContext();
+                loginErrorLabel.setText("Użytkownik jest już zalogowany na innym stanowisku.");
+                loginErrorLabel.setVisible(true);
+                auditService.logAccessEvent(username, "LOGIN_BLOCKED", "Aktywna sesja na innym stanowisku");
+                return;
+            }
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
             log.info("Zalogowano pomyślnie: {}", username);
             auditService.logAccessEvent(username, "LOGIN_SUCCESS", "Udana autentykacja");
-            
+
             User user = userRepository.findByUsername(username).orElse(null);
-            
+
             if (user != null) {
                 // Pkt 4: Reset licznika nieudanych prób po pomyślnym logowaniu
                 userService.resetFailedLoginAttempts(user.getId());
-                // Rejestracja nowej sesji w bazie
-                userService.registerSession(user.getId());
+                // Rejestracja nowej sesji w bazie + utrwalenie tokenu na principalu,
+                // aby monitor bezczynności mógł walidować sesję (wykrycie force-logout / przejęcia).
+                String sessionToken = userService.registerSession(user.getId());
+                if (authentication.getPrincipal() instanceof User principal) {
+                    principal.setSessionToken(sessionToken);
+                }
             }
             
             if (user != null && user.mustChangePasswordNow()) {

@@ -94,6 +94,14 @@ public class UserService {
         return userAuthenticationService.isAlreadyLoggedIn(username);
     }
 
+    public boolean isSessionValid(Long userId, String token) {
+        return userAuthenticationService.isSessionValid(userId, token);
+    }
+
+    public boolean forceLogout(Long userId) {
+        return userAuthenticationService.forceLogout(userId);
+    }
+
     public void checkAccountExpiration(String username) {
         userAuthenticationService.checkAccountExpiration(username);
     }
