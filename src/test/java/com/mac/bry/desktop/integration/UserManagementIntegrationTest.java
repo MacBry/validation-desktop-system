@@ -2,6 +2,7 @@ package com.mac.bry.desktop.integration;
 
 import com.mac.bry.desktop.security.model.User;
 import com.mac.bry.desktop.security.repository.UserRepository;
+import com.mac.bry.desktop.security.service.UserPasswordService;
 import com.mac.bry.desktop.security.service.UserService;
 import com.mac.bry.desktop.service.EmailService;
 import org.junit.jupiter.api.DisplayName;
@@ -87,8 +88,8 @@ public class UserManagementIntegrationTest {
     }
 
     @Test
-    @DisplayName("IT-03: Reset hasła i logowanie hasłem tymczasowym")
-    void shouldResetPasswordAndAllowLoginWithTemp() {
+    @DisplayName("IT-03: Reset hasła jednorazowym tokenem i logowanie nowym hasłem")
+    void shouldResetPasswordViaTokenAndAllowLogin() {
         // Given
         User user = new User();
         user.setUsername("resetuser");
@@ -97,22 +98,27 @@ public class UserManagementIntegrationTest {
         user.setEnabled(true);
         userRepository.save(user);
 
-        // When
-        userService.resetPassword("reset@example.com");
+        // When: administrator/użytkownik zleca reset -> generowany jest token wysyłany mailem
+        userService.initiatePasswordReset("reset@example.com");
 
-        // Capture the temp password
-        ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
-        verify(emailService).sendPasswordResetEmail(eq("reset@example.com"), passwordCaptor.capture());
-        String tempPassword = passwordCaptor.getValue();
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendPasswordResetEmail(eq("reset@example.com"), tokenCaptor.capture());
+        String token = tokenCaptor.getValue();
 
-        // Then
+        // Użytkownik samodzielnie ustawia nowe (silne) hasło przy pomocy tokenu.
+        UserPasswordService.PasswordResetResult result =
+                userService.resetPasswordWithToken("reset@example.com", token, "BrandNewPass123!");
+        assertThat(result).isEqualTo(UserPasswordService.PasswordResetResult.OK);
+
+        // Then: stare hasło nie działa, nowe działa.
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken("resetuser", tempPassword)
+                new UsernamePasswordAuthenticationToken("resetuser", "BrandNewPass123!")
         );
         assertThat(auth.isAuthenticated()).isTrue();
-        
-        User updatedUser = userRepository.findByUsername("resetuser").get();
-        assertThat(updatedUser.isMustChangePassword()).isTrue();
+
+        // Token jest jednorazowy - ponowne użycie jest odrzucane.
+        assertThat(userService.resetPasswordWithToken("reset@example.com", token, "AnotherPass123!"))
+                .isEqualTo(UserPasswordService.PasswordResetResult.INVALID_TOKEN);
     }
 
     @Test

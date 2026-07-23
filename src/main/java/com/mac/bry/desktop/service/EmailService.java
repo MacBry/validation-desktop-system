@@ -21,20 +21,23 @@ public class EmailService {
         this.FROM_ADDRESS = fromAddress;
     }
 
-    public void sendPasswordResetEmail(String to, String tempPassword) {
+    public void sendPasswordResetEmail(String to, String resetToken) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(FROM_ADDRESS);
             message.setTo(to);
             message.setSubject("Validation System - Reset hasła");
             message.setText("Witaj,\n\n" +
-                    "Zlecono reset hasła dla Twojego konta.\n" +
-                    "Twoje nowe hasło tymczasowe to: " + tempPassword + "\n\n" +
-                    "Przy następnym logowaniu system wymusi na Tobie zmianę hasła na nowe.\n\n" +
+                    "Zlecono reset hasła dla Twojego konta.\n\n" +
+                    "Twój jednorazowy token resetu to:\n" + resetToken + "\n\n" +
+                    "Aby ustawić nowe hasło: otwórz aplikację, przejdź do zakładki \"Reset hasła\",\n" +
+                    "wklej powyższy token, podaj swój adres e-mail i ustaw nowe hasło.\n\n" +
+                    "Token jest jednorazowy i ma ograniczony czas ważności.\n" +
+                    "Jeśli to nie Ty zleciłeś reset, zignoruj tę wiadomość - Twoje hasło pozostaje bez zmian.\n\n" +
                     "Pozdrawiamy,\nZespół Validation System");
-            
+
             mailSender.send(message);
-            log.info("Wysłano email z resetem hasła do: {}", to);
+            log.info("Wysłano email z tokenem resetu hasła do: {}", to);
         } catch (Exception e) {
             log.error("Nie udało się wysłać emaila z resetem hasła do: {}", to, e);
         }

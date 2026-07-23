@@ -93,6 +93,14 @@ public class User implements UserDetails {
     @Column(name = "last_activity")
     private LocalDateTime lastActivity;
 
+    @NotAudited
+    @Column(name = "password_reset_token_hash")
+    private String passwordResetTokenHash;
+
+    @NotAudited
+    @Column(name = "password_reset_token_expires_at")
+    private LocalDateTime passwordResetTokenExpiresAt;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     @Audited
