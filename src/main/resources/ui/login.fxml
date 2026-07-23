@@ -144,6 +144,21 @@
                               <Font name="System Bold" size="14.0" />
                            </font>
                         </Button>
+
+                        <!-- KROK 2: WKLEJENIE TOKENU I USTAWIENIE NOWEGO HASŁA -->
+                        <Label style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;" text="%reset.form.token.header">
+                           <VBox.margin>
+                              <Insets top="10.0" />
+                           </VBox.margin>
+                        </Label>
+                        <TextField fx:id="resetTokenField" promptText="%reset.form.token.prompt" style="-fx-pref-height: 38px;" />
+                        <PasswordField fx:id="resetNewPasswordField" promptText="%reset.form.newPassword.prompt" style="-fx-pref-height: 38px;" />
+                        <PasswordField fx:id="resetNewPasswordConfirmField" promptText="%reset.form.newPasswordConfirm.prompt" style="-fx-pref-height: 38px;" />
+                        <Button mnemonicParsing="false" onAction="#handleTokenReset" prefHeight="40.0" prefWidth="380.0" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;" text="%reset.form.submitToken">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font>
+                        </Button>
                       </children>
                     </VBox>
                   </content>
