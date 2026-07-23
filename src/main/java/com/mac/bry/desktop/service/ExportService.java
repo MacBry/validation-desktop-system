@@ -104,7 +104,7 @@ public class ExportService {
     public void exportToCsv(List<UserAuditDto> data, File file) throws IOException {
         log.info("Eksportowanie {} rekordów do CSV: {}", data.size(), file.getAbsolutePath());
         
-        try (CSVWriter writer = new CSVWriter(new FileWriter(file))) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(file, java.nio.charset.StandardCharsets.UTF_8))) {
             // Nagłówek
             writer.writeNext(new String[]{"Revision ID", "Timestamp", "Modified By", "Operation", "Field", "Old Value", "New Value"});
             
