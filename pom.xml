@@ -18,7 +18,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <javafx.version>21.0.2</javafx.version>
+        <javafx.version>26.0.2</javafx.version>
         <fxweaver.version>2.0.1</fxweaver.version>
         <!-- Nadpisanie wersji z BOM Spring Boota (1.19.3) - nowszy klient Dockera
              zgodny z minimalnym API Docker Engine 29.x (min 1.44). -->
