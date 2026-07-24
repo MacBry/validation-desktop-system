@@ -1,0 +1,54 @@
+name: OWASP Dependency-Check
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # codziennie o 03:00 UTC
+  workflow_dispatch:        # możliwość ręcznego uruchomienia
+
+# Anuluj starszy przebieg, jeśli wystartuje nowy.
+concurrency:
+  group: owasp-dependency-check
+  cancel-in-progress: true
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    # Skan czyta bazę NVD z self-hosted mirrora (release `nvd-mirror`, patrz
+    # nvdDatafeedUrl w pom.xml), NIE bije w API NVD - więc omija rate-limit IP
+    # runnerów GitHuba. Pobranie datafeedu z GitHuba + import do H2 mieści się
+    # spokojnie w 30 min; z cache H2 kolejne przebiegi są jeszcze szybsze.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # Cache lokalnej bazy H2 zbudowanej z datafeedu mirrora - bez tego każdy
+      # przebieg importuje całe .json.gz od nowa. Klucz zależny od run_id (świeży
+      # zapis co przebieg), z fallbackiem do najnowszego (przyrostowy import delty).
+      - name: Cache NVD data
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-data-${{ github.run_id }}
+          restore-keys: |
+            nvd-data-
+
+      # Bez NVD_API_KEY: baza pochodzi z nvdDatafeedUrl (release nvd-mirror), nie z API.
+      - name: Run OWASP Dependency-Check
+        run: mvn -B -Psecurity-scan org.owasp:dependency-check-maven:check
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: |
+            target/dependency-check-report.html
+            target/dependency-check-report.json
+          if-no-files-found: ignore
