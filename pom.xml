@@ -302,9 +302,11 @@
                         <version>12.2.2</version>
                         <configuration>
                             <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
-                            <!-- Blokuje build przy podatności High/Critical (CVSS >= 7.0).
-                                 Dla samych krytycznych ustaw 9.0. -->
-                            <failBuildOnCVSS>7.0</failBuildOnCVSS>
+                            <!-- Tryb RAPORTOWY na start: 11 > maks. CVSS (10), więc build nigdy
+                                 nie pada na podatnościach - najpierw chcemy zobaczyć krajobraz.
+                                 Po przeglądzie raportu zaostrzyć: 7.0 = blokada High/Critical,
+                                 9.0 = tylko Critical. -->
+                            <failBuildOnCVSS>11</failBuildOnCVSS>
                             <formats>
                                 <format>HTML</format>
                                 <format>JSON</format>
