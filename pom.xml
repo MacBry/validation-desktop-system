@@ -143,21 +143,21 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>5.9</version>
+            <version>5.12.0</version>
         </dependency>
 
         <!-- AtlantaFX for modern UI -->
         <dependency>
             <groupId>io.github.mkpaz</groupId>
             <artifactId>atlantafx-base</artifactId>
-            <version>2.0.1</version>
+            <version>2.1.0</version>
         </dependency>
 
         <!-- Apache POI for DOCX Export -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
+            <version>5.5.1</version>
         </dependency>
     </dependencies>
 
@@ -192,7 +192,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
+                <version>0.8.15</version>
                 <configuration>
                     <excludes>
                         <exclude>**/controller/**</exclude>
@@ -257,7 +257,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.8.6.4</version>
+                <version>4.10.3.0</version>
                 <configuration>
                     <effort>Max</effort>
                     <threshold>High</threshold>
@@ -268,7 +268,7 @@
                         <plugin>
                             <groupId>com.h3xstream.findsecbugs</groupId>
                             <artifactId>findsecbugs-plugin</artifactId>
-                            <version>1.13.0</version>
+                            <version>1.14.0</version>
                         </plugin>
                     </plugins>
                 </configuration>
