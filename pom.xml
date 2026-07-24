@@ -301,7 +301,13 @@
                         <artifactId>dependency-check-maven</artifactId>
                         <version>12.2.2</version>
                         <configuration>
-                            <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                            <!-- Self-hosted mirror bazy NVD zamiast bezpośredniego API NVD.
+                                 NVD agresywnie rate-limituje IP runnerów GitHuba (pełne pobranie
+                                 potrafi pełznąć godzinami). Bazę pobiera TYLKO builder mirrora
+                                 (vulnz, workflow nvd-mirror-refresh), a skan czyta gotowe pliki
+                                 .json.gz z release'u `nvd-mirror`. {0} = rocznik lub "modified".
+                                 Klucz NVD do samego skanu NIE jest potrzebny. -->
+                            <nvdDatafeedUrl>https://github.com/MacBry/validation-desktop-system/releases/download/nvd-mirror/nvdcve-{0}.json.gz</nvdDatafeedUrl>
                             <!-- Tryb RAPORTOWY na start: 11 > maks. CVSS (10), więc build nigdy
                                  nie pada na podatnościach - najpierw chcemy zobaczyć krajobraz.
                                  Po przeglądzie raportu zaostrzyć: 7.0 = blokada High/Critical,

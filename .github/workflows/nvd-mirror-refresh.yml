@@ -1,0 +1,58 @@
+name: NVD Mirror Refresh
+
+# Odświeża self-hosted mirror bazy NVD (release `nvd-mirror`), z którego skan OWASP
+# czyta dane przez nvdDatafeedUrl. Kluczowe: workflow POBIERA obecny mirror z release'u
+# i tylko dokłada deltę (feed "modified" NVD, ostatnie ~8 dni) - NIGDY nie robi pełnego
+# pobrania na runnerze, więc rate-limit IP runnerów GitHuba jest nieistotny.
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 02:00 UTC, godzinę przed nocnym skanem OWASP (03:00)
+  workflow_dispatch:
+
+concurrency:
+  group: nvd-mirror-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    # Delta jest mała, ale zostawiamy zapas na wypadek chwilowego dławienia runnera przez NVD.
+    timeout-minutes: 45
+    permissions:
+      contents: write   # nadpisanie assetów release'u nvd-mirror
+    steps:
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # Startujemy z aktualnego mirrora (cache.properties niesie lastModifiedDate),
+      # dzięki czemu vulnz pobierze tylko zmiany od ostatniego odświeżenia.
+      - name: Pobierz obecny mirror z release'u nvd-mirror
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p nvd-cache
+          gh release download nvd-mirror --repo "${{ github.repository }}" --dir nvd-cache --pattern '*'
+
+      - name: Pobierz vulnz CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v9.0.4 --repo jeremylong/open-vulnerability-cli \
+            --pattern 'vulnz-9.0.4.jar' --dir .
+
+      # Przyrostowa aktualizacja: vulnz czyta cache.properties i dociąga tylko deltę.
+      - name: Przyrostowa aktualizacja mirrora
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          java -Xmx2g -jar vulnz-9.0.4.jar cve --cache --directory nvd-cache
+
+      - name: Nadpisz assety release'u nvd-mirror
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload nvd-mirror --repo "${{ github.repository }}" --clobber \
+            nvd-cache/nvdcve-*.json.gz nvd-cache/nvdcve-*.meta nvd-cache/cache.properties

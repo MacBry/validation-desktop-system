@@ -13,11 +13,11 @@ concurrency:
 jobs:
   dependency-check:
     runs-on: ubuntu-latest
-    # BOOTSTRAP: pierwsze, zimne pobranie CAŁEJ bazy NVD (~370 tys. CVE) trwa ~60 min
-    # nawet z działającym kluczem. Musi się raz dokończyć, żeby cache zapisał pełną bazę;
-    # kolejne noce robią tylko przyrostową aktualizację (kilka min). Timeout 75 min daje
-    # zapas na bootstrap. Po pierwszym udanym przebiegu obniżymy z powrotem do 30 min.
-    timeout-minutes: 75
+    # Skan czyta bazę NVD z self-hosted mirrora (release `nvd-mirror`, patrz
+    # nvdDatafeedUrl w pom.xml), NIE bije w API NVD - więc omija rate-limit IP
+    # runnerów GitHuba. Pobranie datafeedu z GitHuba + import do H2 mieści się
+    # spokojnie w 30 min; z cache H2 kolejne przebiegi są jeszcze szybsze.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -28,9 +28,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Cache bazy NVD - bez tego każdy przebieg pobiera całość od nowa.
-      # Klucz zależny od run_id (każdy przebieg zapisuje świeży cache), z fallbackiem do
-      # najnowszego dostępnego (przyrostowa aktualizacja danych NVD).
+      # Cache lokalnej bazy H2 zbudowanej z datafeedu mirrora - bez tego każdy
+      # przebieg importuje całe .json.gz od nowa. Klucz zależny od run_id (świeży
+      # zapis co przebieg), z fallbackiem do najnowszego (przyrostowy import delty).
       - name: Cache NVD data
         uses: actions/cache@v4
         with:
@@ -39,9 +39,8 @@ jobs:
           restore-keys: |
             nvd-data-
 
+      # Bez NVD_API_KEY: baza pochodzi z nvdDatafeedUrl (release nvd-mirror), nie z API.
       - name: Run OWASP Dependency-Check
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn -B -Psecurity-scan org.owasp:dependency-check-maven:check
 
       - name: Upload report
