@@ -13,10 +13,11 @@ concurrency:
 jobs:
   dependency-check:
     runs-on: ubuntu-latest
-    # Twardy limit: bez klucza NVD pełne pobranie bazy potrafi wisieć >50 min.
-    # Z działającym kluczem pierwszy przebieg mieści się w kilkunastu minutach,
-    # kolejne (z cache) w kilku. 30 min to bezpieczny bufor + sygnał alarmowy.
-    timeout-minutes: 30
+    # BOOTSTRAP: pierwsze, zimne pobranie CAŁEJ bazy NVD (~370 tys. CVE) trwa ~60 min
+    # nawet z działającym kluczem. Musi się raz dokończyć, żeby cache zapisał pełną bazę;
+    # kolejne noce robią tylko przyrostową aktualizację (kilka min). Timeout 75 min daje
+    # zapas na bootstrap. Po pierwszym udanym przebiegu obniżymy z powrotem do 30 min.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
 
