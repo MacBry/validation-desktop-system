@@ -13,6 +13,10 @@ concurrency:
 jobs:
   dependency-check:
     runs-on: ubuntu-latest
+    # Twardy limit: bez klucza NVD pełne pobranie bazy potrafi wisieć >50 min.
+    # Z działającym kluczem pierwszy przebieg mieści się w kilkunastu minutach,
+    # kolejne (z cache) w kilku. 30 min to bezpieczny bufor + sygnał alarmowy.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
