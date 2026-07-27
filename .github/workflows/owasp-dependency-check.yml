@@ -32,7 +32,7 @@ jobs:
       # przebieg importuje całe .json.gz od nowa. Klucz zależny od run_id (świeży
       # zapis co przebieg), z fallbackiem do najnowszego (przyrostowy import delty).
       - name: Cache NVD data
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
           key: nvd-data-${{ github.run_id }}
