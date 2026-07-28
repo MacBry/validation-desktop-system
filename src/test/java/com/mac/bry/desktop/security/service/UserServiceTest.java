@@ -117,25 +117,25 @@ class UserServiceTest {
         }
 
         @Test
-        @DisplayName("UT-08: resetPassword() deleguje do UserPasswordService")
-        void shouldDelegateResetPasswordToPasswordService() {
-            when(userPasswordService.resetPassword("test@example.com")).thenReturn(true);
+        @DisplayName("UT-08: initiatePasswordReset() deleguje do UserPasswordService")
+        void shouldDelegateInitiatePasswordResetToPasswordService() {
+            when(userPasswordService.initiatePasswordReset("test@example.com")).thenReturn(true);
 
-            boolean result = userService.resetPassword("test@example.com");
+            boolean result = userService.initiatePasswordReset("test@example.com");
 
             assertThat(result).isTrue();
-            verify(userPasswordService).resetPassword("test@example.com");
+            verify(userPasswordService).initiatePasswordReset("test@example.com");
         }
 
         @Test
-        @DisplayName("UT-09: resetPassword() zwraca false gdy delegacja zwraca false")
+        @DisplayName("UT-09: initiatePasswordReset() zwraca false gdy delegacja zwraca false")
         void shouldReturnFalseWhenPasswordServiceReturnsFalse() {
-            when(userPasswordService.resetPassword("unknown@example.com")).thenReturn(false);
+            when(userPasswordService.initiatePasswordReset("unknown@example.com")).thenReturn(false);
 
-            boolean result = userService.resetPassword("unknown@example.com");
+            boolean result = userService.initiatePasswordReset("unknown@example.com");
 
             assertThat(result).isFalse();
-            verify(userPasswordService).resetPassword("unknown@example.com");
+            verify(userPasswordService).initiatePasswordReset("unknown@example.com");
         }
 
         @Test

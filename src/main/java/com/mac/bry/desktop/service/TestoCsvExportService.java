@@ -13,7 +13,7 @@ import java.util.List;
 public class TestoCsvExportService {
 
     public void exportToCsv(File targetFile, String model, String serialNumber, String battery, String interval, int count, String comments, List<ThermoMeasurementPoint> points) throws IOException {
-        try (FileWriter writer = new FileWriter(targetFile)) {
+        try (FileWriter writer = new FileWriter(targetFile, java.nio.charset.StandardCharsets.UTF_8)) {
             writer.write("Validation System - Standalone Testo Report\n");
             writer.write("Wygenerowano," + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "\n");
             writer.write("Model rejestratora," + (model != null ? model : "") + "\n");

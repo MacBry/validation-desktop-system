@@ -57,8 +57,12 @@ public class UserService {
         return userPasswordService.changePasswordWithOld(userId, oldPassword, newPassword);
     }
 
-    public boolean resetPassword(String email) {
-        return userPasswordService.resetPassword(email);
+    public boolean initiatePasswordReset(String email) {
+        return userPasswordService.initiatePasswordReset(email);
+    }
+
+    public UserPasswordService.PasswordResetResult resetPasswordWithToken(String email, String rawToken, String newPassword) {
+        return userPasswordService.resetPasswordWithToken(email, rawToken, newPassword);
     }
 
     public boolean isPasswordInHistory(Long userId, String rawPassword) {
@@ -92,6 +96,14 @@ public class UserService {
 
     public boolean isAlreadyLoggedIn(String username) {
         return userAuthenticationService.isAlreadyLoggedIn(username);
+    }
+
+    public boolean isSessionValid(Long userId, String token) {
+        return userAuthenticationService.isSessionValid(userId, token);
+    }
+
+    public boolean forceLogout(Long userId) {
+        return userAuthenticationService.forceLogout(userId);
     }
 
     public void checkAccountExpiration(String username) {

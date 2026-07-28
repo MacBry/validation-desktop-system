@@ -69,6 +69,9 @@ public class LoginController {
     // Reset Tab
     @FXML private TextField resetEmailField;
     @FXML private Label resetMessageLabel;
+    @FXML private TextField resetTokenField;
+    @FXML private PasswordField resetNewPasswordField;
+    @FXML private PasswordField resetNewPasswordConfirmField;
 
     // Przełącznik języka UI
     @FXML private javafx.scene.control.ComboBox<String> languageCombo;
@@ -102,28 +105,35 @@ public class LoginController {
             // Sprawdzenie czy konto nie wygasło (90 dni bezczynności)
             userService.checkAccountExpiration(username);
 
-            // Pkt 3: Blokada jednoczesnych logowań
-            if (userService.isAlreadyLoggedIn(username)) {
-                loginErrorLabel.setText("Użytkownik jest już zalogowany na innym stanowisku.");
-                loginErrorLabel.setVisible(true);
-                return;
-            }
-
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password)
             );
 
+            // Pkt 3: Blokada jednoczesnych logowań - po potwierdzeniu tożsamości,
+            // aby nie ujawniać stanu sesji przed weryfikacją hasła.
+            if (userService.isAlreadyLoggedIn(username)) {
+                SecurityContextHolder.clearContext();
+                loginErrorLabel.setText("Użytkownik jest już zalogowany na innym stanowisku.");
+                loginErrorLabel.setVisible(true);
+                auditService.logAccessEvent(username, "LOGIN_BLOCKED", "Aktywna sesja na innym stanowisku");
+                return;
+            }
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
             log.info("Zalogowano pomyślnie: {}", username);
             auditService.logAccessEvent(username, "LOGIN_SUCCESS", "Udana autentykacja");
-            
+
             User user = userRepository.findByUsername(username).orElse(null);
-            
+
             if (user != null) {
                 // Pkt 4: Reset licznika nieudanych prób po pomyślnym logowaniu
                 userService.resetFailedLoginAttempts(user.getId());
-                // Rejestracja nowej sesji w bazie
-                userService.registerSession(user.getId());
+                // Rejestracja nowej sesji w bazie + utrwalenie tokenu na principalu,
+                // aby monitor bezczynności mógł walidować sesję (wykrycie force-logout / przejęcia).
+                String sessionToken = userService.registerSession(user.getId());
+                if (authentication.getPrincipal() instanceof User principal) {
+                    principal.setSessionToken(sessionToken);
+                }
             }
             
             if (user != null && user.mustChangePasswordNow()) {
@@ -301,15 +311,55 @@ public class LoginController {
             return;
         }
 
-        boolean resetSuccessful = userService.resetPassword(email);
-        
-        // Ze względów bezpieczeństwa (enumeracja kont), przeważnie wyświetla się 
-        // ten sam komunikat niezależnie czy e-mail istnieje czy nie. 
-        // Dla wygody użytkownika możemy to ewentualnie rozdzielić, ale zostawiamy bezpieczniejszą opcję.
-        resetMessageLabel.setText("Jeśli email istnieje w bazie, wysłano instrukcje resetu na podany adres.");
-        resetMessageLabel.setStyle("-fx-text-fill: green;");
+        // Model tokenowy: generuje jednorazowy token i wysyła go mailem (nie zmienia hasła).
+        userService.initiatePasswordReset(email);
+
+        // Ze względów bezpieczeństwa (enumeracja kont) komunikat jest neutralny -
+        // niezależnie od tego, czy e-mail istnieje w bazie.
+        showResetMessage("Jeśli email istnieje w bazie, wysłaliśmy na niego jednorazowy token resetu.", true);
+    }
+
+    @FXML
+    public void handleTokenReset(ActionEvent event) {
+        String email = resetEmailField.getText();
+        String token = resetTokenField.getText();
+        String newPassword = resetNewPasswordField.getText();
+        String confirm = resetNewPasswordConfirmField.getText();
+
+        if (email == null || email.isBlank() || token == null || token.isBlank()) {
+            showResetMessage("Podaj adres e-mail oraz token otrzymany w wiadomości.", false);
+            return;
+        }
+        if (newPassword == null || !newPassword.equals(confirm)) {
+            showResetMessage("Hasła nie są identyczne!", false);
+            return;
+        }
+        String strengthError = validatePasswordStrength(newPassword);
+        if (strengthError != null) {
+            showResetMessage(strengthError, false);
+            return;
+        }
+
+        var result = userService.resetPasswordWithToken(email.trim(), token.trim(), newPassword);
+        switch (result) {
+            case OK -> {
+                auditService.logAccessEvent(email, "PASSWORD_RESET", "Hasło ustawione jednorazowym tokenem");
+                showResetMessage("Hasło zostało ustawione. Możesz się teraz zalogować.", true);
+                resetEmailField.clear();
+                resetTokenField.clear();
+                resetNewPasswordField.clear();
+                resetNewPasswordConfirmField.clear();
+            }
+            case INVALID_TOKEN -> showResetMessage("Nieprawidłowy token lub adres e-mail.", false);
+            case EXPIRED -> showResetMessage("Token wygasł. Zleć reset hasła ponownie.", false);
+            case REUSED -> showResetMessage("To hasło było już używane. Wybierz inne.", false);
+        }
+    }
+
+    private void showResetMessage(String text, boolean success) {
+        resetMessageLabel.setText(text);
+        resetMessageLabel.setStyle(success ? "-fx-text-fill: green;" : "-fx-text-fill: #dc2626;");
         resetMessageLabel.setVisible(true);
-        resetEmailField.clear();
     }
 
     // Pkt 7: Wspólna metoda walidacji siły hasła
