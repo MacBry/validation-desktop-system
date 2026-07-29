@@ -39,5 +39,14 @@ public interface PlannedTaskRecorderAssignmentRepository
     List<Long> findBusyRecorderIds(@Param("from") LocalDateTime from,
                                    @Param("until") LocalDateTime until);
 
+    /**
+     * Najwcześniejszy moment zwolnienia jakiegokolwiek rejestratora zajętego
+     * w podanym oknie — heurystyka propozycji kolejnego wolnego okna (ST-W2-01).
+     */
+    @Query("select min(a.reservedUntil) from PlannedTaskRecorderAssignment a " +
+           "where a.reservedFrom <= :until and a.reservedUntil >= :from")
+    LocalDateTime findEarliestRelease(@Param("from") LocalDateTime from,
+                                      @Param("until") LocalDateTime until);
+
     void deleteByPlannedTask(PlannedValidationTask plannedTask);
 }
