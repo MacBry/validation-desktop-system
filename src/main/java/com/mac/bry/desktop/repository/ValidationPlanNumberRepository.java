@@ -24,4 +24,13 @@ public interface ValidationPlanNumberRepository extends JpaRepository<Validation
     Optional<ValidationPlanNumber> findByCoolingDeviceAndYear(CoolingDevice coolingDevice, Integer year);
 
     boolean existsByCoolingDeviceAndYear(CoolingDevice coolingDevice, Integer year);
+
+    /**
+     * Najwyższy numer RPW wydany w danym roku — podstawa nadania kolejnego
+     * przy generowaniu planu rocznego.
+     *
+     * @return {@code null} gdy w danym roku nie wydano jeszcze żadnego numeru
+     */
+    @Query("select max(vpn.planNumber) from ValidationPlanNumber vpn where vpn.year = :year")
+    Integer findMaxPlanNumberByYear(@Param("year") Integer year);
 }

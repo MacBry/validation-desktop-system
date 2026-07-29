@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 
 /**
  * Wyznacza okna, w których wolno planować akcje manualne technika —
@@ -135,6 +137,25 @@ public class OperatorCalendarService {
     public LocalDateTime findFirstShiftStartAfter(UserVacation absence, User user) {
         OperatorShiftConfig config = resolveShiftConfig(user);
         return findNextValidShiftStart(absence.firstDayBack().atTime(config.getShiftStart()), user);
+    }
+
+    /**
+     * Dni robocze w zakresie, pobrane jednym zapytaniem o nieobecności.
+     * <p>
+     * Silnik planera przeszukuje setki kandydatów na okno startu; odpytywanie
+     * bazy dla każdego z osobna byłoby nieproporcjonalnie kosztowne.
+     */
+    public NavigableSet<LocalDate> workingDaysBetween(LocalDate from, LocalDate to, User user) {
+        OperatorShiftConfig config = resolveShiftConfig(user);
+        List<UserVacation> vacations = vacationRepository.findOverlapping(user, from, to);
+
+        NavigableSet<LocalDate> workingDays = new TreeSet<>();
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+            if (isWorkingDay(date, config, vacations)) {
+                workingDays.add(date);
+            }
+        }
+        return workingDays;
     }
 
     private boolean isWorkingDay(LocalDate date, OperatorShiftConfig config, List<UserVacation> vacations) {
