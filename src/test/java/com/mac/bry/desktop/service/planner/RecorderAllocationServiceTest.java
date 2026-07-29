@@ -275,6 +275,19 @@ class RecorderAllocationServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("W4 odroczone: ThermoRecorder nie ma pól batteryLevel ani sampleCapacity")
+    @DisplayName("ST-W4-01: rejestrator z niską baterią lub za małą pamięcią zostaje odrzucony")
+    void st_w4_01_hardwareLimitsRejectRecorder() {
+        // Reguła W4 wymaga danych sprzętowych, których encja ThermoRecorder nie
+        // przechowuje: poziomu baterii (> 50%) i pojemności pamięci wobec liczby
+        // próbek z Kroku 4. Do czasu dodania tych pól — albo odczytania ich ze
+        // stacji Testo przy imporcie .vi2 — alokacja nie może tej reguły
+        // egzekwować. Test celowo pozostaje widoczny jako pominięty, żeby luka
+        // w pokryciu W1-W10 nie zniknęła z raportu.
+        throw new UnsupportedOperationException("Wymaga pól batteryLevel i sampleCapacity na ThermoRecorder");
+    }
+
+    @Test
     @DisplayName("Zwolnienie obsady czyści rezerwacje zadania")
     void releaseRecordersClearsAssignments() {
         when(recorderRepository.findByStatusOrderBySerialNumberAsc(RecorderStatus.ACTIVE))
