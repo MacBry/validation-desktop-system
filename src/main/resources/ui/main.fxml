@@ -66,6 +66,20 @@
                </children>
             </VBox>
 
+            <!-- Kategoria: PLANER REWALIDACJI -->
+            <VBox fx:id="sectionPlaner" styleClass="sidebar-section">
+               <children>
+                  <Label styleClass="nav-section-label" text="%main.nav.section.planner" />
+                  <VBox fx:id="sectionPlanerItems" styleClass="nav-section-items">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#showPlannerCalendar" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.plannerCalendar" />
+                        <Button mnemonicParsing="false" onAction="#showProcedureClasses" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.procedureClasses" />
+                        <Button mnemonicParsing="false" onAction="#showOperatorVacations" prefHeight="40.0" prefWidth="250.0" styleClass="nav-button" text="%main.nav.operatorVacations" />
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+
             <!-- Kategoria: ADMINISTRACJA -->
             <VBox fx:id="sectionAdministracja" styleClass="sidebar-section" visible="false" managed="false">
                <children>

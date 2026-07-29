@@ -57,4 +57,20 @@ public interface PlannedValidationTaskRepository extends JpaRepository<PlannedVa
            "where t.dueDate between :from and :to " +
            "order by t.dueDate asc")
     List<PlannedValidationTask> findByDueDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /**
+     * Wariant dla widoku kalendarza — pobiera komorę, urządzenie i pracownię
+     * jednym zapytaniem. Bez tego tabela JavaFX, renderowana poza transakcją,
+     * wywróciłaby się na leniwym ładowaniu.
+     */
+    @Query("select distinct t from PlannedValidationTask t " +
+           "join fetch t.coolingChamber c " +
+           "join fetch c.coolingDevice d " +
+           "left join fetch d.laboratory " +
+           "left join fetch c.materialType " +
+           "join fetch t.procedureClassConfig " +
+           "where t.dueDate between :from and :to " +
+           "order by t.dueDate asc")
+    List<PlannedValidationTask> findByDueDateRangeWithDetails(@Param("from") LocalDate from,
+                                                              @Param("to") LocalDate to);
 }

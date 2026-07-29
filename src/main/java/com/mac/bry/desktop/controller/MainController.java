@@ -264,6 +264,21 @@ public class MainController {
     }
 
     @FXML
+    public void showPlannerCalendar(ActionEvent event) {
+        loadView("/ui/planner_calendar.fxml");
+    }
+
+    @FXML
+    public void showProcedureClasses(ActionEvent event) {
+        loadView("/ui/procedure_class_config.fxml");
+    }
+
+    @FXML
+    public void showOperatorVacations(ActionEvent event) {
+        loadView("/ui/operator_vacation_dialog.fxml");
+    }
+
+    @FXML
     public void showAdminUsers(ActionEvent event) {
         loadAdminTab(0);
     }
