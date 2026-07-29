@@ -58,8 +58,19 @@ public class CoolingChamber {
     @Column(name = "volume_category", length = 10)
     private VolumeCategory volumeCategory;
 
+    /**
+     * Zegar wyłącznie 5-letniego mapowania GxP. Nie wolno go aktualizować po
+     * rocznej rewalidacji — resetowałoby to cykl mapowania (BA R2).
+     */
     @Column(name = "last_mapping_date")
     private LocalDate lastMappingDate;
+
+    /**
+     * Zegar corocznej rewalidacji okresowej — niezależny od
+     * {@link #lastMappingDate} (BA R2).
+     */
+    @Column(name = "last_periodic_revalidation_date")
+    private LocalDate lastPeriodicRevalidationDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "hotspot_position", length = 50)
@@ -137,6 +148,23 @@ public class CoolingChamber {
 
     public boolean isMappingValid() {
         return lastMappingDate != null && !lastMappingDate.isBefore(LocalDate.now().minusYears(5));
+    }
+
+    public boolean isPeriodicRevalidationValid() {
+        return lastPeriodicRevalidationDate != null
+                && !lastPeriodicRevalidationDate.isBefore(LocalDate.now().minusYears(1));
+    }
+
+    /**
+     * Termin kolejnego badania danego typu, liczony z właściwego zegara (BA R2).
+     * Brak daty bazowej oznacza komorę nigdy niewalidowaną — termin wypada
+     * natychmiast.
+     */
+    public LocalDate getNextDueDate(GxPProcedureType procedureType, LocalDate today) {
+        if (procedureType == GxPProcedureType.MAPPING) {
+            return lastMappingDate != null ? lastMappingDate.plusYears(5) : today;
+        }
+        return lastPeriodicRevalidationDate != null ? lastPeriodicRevalidationDate.plusYears(1) : today;
     }
 
     public void updateVolumeCategoryFromVolume() {
