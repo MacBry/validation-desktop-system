@@ -92,6 +92,25 @@ class PlannerSchemaMigrationIntegrationTest {
     }
 
     @Test
+    @DisplayName("V33: przeniesienie zegara nie zostawia komory z datą mapowania, a bez rewalidacji")
+    void v33_backfillsPeriodicRevalidationClock() {
+        Integer applied = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" " +
+                        "WHERE \"version\" = '33' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(applied).isEqualTo(1);
+
+        Integer stragglers = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM cooling_chambers " +
+                        "WHERE last_mapping_date IS NOT NULL AND last_periodic_revalidation_date IS NULL",
+                Integer.class);
+
+        assertThat(stragglers)
+                .as("komora z datą mapowania musi mieć też datę rewalidacji, inaczej digest zgłosi ją jako nigdy nierewalidowaną")
+                .isZero();
+    }
+
+    @Test
     @DisplayName("V32: rozdział zegarów — last_periodic_revalidation_date w tabeli i w _aud")
     void periodicRevalidationClockColumnExists() {
         assertThatCode(() -> jdbc.queryForList(
