@@ -40,8 +40,8 @@
                                         <Label fx:id="lblTostBadge" text="%tabhypothesis.potwierdzono" style="-fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: -color-success-emphasis; -fx-padding: 4 8; -fx-background-radius: 4;" />
                                         <VBox spacing="3.0">
                                             <children>
-                                                <Label fx:id="lblTostDifference" text="%tabhypothesis.srednia_roznica_0_00c" style="-fx-font-weight: bold;" />
-                                                <Label fx:id="lblTostDetails" text="%common.szczegoly" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                                <Label fx:id="lblTostDifference" text="" style="-fx-font-weight: bold;" />
+                                                <Label fx:id="lblTostDetails" text="" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                             </children>
                                         </VBox>
                                     </children>
@@ -67,8 +67,8 @@
                                         <Label fx:id="lblFBadge" text="%tabhypothesis.zgodne_wariancje" style="-fx-font-weight: bold; -fx-text-fill: white; -fx-background-color: -color-success-emphasis; -fx-padding: 4 8; -fx-background-radius: 4;" />
                                         <VBox spacing="3.0">
                                             <children>
-                                                <Label fx:id="lblFRatio" text="%tabhypothesis.stosunek_wariancji" style="-fx-font-weight: bold;" />
-                                                <Label fx:id="lblFDetails" text="%tabhypothesis.p_value" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
+                                                <Label fx:id="lblFRatio" text="" style="-fx-font-weight: bold;" />
+                                                <Label fx:id="lblFDetails" text="" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
                                             </children>
                                         </VBox>
                                     </children>
@@ -103,10 +103,10 @@
                                     </rowConstraints>
                                     <children>
                                         <Label text="%tabhypothesis.zastosowany_test" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
-                                        <Label fx:id="lblHomogeneityTestName" text="%tabhypothesis.anova" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-font-weight: bold; -fx-font-size: 11px;" />
+                                        <Label fx:id="lblHomogeneityTestName" text="" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-font-weight: bold; -fx-font-size: 11px;" />
                                         
                                         <Label text="%tabhypothesis.wartosc_p_p_value" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" />
-                                        <Label fx:id="lblHomogeneityPValue" text="0.0000" GridPane.columnIndex="1" GridPane.rowIndex="1" style="-fx-font-weight: bold; -fx-font-size: 11px;" />
+                                        <Label fx:id="lblHomogeneityPValue" text="" GridPane.columnIndex="1" GridPane.rowIndex="1" style="-fx-font-weight: bold; -fx-font-size: 11px;" />
                                     </children>
                                 </GridPane>
                                 <Label fx:id="lblHomogeneityDetails" text="%tabhypothesis.brak_istotnych_roznic" style="-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;" wrapText="true" />

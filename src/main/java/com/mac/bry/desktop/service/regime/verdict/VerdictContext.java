@@ -31,6 +31,27 @@ public class VerdictContext {
     /** Pełna lista segmentów po detekcji (STEADY_STATE, EQUILIBRATION, zdarzenia). */
     List<MeasurementSegment> segments;
 
+    // ── Baseline poprzedniej sesji (tryb MONITORING, DP-001 §4.5) ────────────
+
+    /** Średnia bieżącej fazy STEADY_STATE [°C]; null gdy brak danych. */
+    Double currentAvg;
+
+    /** Odch. std bieżącej fazy STEADY_STATE [°C]; null gdy brak danych. */
+    Double currentStdDev;
+
+    /** Średnia tej pozycji z poprzedniej sesji [°C]; null = brak baseline'u. */
+    Double baselineAvg;
+
+    /** Odch. std tej pozycji z poprzedniej sesji [°C]; null = brak baseline'u. */
+    Double baselineStdDev;
+
+    /** Data sesji baseline (do notatki werdyktu); null = brak baseline'u. */
+    String baselineSessionDate;
+
+    public boolean hasBaseline() {
+        return baselineAvg != null && baselineStdDev != null;
+    }
+
     /**
      * Liczba niezidentyfikowanych ekskursji (EXCURSION) nakładających się na
      * kopertę czasową fazy ustalonej [min(from), max(to)] zaakceptowanych

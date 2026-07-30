@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="15.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mac.bry.desktop.controller.ChamberTrendsController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+    <children>
+        <VBox spacing="5.0">
+            <children>
+                <Label styleClass="title-1" text="%chambertrends.title" />
+                <Label style="-fx-text-fill: -color-fg-muted;" text="%chambertrends.subtitle" wrapText="true" />
+            </children>
+        </VBox>
+
+        <HBox spacing="15.0" alignment="CENTER_LEFT">
+            <children>
+                <Label text="%chambertrends.device" style="-fx-font-weight: bold;" />
+                <ComboBox fx:id="deviceCombo" prefWidth="300.0" promptText="%testorevalidation.wybierz_urzadzenie_chlodnicze" />
+                <Label text="%chambertrends.chamber" style="-fx-font-weight: bold;" />
+                <ComboBox fx:id="chamberCombo" prefWidth="260.0" promptText="%testorevalidation.wybierz_komore_chlodnicza" disable="true" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Label fx:id="lblSessionCount" style="-fx-text-fill: -color-fg-muted;" />
+            </children>
+        </HBox>
+
+        <LineChart fx:id="trendChart" prefHeight="280.0" createSymbols="true" animated="false" VBox.vgrow="SOMETIMES">
+            <xAxis>
+                <CategoryAxis fx:id="xAxisSessions" label="%chambertrends.chart_x" />
+            </xAxis>
+            <yAxis>
+                <NumberAxis fx:id="yAxisCelsius" label="%chambertrends.chart_y" forceZeroInRange="false" />
+            </yAxis>
+        </LineChart>
+
+        <TableView fx:id="sessionTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colDate" text="%chambertrends.col_date" prefWidth="120.0" />
+                <TableColumn fx:id="colSeries" text="%chambertrends.col_series" prefWidth="60.0" />
+                <TableColumn fx:id="colMean" text="%chambertrends.col_mean" prefWidth="90.0" />
+                <TableColumn fx:id="colDeltaT" text="%chambertrends.col_deltat" prefWidth="90.0" />
+                <TableColumn fx:id="colDeltaTChange" text="%chambertrends.col_deltat_change" prefWidth="110.0" />
+                <TableColumn fx:id="colStd" text="%chambertrends.col_std" prefWidth="100.0" />
+                <TableColumn fx:id="colStdChange" text="%chambertrends.col_std_change" prefWidth="110.0" />
+                <TableColumn fx:id="colHotspot" text="Hotspot" prefWidth="90.0" />
+                <TableColumn fx:id="colColdspot" text="Coldspot" prefWidth="90.0" />
+                <TableColumn fx:id="colSpikes" text="%common.szpilki" prefWidth="70.0" />
+            </columns>
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN" /></columnResizePolicy>
+        </TableView>
+
+        <Label fx:id="lblNoData" text="%chambertrends.no_data" style="-fx-text-fill: -color-fg-muted;" visible="false" managed="false" wrapText="true" />
+    </children>
+</VBox>
