@@ -11,6 +11,7 @@ import javafx.fxml.FXMLLoader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.concurrent.CountDownLatch;
@@ -30,12 +31,12 @@ import static org.mockito.Mockito.mock;
  * przy samym parsowaniu FXML przechodzą, a wywracają aplikację dopiero
  * w rękach użytkownika.
  */
+@ExtendWith(JavaFxToolkitExtension.class)
 class PlannerFxmlTest {
 
     @BeforeAll
-    static void initJavaFX() throws InterruptedException {
+    static void initI18n() {
         I18n.init("pl");
-        JavaFxTestToolkit.startOnce();
     }
 
     @Test

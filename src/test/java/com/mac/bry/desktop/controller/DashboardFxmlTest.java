@@ -1,19 +1,13 @@
 package com.mac.bry.desktop.controller;
 
 import javafx.fxml.FXMLLoader;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.fail;
 
+@ExtendWith(JavaFxToolkitExtension.class)
 class DashboardFxmlTest {
-
-    @BeforeAll
-    static void initJavaFX() throws InterruptedException {
-        // Start toolkitu i odłożone zamknięcie — patrz JavaFxTestToolkit.
-        // Wołanie Platform.exit() tutaj wywracało kolejne klasy testów JavaFX.
-        JavaFxTestToolkit.startOnce();
-    }
 
     @Test
     void testLoadDashboardFxml() {
