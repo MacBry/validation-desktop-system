@@ -111,6 +111,63 @@ class PlannerSchemaMigrationIntegrationTest {
     }
 
     @Test
+    @DisplayName("V34: kolumny sprzętowe reguły W4 w tabeli modeli i w _aud")
+    void v34_hardwareLimitColumnsExist() {
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT sample_capacity, min_operating_temp_c, max_operating_temp_c, battery_type, "
+                        + "battery_replaceable, battery_life_days, battery_life_ref_cycle_min, "
+                        + "battery_life_ref_temp_c, operating_duration_days, battery_shelf_life_months "
+                        + "FROM thermo_recorder_models LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT sample_capacity, min_operating_temp_c, battery_life_days FROM thermo_recorder_models_aud LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT last_battery_level_percent, last_battery_read_at, battery_replacement_date, "
+                        + "first_activation_date FROM thermo_recorders LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT last_battery_level_percent, first_activation_date FROM thermo_recorders_aud LIMIT 1"
+        )).doesNotThrowAnyException();
+    }
+
+    /**
+     * V34 dopasowywała modele wzorcem {@code %174t%}, przez co nazwa zapisana
+     * bez oznaczenia wariantu („Testo 174") zostawała bez danych katalogowych,
+     * a reguła W4 blokowała planowanie. Test sprawdza wzorzec z V35 na tym
+     * samym silniku, który wykonuje migrację.
+     */
+    @ParameterizedTest(name = "V35 dopasowuje nazwę: {0}")
+    @ValueSource(strings = {"Testo 174", "testo 174 T", "Testo174T", "TESTO 174 H", "testo  174"})
+    @DisplayName("V35: dopasowanie kartoteki znosi spacje, wielkość liter i brak wariantu")
+    void v35_modelNameMatchingToleratesRealWorldSpellings(String modelName) {
+        Boolean matches = jdbc.queryForObject(
+                "SELECT CASE WHEN REPLACE(LOWER(?), ' ', '') LIKE '%174%' THEN TRUE ELSE FALSE END",
+                Boolean.class, modelName);
+
+        assertThat(matches)
+                .as("model „%s\" musi dostać dane katalogowe, inaczej W4 zablokuje każde badanie", modelName)
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("V35: seria 184 celowo bez wartości domyślnych — warianty różnią się zasadniczo")
+    void v35_leaves184ForManualEntry() {
+        Boolean matches = jdbc.queryForObject(
+                "SELECT CASE WHEN REPLACE(LOWER('Testo 184'), ' ', '') LIKE '%174%' "
+                        + "OR REPLACE(LOWER('Testo 184'), ' ', '') LIKE '%175%' "
+                        + "OR REPLACE(LOWER('Testo 184'), ' ', '') LIKE '%176%' THEN TRUE ELSE FALSE END",
+                Boolean.class);
+
+        assertThat(matches)
+                .as("T1 ma 16 000 odczytów i 90 dni pracy, T4 pracuje do -80 °C — zgadywanie wstawiłoby złe dane")
+                .isFalse();
+    }
+
+    @Test
     @DisplayName("V32: rozdział zegarów — last_periodic_revalidation_date w tabeli i w _aud")
     void periodicRevalidationClockColumnExists() {
         assertThatCode(() -> jdbc.queryForList(

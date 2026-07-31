@@ -3,6 +3,7 @@ package com.mac.bry.desktop.controller;
 import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.repository.PlannedValidationTaskRepository;
 import com.mac.bry.desktop.repository.ProcedureClassConfigRepository;
+import com.mac.bry.desktop.repository.ThermoRecorderModelRepository;
 import com.mac.bry.desktop.repository.UserVacationRepository;
 import com.mac.bry.desktop.service.planner.RevalidationSchedulerEngine;
 import com.mac.bry.desktop.service.planner.TestoDelayCalculatorService;
@@ -61,6 +62,42 @@ class PlannerFxmlTest {
         loadOnFxThread("/ui/operator_vacation_dialog.fxml", type -> new OperatorVacationDialogController(
                 mock(UserVacationRepository.class),
                 mock(ApplicationEventPublisher.class)));
+    }
+
+    @Test
+    @DisplayName("thermo_recorder_model_dialog.fxml ładuje się z polami kartoteki sprzętowej W4")
+    void thermoRecorderModelDialogLoads() throws Exception {
+        // Kartoteka modelu jest jedynym miejscem, w którym da się wprowadzić dane
+        // katalogowe producenta — bez nich reguła W4 blokuje planowanie.
+        loadOnFxThread("/ui/thermo_recorder_model_dialog.fxml",
+                type -> new ThermoRecorderModelDialogController(mock(ThermoRecorderModelRepository.class)));
+    }
+
+    @Test
+    @DisplayName("Klucze i18n kartoteki sprzętowej W4 istnieją w obu wersjach językowych")
+    void hardwareSpecificationKeysResolveInBothLocales() {
+        String[] keys = {
+                "thermorecordermodeldialog.dane_katalogowe_producenta",
+                "thermorecordermodeldialog.dane_katalogowe_opis",
+                "thermorecordermodeldialog.pojemnosc_pamieci",
+                "thermorecordermodeldialog.zakres_pracy_min",
+                "thermorecordermodeldialog.zakres_pracy_max",
+                "thermorecordermodeldialog.bateria_wymienna",
+                "thermorecordermodeldialog.zywotnosc_baterii_dni",
+                "thermorecordermodeldialog.cykl_referencyjny_min",
+                "thermorecordermodeldialog.temperatura_referencyjna",
+                "thermorecordermodeldialog.limit_pracy_dni"
+        };
+
+        for (String locale : new String[]{"pl", "en"}) {
+            I18n.init(locale);
+            for (String key : keys) {
+                assertThat(I18n.t(key))
+                        .as("klucz %s w locale %s", key, locale)
+                        .doesNotStartWith("!");
+            }
+        }
+        I18n.init("pl");
     }
 
     @Test

@@ -8,7 +8,9 @@ import com.mac.bry.desktop.service.planner.exception.InsufficientMeasurementPoin
 import com.mac.bry.desktop.service.planner.exception.InsufficientRecorderCapacityException;
 import com.mac.bry.desktop.service.planner.exception.InsufficientRecorderMemoryException;
 import com.mac.bry.desktop.service.planner.exception.MetrologicalRangeMismatchException;
+import com.mac.bry.desktop.service.planner.exception.RecorderAllocationException;
 import com.mac.bry.desktop.service.planner.exception.RecorderDoubleBookingException;
+import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -363,6 +365,23 @@ class RecorderAllocationServiceTest {
                 service.allocateRecorders(task(2), chamber(VolumeCategory.SMALL));
 
         assertThat(assignments).hasSize(18);
+    }
+
+    @Test
+    @DisplayName("Brak obsady nie zatruwa transakcji wołającego — inaczej ginie cały plan roczny")
+    void allocationFailureDoesNotMarkTransactionRollbackOnly() throws NoSuchMethodException {
+        // RevalidationSchedulerEngine.generateYearlySchedule jest @Transactional
+        // i woła alokację w pętli, przechwytując wyjątek, żeby zapisać przyczynę
+        // w zadaniu. Bez noRollbackFor interceptor transakcji oznaczyłby wspólną
+        // transakcję jako rollback-only przy pierwszej nieobsadzonej komorze,
+        // a commit poleciałby na UnexpectedRollbackException — jedno zadanie bez
+        // rejestratora kasowałoby plan na cały rok.
+        Transactional tx = RecorderAllocationService.class
+                .getMethod("allocateRecorders", PlannedValidationTask.class, CoolingChamber.class)
+                .getAnnotation(Transactional.class);
+
+        assertThat(tx).isNotNull();
+        assertThat(tx.noRollbackFor()).contains(RecorderAllocationException.class);
     }
 
     @Test
