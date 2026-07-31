@@ -62,7 +62,18 @@ public class RecorderAllocationService {
      * @throws RecorderAllocationException gdy kompletu nie da się skompletować;
      *         wyjątek niesie przyczynę i propozycję kolejnego okna
      */
-    @Transactional
+    /*
+     * noRollbackFor: brak obsady to wynik biznesowy, nie awaria zapisu.
+     * Generowanie planu rocznego woła tę metodę w pętli wewnątrz własnej
+     * transakcji i przechwytuje wyjątek, żeby zapisać przyczynę w zadaniu
+     * (shortageReason). Bez tej adnotacji interceptor transakcji oznaczyłby
+     * wspólną transakcję jako rollback-only przy pierwszym nieobsadzonym
+     * zadaniu, a commit całego planu poleciałby na UnexpectedRollbackException
+     * — czyli jedna komora bez rejestratora kasowałaby plan na cały rok.
+     * Metoda nie zapisuje nic przed rzuceniem wyjątku (persistAssignments jest
+     * ostatnim krokiem), więc nie ma tu częściowego stanu do wycofania.
+     */
+    @Transactional(noRollbackFor = RecorderAllocationException.class)
     public List<PlannedTaskRecorderAssignment> allocateRecorders(PlannedValidationTask task,
                                                                  CoolingChamber chamber) {
         LocalDateTime reservedFrom = task.getPlannedStep1Time();

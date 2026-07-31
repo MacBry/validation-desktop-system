@@ -15,6 +15,8 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumMap;
@@ -22,7 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Dialog pojedynczej komory. Prototyp z tego samego powodu co
+ * {@link CoolingDeviceDialogController}: jako singleton przenosił flagę
+ * {@code saved} między otwarciami, więc anulowanie kolejnego okna nadal
+ * raportowało zapis i dokładało komorę do listy urządzenia.
+ */
 @Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @RequiredArgsConstructor
 @Slf4j
 public class CoolingChamberDialogController {
@@ -62,6 +71,7 @@ public class CoolingChamberDialogController {
         this.coolingChamber = chamber;
         this.isEdit = isEdit;
         this.readOnly = readOnly;
+        this.saved = false;
 
         populateCombos();
 
