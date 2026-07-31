@@ -10,6 +10,8 @@ import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +55,30 @@ public class ThermoRecorder {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "laboratory_id", nullable = true)
     private Laboratory laboratory;
+
+    // --- Stan sprzętowy egzemplarza (reguła W4, V34) ------------------------
+
+    /**
+     * Ostatni stan naładowania odczytany ze stacji Testo USB (ramka {@code ab31}) [%].
+     * <p>
+     * {@code null} oznacza brak jakiegokolwiek odczytu. Wartość {@code -1}
+     * z importu (PDF bez informacji o baterii) <b>nie jest tu zapisywana</b> —
+     * sentinel jest odfiltrowywany na wejściu, żeby reguła W4c nigdy nie liczyła
+     * budżetu energii z liczby ujemnej.
+     */
+    @Column(name = "last_battery_level_percent")
+    private Integer lastBatteryLevelPercent;
+
+    @Column(name = "last_battery_read_at")
+    private LocalDateTime lastBatteryReadAt;
+
+    /** Data ostatniej wymiany baterii — podstawa kontroli wieku ogniwa. */
+    @Column(name = "battery_replacement_date")
+    private LocalDate batteryReplacementDate;
+
+    /** Pierwsze uruchomienie — punkt odniesienia limitu pracy loggerów jednorazowych. */
+    @Column(name = "first_activation_date")
+    private LocalDate firstActivationDate;
 
     @NotAudited
     @OneToMany(mappedBy = "thermoRecorder", cascade = CascadeType.ALL, orphanRemoval = true)

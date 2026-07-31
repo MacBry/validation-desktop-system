@@ -3,6 +3,8 @@ package com.mac.bry.desktop.service.planner;
 import com.mac.bry.desktop.model.*;
 import com.mac.bry.desktop.repository.PlannedTaskRecorderAssignmentRepository;
 import com.mac.bry.desktop.repository.ThermoRecorderRepository;
+import com.mac.bry.desktop.service.planner.dto.HardwareBudget;
+import com.mac.bry.desktop.service.planner.dto.HardwareViolation;
 import com.mac.bry.desktop.service.planner.exception.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,8 +20,9 @@ import java.util.Set;
 /**
  * Dobór rejestratorów do zadania walidacyjnego — reguły W2 (pojemność puli),
  * W5 (brak podwójnej rezerwacji), W1 i W8 (kwalifikacja metrologiczna,
- * delegowana do {@link MetrologicalQualificationService}) oraz pokrycie
- * minimalnej liczby punktów pomiarowych.
+ * delegowana do {@link MetrologicalQualificationService}), W4 (limity sprzętowe,
+ * delegowane do {@link HardwareCapacityService}) oraz pokrycie minimalnej liczby
+ * punktów pomiarowych.
  * <p>
  * <b>Rezerwacja jest na poziomie urządzenia, nie kanału.</b> Wielokanałowy
  * rejestrator to jedna fizyczna sztuka wkładana do jednej komory — jego sondy
@@ -34,15 +37,18 @@ public class RecorderAllocationService {
     private final ThermoRecorderRepository recorderRepository;
     private final PlannedTaskRecorderAssignmentRepository assignmentRepository;
     private final MetrologicalQualificationService qualificationService;
+    private final HardwareCapacityService hardwareCapacityService;
     private final int logisticBufferHours;
 
     public RecorderAllocationService(ThermoRecorderRepository recorderRepository,
                                      PlannedTaskRecorderAssignmentRepository assignmentRepository,
                                      MetrologicalQualificationService qualificationService,
+                                     HardwareCapacityService hardwareCapacityService,
                                      @Value("${app.planner.logistic-buffer-hours:24}") int logisticBufferHours) {
         this.recorderRepository = recorderRepository;
         this.assignmentRepository = assignmentRepository;
         this.qualificationService = qualificationService;
+        this.hardwareCapacityService = hardwareCapacityService;
         this.logisticBufferHours = logisticBufferHours;
     }
 
@@ -72,10 +78,15 @@ public class RecorderAllocationService {
         List<ThermoRecorder> activeRecorders =
                 recorderRepository.findByStatusOrderBySerialNumberAsc(RecorderStatus.ACTIVE);
 
+        ProcedureClassConfig config = requireProcedureConfig(task);
+        LocalDate missionStart = reservedFrom.toLocalDate();
+
         List<Candidate> free = new ArrayList<>();
         int qualifiedButBusy = 0;
         int rejectedForCalibration = 0;
         int rejectedForRange = 0;
+        int rejectedForHardware = 0;
+        HardwareViolation firstHardwareViolation = null;
 
         for (ThermoRecorder recorder : activeRecorders) {
             List<Integer> qualifiedChannels = qualifiedChannelsOf(recorder, chamber, measurementEnd);
@@ -87,6 +98,18 @@ public class RecorderAllocationService {
                 }
                 continue;
             }
+
+            // W4 — limity sprzętowe. Ocena nie rzuca wyjątku, bo niepasujący
+            // rejestrator ma wypaść z puli, a nie przerwać całą alokację.
+            HardwareBudget budget = hardwareCapacityService.evaluate(recorder, config, chamber, missionStart);
+            if (!budget.isAcceptable()) {
+                rejectedForHardware++;
+                if (firstHardwareViolation == null) {
+                    firstHardwareViolation = budget.firstViolation();
+                }
+                continue;
+            }
+
             if (busyRecorderIds.contains(recorder.getId())) {
                 qualifiedButBusy++;
                 continue;
@@ -95,7 +118,8 @@ public class RecorderAllocationService {
         }
 
         if (free.size() + qualifiedButBusy == 0) {
-            throw noQualifiedRecorder(chamber, rejectedForCalibration, rejectedForRange, activeRecorders.size());
+            throw noQualifiedRecorder(chamber, rejectedForCalibration, rejectedForRange,
+                    rejectedForHardware, firstHardwareViolation, activeRecorders.size());
         }
 
         if (free.size() < requiredRecorders) {
@@ -227,10 +251,33 @@ public class RecorderAllocationService {
         return assignments;
     }
 
+    /**
+     * Reguła W4 potrzebuje parametrów procedury (interwał, liczba próbek, czasy
+     * kroków). Ich brak to nie jest przypadek do przemilczenia — bez nich nie da
+     * się stwierdzić, czy sprzęt udźwignie badanie.
+     */
+    private ProcedureClassConfig requireProcedureConfig(PlannedValidationTask task) {
+        ProcedureClassConfig config = task.getProcedureClassConfig();
+        if (config == null) {
+            throw new HardwareDataIncompleteException(String.format(
+                    "Zadanie %s nie ma przypisanej klasy procedury — reguły W4 nie da się ocenić",
+                    task.getTaskNumber()));
+        }
+        return config;
+    }
+
     private RecorderAllocationException noQualifiedRecorder(CoolingChamber chamber,
                                                             int rejectedForCalibration,
                                                             int rejectedForRange,
+                                                            int rejectedForHardware,
+                                                            HardwareViolation firstHardwareViolation,
                                                             int activeCount) {
+        // Odrzucenie sprzętowe jest najbardziej konkretną przyczyną, jaką planer
+        // może pokazać (niesie liczby: próbki, dni, zakres), więc gdy cała pula
+        // odpadła na W4, raportujemy je zamiast ogólnego komunikatu metrologicznego.
+        if (rejectedForHardware > 0 && rejectedForCalibration == 0 && rejectedForRange == 0) {
+            return hardwareCapacityService.exceptionFor(firstHardwareViolation);
+        }
         if (rejectedForCalibration > 0 && rejectedForRange == 0) {
             return new CalibrationExpiredException(String.format(
                     "Żaden z %d aktywnych rejestratorów nie ma świadectwa ważnego przez cały pomiar komory %s",
@@ -238,8 +285,9 @@ public class RecorderAllocationService {
         }
         return new MetrologicalRangeMismatchException(String.format(
                 "Żaden z %d aktywnych rejestratorów nie pokrywa zakresu materiału w komorze %s "
-                        + "(odrzucone: %d na zakresie, %d na ważności świadectwa)",
-                activeCount, chamber.getChamberName(), rejectedForRange, rejectedForCalibration));
+                        + "(odrzucone: %d na zakresie, %d na ważności świadectwa, %d na limitach sprzętowych)",
+                activeCount, chamber.getChamberName(), rejectedForRange, rejectedForCalibration,
+                rejectedForHardware));
     }
 
     private int totalChannels(List<Candidate> candidates) {

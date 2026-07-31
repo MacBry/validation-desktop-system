@@ -3,8 +3,10 @@ package com.mac.bry.desktop.service.planner;
 import com.mac.bry.desktop.model.*;
 import com.mac.bry.desktop.repository.PlannedTaskRecorderAssignmentRepository;
 import com.mac.bry.desktop.repository.ThermoRecorderRepository;
+import com.mac.bry.desktop.service.planner.exception.HardwareDataIncompleteException;
 import com.mac.bry.desktop.service.planner.exception.InsufficientMeasurementPointsException;
 import com.mac.bry.desktop.service.planner.exception.InsufficientRecorderCapacityException;
+import com.mac.bry.desktop.service.planner.exception.InsufficientRecorderMemoryException;
 import com.mac.bry.desktop.service.planner.exception.MetrologicalRangeMismatchException;
 import com.mac.bry.desktop.service.planner.exception.RecorderDoubleBookingException;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +52,8 @@ class RecorderAllocationServiceTest {
     @BeforeEach
     void setUp() {
         service = new RecorderAllocationService(
-                recorderRepository, assignmentRepository, new MetrologicalQualificationService(), 24);
+                recorderRepository, assignmentRepository, new MetrologicalQualificationService(),
+                new HardwareCapacityService(1.5), 24);
 
         when(assignmentRepository.findBusyRecorderIds(any(), any())).thenReturn(List.of());
         when(assignmentRepository.findEarliestRelease(any(), any())).thenReturn(null);
@@ -58,11 +61,28 @@ class RecorderAllocationServiceTest {
     }
 
     private ThermoRecorder recorder(long id, String serial, int channelCount, double calLow, double calHigh) {
+        return recorder(id, serial, model(channelCount, 16000), calLow, calHigh);
+    }
+
+    /** Kartoteka sprzętowa wzorowana na testo 174 T — bez niej reguła W4 odrzuca cały sprzęt. */
+    private ThermoRecorderModel model(int channelCount, int sampleCapacity) {
+        return ThermoRecorderModel.builder()
+                .name("testo 174 T").channelCount(channelCount).sampleCapacity(sampleCapacity)
+                .minOperatingTempC(-30.0).maxOperatingTempC(70.0)
+                .batteryType("CR2032").batteryReplaceable(true)
+                .batteryLifeDays(500).batteryLifeRefCycleMin(15).batteryLifeRefTempC(25.0)
+                .build();
+    }
+
+    private ThermoRecorder recorder(long id, String serial, ThermoRecorderModel model,
+                                    double calLow, double calHigh) {
+        int channelCount = model.getChannelCount();
         ThermoRecorder recorder = ThermoRecorder.builder()
                 .id(id)
                 .serialNumber(serial)
                 .status(RecorderStatus.ACTIVE)
-                .model(ThermoRecorderModel.builder().name("Testo").channelCount(channelCount).build())
+                .model(model)
+                .lastBatteryLevelPercent(100)
                 .calibrations(new ArrayList<>())
                 .build();
 
@@ -103,9 +123,26 @@ class RecorderAllocationServiceTest {
                 .build();
     }
 
+    /** Domyślna klasa procedury: pomiar co 180 min × 40 próbek — mieści się w każdym modelu. */
+    private ProcedureClassConfig procedureConfig() {
+        return ProcedureClassConfig.builder()
+                .step1ProgMinutes(10)
+                .step2PlacementMinutes(20)
+                .step3StabHours(6)
+                .step4IntervalMinutes(180)
+                .step4SampleCount(40)
+                .step5ReadoutBufferHours(6)
+                .build();
+    }
+
     private PlannedValidationTask task(int requiredRecorders) {
+        return task(requiredRecorders, procedureConfig());
+    }
+
+    private PlannedValidationTask task(int requiredRecorders, ProcedureClassConfig config) {
         return PlannedValidationTask.builder()
                 .taskNumber("5/HLA/2026")
+                .procedureClassConfig(config)
                 .procedureType(GxPProcedureType.PERIODIC_REVALIDATION)
                 .dueDate(LocalDate.of(2026, 8, 10))
                 .plannedStep1Time(STEP1)
@@ -275,16 +312,57 @@ class RecorderAllocationServiceTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("W4 odroczone: ThermoRecorder nie ma pól batteryLevel ani sampleCapacity")
-    @DisplayName("ST-W4-01: rejestrator z niską baterią lub za małą pamięcią zostaje odrzucony")
-    void st_w4_01_hardwareLimitsRejectRecorder() {
-        // Reguła W4 wymaga danych sprzętowych, których encja ThermoRecorder nie
-        // przechowuje: poziomu baterii (> 50%) i pojemności pamięci wobec liczby
-        // próbek z Kroku 4. Do czasu dodania tych pól — albo odczytania ich ze
-        // stacji Testo przy imporcie .vi2 — alokacja nie może tej reguły
-        // egzekwować. Test celowo pozostaje widoczny jako pominięty, żeby luka
-        // w pokryciu W1-W10 nie zniknęła z raportu.
-        throw new UnsupportedOperationException("Wymaga pól batteryLevel i sampleCapacity na ThermoRecorder");
+    @DisplayName("ST-W4-01: cała pula za mała pamięciowo → odrzucenie sprzętowe, nie logistyczne")
+    void st_w4_01_memoryLimitRejectsWholePool() {
+        // 20 160 próbek co 1 min (14 dni) wobec 16 000 odczytów pojemności
+        when(recorderRepository.findByStatusOrderBySerialNumberAsc(RecorderStatus.ACTIVE))
+                .thenReturn(pool(4, 9));
+        ProcedureClassConfig denseSampling = ProcedureClassConfig.builder()
+                .step1ProgMinutes(10).step2PlacementMinutes(20).step3StabHours(6)
+                .step4IntervalMinutes(1).step4SampleCount(20160)
+                .step5ReadoutBufferHours(6)
+                .build();
+        PlannedValidationTask task = task(2, denseSampling);
+
+        assertThatThrownBy(() -> service.allocateRecorders(task, chamber(VolumeCategory.SMALL)))
+                .isInstanceOf(InsufficientRecorderMemoryException.class)
+                .satisfies(e -> {
+                    InsufficientRecorderMemoryException ex = (InsufficientRecorderMemoryException) e;
+                    assertThat(ex.getRequiredSamples()).isEqualTo(20160);
+                    // 16 000 na 9 kanałów — pamięć jest dzielona, nie zwielokrotniana
+                    assertThat(ex.getAvailableSamples()).isEqualTo(1777);
+                    assertThat(ex.getResourceStatus()).isEqualTo(TaskResourceStatus.HARDWARE_LIMITS_EXCEEDED);
+                });
+
+        assertThat(task.getRecorderAssignments()).isEmpty();
+        verify(assignmentRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("ST-W4-02: rejestrator bez odczytanego stanu baterii nie trafia do puli")
+    void st_w4_02_unknownBatteryBlocksAllocation() {
+        List<ThermoRecorder> neverRead = pool(4, 9);
+        neverRead.forEach(r -> r.setLastBatteryLevelPercent(null));
+        when(recorderRepository.findByStatusOrderBySerialNumberAsc(RecorderStatus.ACTIVE))
+                .thenReturn(neverRead);
+
+        assertThatThrownBy(() -> service.allocateRecorders(task(2), chamber(VolumeCategory.SMALL)))
+                .isInstanceOf(HardwareDataIncompleteException.class)
+                .satisfies(e -> assertThat(((HardwareDataIncompleteException) e).getResourceStatus())
+                        .isEqualTo(TaskResourceStatus.HARDWARE_DATA_INCOMPLETE))
+                .hasMessageContaining("stacji Testo USB");
+    }
+
+    @Test
+    @DisplayName("W4 nie blokuje sprzętu, który mieści się w limitach")
+    void st_w4_03_hardwareWithinLimitsIsAllocated() {
+        when(recorderRepository.findByStatusOrderBySerialNumberAsc(RecorderStatus.ACTIVE))
+                .thenReturn(pool(4, 9));
+
+        List<PlannedTaskRecorderAssignment> assignments =
+                service.allocateRecorders(task(2), chamber(VolumeCategory.SMALL));
+
+        assertThat(assignments).hasSize(18);
     }
 
     @Test

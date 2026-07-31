@@ -110,6 +110,8 @@ public class TestoRevalidationService {
         );
 
         // batteryLevelPercent = -1 oznacza "N/D" (PDF nie zawiera tej informacji)
+        recordBatteryLevel(recorder, result.session.batteryLevelPercent);
+
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
@@ -160,10 +162,31 @@ public class TestoRevalidationService {
                 .build();
     }
 
+    /**
+     * Zapisuje na rejestratorze ostatni znany stan baterii — dane wejściowe
+     * reguły W4c (budżet energii przy planowaniu kolejnych badań).
+     * <p>
+     * Sentinel {@code -1} („N/D", gdy źródło nie raportuje baterii — np. import
+     * z PDF) jest odrzucany: w kartotece ma zostać ostatni <b>rzeczywisty</b>
+     * odczyt, a nie znacznik braku danych. Nadpisanie go zerem albo minus jedynką
+     * dałoby planerowi fałszywą podstawę do wyliczeń.
+     */
+    private void recordBatteryLevel(ThermoRecorder recorder, int batteryLevelPercent) {
+        if (batteryLevelPercent < 0 || batteryLevelPercent > 100) {
+            log.debug("Pomijam zapis stanu baterii dla {} — źródło nie podało poziomu ({})",
+                    recorder.getSerialNumber(), batteryLevelPercent);
+            return;
+        }
+        recorder.setLastBatteryLevelPercent(batteryLevelPercent);
+        recorder.setLastBatteryReadAt(LocalDateTime.now());
+        thermoRecorderRepository.save(recorder);
+        log.info("Zaktualizowano stan baterii rejestratora {}: {}%", recorder.getSerialNumber(), batteryLevelPercent);
+    }
+
     @Transactional
     public RevalidationSession.PositionData readPositionData(
-            RevalidationSession session, 
-            RevalidationSession.GridPosition position, 
+            RevalidationSession session,
+            RevalidationSession.GridPosition position,
             boolean simulationMode) {
         return readPositionData(session, position, simulationMode, SimulationProfile.STABLE);
     }
@@ -223,6 +246,8 @@ public class TestoRevalidationService {
                 ? usbResult.session.firstMeasurementTimeLocal.substring(0, 19) 
                 : usbResult.session.firstMeasurementTimeLocal
         );
+
+        recordBatteryLevel(recorder, usbResult.session.batteryLevelPercent);
 
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
