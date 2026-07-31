@@ -139,9 +139,12 @@ class HardwareCapacityServiceTest {
                     .extracting(HardwareViolation::rule)
                     .as("pełna bateria nie ratuje urządzenia użytego poza specyfikacją")
                     .contains(HardwareViolation.Rule.OPERATING_RANGE);
+            // Separator dziesiętny zależy od locale JVM (pl: przecinek, en: kropka),
+            // więc oczekiwany fragment formatujemy tak samo jak komunikat.
             assertThat(budget.firstViolation().message())
                     .contains("testo 174 T")
-                    .contains("-30,0…70,0°C");
+                    .contains(String.format("%.1f…%.1f°C", -30.0, 70.0))
+                    .contains("Zamrażarka -80");
         }
 
         @Test
