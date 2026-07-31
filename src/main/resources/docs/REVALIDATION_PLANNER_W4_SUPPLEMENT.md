@@ -3,8 +3,8 @@
 **System**: `validation-desktop` (JavaFX / Spring Boot / GxP / ISO 17025)
 **Dokument nadrzędny**: `src/main/resources/docs/REVALIDATION_PLANNER_BA.md` (BA v5.0, reguła W4)
 **Data opracowania**: 2026-07-30
-**Data korekty**: 2026-07-31 (wersja 1.1)
-**Status**: Plan Wdrożenia Suplementu Reguły W4 (Hardware Limits: pamięć, zakres pracy, budżet baterii)
+**Data korekty**: 2026-07-31 (wersja 1.2)
+**Status**: Reguła W4 wdrożona (Hardware Limits: zakres pracy, pamięć, budżet baterii)
 
 ---
 
@@ -14,6 +14,7 @@
 |---|---|---|
 | 1.0 | 2026-07-30 | Pierwsza wersja planu W4 (model `Battery_eff = Battery × k_temp`) |
 | 1.1 | 2026-07-31 | **Korekta modelu matematycznego.** Procentowy derating baterii zastąpiony budżetem czasu pracy w dniach, zgodnym z kartami katalogowymi Testo; dodana twarda bramka zakresu pracy urządzenia; poprawione pojemności pamięci (175 ≠ 176, 184 T1 ≠ T3); uwzględniona liczba kanałów i pełny czas misji; poprawiony punkt wpięcia w `RecorderAllocationService`; migracja rozbita na `h2`/`mysql` wraz z tabelami Envers. |
+| 1.2 | 2026-07-31 | **Synchronizacja z wdrożeniem.** Poprawiona arytmetyka ST-W4c-01/02 (pominięty współczynnik cyklu); migracja scalona do jednej przenośnej w `common/`; W4b dostaje własny wyjątek zamiast reużycia W2-owego; ocena zwraca `HardwareBudget` zamiast rzucać wyjątkiem wewnątrz filtra kandydatów; zastrzeżenie temperaturowe opisane jako ostrzeżenie, nie blokada. |
 
 ---
 
@@ -102,7 +103,7 @@ Równoważnie, maksymalny czas rejestracji wynikający z pamięci:
 
 $$T_{mem}[\text{dni}] = \frac{N_{max}}{n_{ch}} \cdot \frac{\Delta t}{1440}$$
 
-* **Błąd walidacji**: `InsufficientRecorderCapacityException` (klasa już istnieje w `service/planner/exception/`).
+* **Błąd walidacji**: `InsufficientRecorderMemoryException` — nowa klasa, **nie** reużycie `InsufficientRecorderCapacityException` (ta opisuje regułę W2, patrz §5).
 * **Uwaga**: $N_{req}$ bierzemy wprost z `config.getStep4SampleCount()`. Wzoru $N_{req} = T_{map}/\Delta t$ **nie stosujemy** — `ProcedureClassConfig` przechowuje interwał i liczbę próbek jako dwa niezależne pola (`ProcedureClassConfig.java:64-75`), a wyprowadzanie jednego z drugiego może dać wynik rozbieżny z konfiguracją zatwierdzoną przez QA.
 
 **Maksymalny czas rejestracji z limitu pamięci [dni]:**
@@ -132,7 +133,8 @@ $$D_{avail}[\text{dni}] = D_{spec} \cdot \min\!\left(1,\ \frac{\Delta t}{\Delta 
 $$\frac{T_{mission}}{1440} \le \frac{D_{avail}}{f_{safety}}, \qquad f_{safety} = 1{,}5 \ \text{(domyślnie, konfigurowalne w SOP)}$$
 
 * **Błąd walidacji**: `InsufficientBatteryLevelException`.
-* **Dobór $D_{spec}$**: bierzemy wartość katalogową **dla warunków najbliższych warunkom misji**. Dla 184 T4 w −80 °C jest to wprost 100 dni. Dla 174 T w zamrażarce −20 °C producent nie publikuje wartości — patrz §7 (kwestia otwarta). Do czasu jej rozstrzygnięcia obowiązuje **ograniczenie konserwatywne**: brak danych dla $T_{chamber} < T_{ref}$ oznacza wymaganie ręcznego zatwierdzenia przez Kierownika Walidacji (ostrzeżenie w planerze, nigdy ciche przepuszczenie).
+* **Dobór $D_{spec}$**: bierzemy wartość katalogową **dla warunków najbliższych warunkom misji**. Dla 184 T4 w −80 °C jest to wprost 100 dni. Dla 174 T w zamrażarce −20 °C producent nie publikuje wartości — patrz §7 (kwestia otwarta).
+* **Praca poniżej $T_{ref}$ jest zastrzeżeniem, nie blokadą.** Rejestrator dostaje wpis w `HardwareBudget.warnings()` z treścią dla Kierownika Walidacji, ale alokacja przechodzi. Blokowanie automatyczne odpadło z dwóch powodów: producent nie publikuje współczynnika deratingu (a zmyślony nie ma wartości walidacyjnej), a odrzucanie każdego mapowania zamrażarki unieruchomiłoby pracownię. Egzekwowanie ręcznego zatwierdzenia wymaga ścieżki akceptacji, której planer jeszcze nie ma — to osobne zadanie.
 * **Uzasadnienie członu $\min(1, \Delta t/\Delta t_{ref})$**: specyfikacja jest podana przy 15 min; przy szybszym cyklu zużycie rośnie, przy wolniejszym nie zakładamy zysku (pobór spoczynkowy: LCD, zegar, NFC). Człon jest zachowawczy w obie strony — patrz §7.
 * **Sentinel N/D**: jeżeli $SoC < 0$ (wartość `-1`), reguła W4c **nie liczy nic** — zwraca status `UNKNOWN` i blokuje zadanie z komunikatem o konieczności odczytu stanu baterii ze stacji USB. Arytmetyka na `-1` jest niedopuszczalna.
 * **Bateria niewymienna (184 T1/T2)**: zamiast $D_{avail}$ obowiązuje pozostały limit `operatingDurationDays`, liczony od `firstActivationDate`.
@@ -155,39 +157,36 @@ Wniosek projektowy: w komorach ultra‑niskotemperaturowych realnym ograniczenie
 
 ### 4.1. Umiejscowienie migracji
 
-Tabele `thermo_recorders` i `thermo_recorder_models` powstały w migracjach **vendorowych** (`db/migration/h2/V24__MultiChannelRecorders.sql` oraz `db/migration/mysql/V24__MultiChannelRecorders.sql`), nie w `common/`. Migrację W4 należy zatem:
+Tabele `thermo_recorders` i `thermo_recorder_models` powstały w migracjach **vendorowych** (`db/migration/h2/V24__MultiChannelRecorders.sql` oraz `db/migration/mysql/V24__MultiChannelRecorders.sql`), nie w `common/` — bo tam potrzebne były konstrukcje dialektowe (`UPDATE ... JOIN`, `MODIFY COLUMN`).
 
-1. dodać **w obu katalogach** (`h2/` i `mysql/`) jako `V34__Thermo_Recorder_Hardware_Limits.sql`,
-2. objąć **również tabele Envers** `thermo_recorder_models_aud` i `thermo_recorders_aud` — inaczej `PlannerEnversMySqlIntegrationTest` i walidacja schematu Hibernate zgłoszą niezgodność,
-3. używać typów zgodnych z oboma silnikami (`DOUBLE`, nie `DOUBLE PRECISION`).
+Migracja W4 takich konstrukcji nie potrzebuje, więc **jest jedna, w `common/V34__Thermo_Recorder_Hardware_Limits.sql`**, i obsługuje oba silniki. Warunki, które to umożliwiają i których nie wolno naruszyć przy późniejszych zmianach:
 
-### 4.2. Skrypt `V34__Thermo_Recorder_Hardware_Limits.sql` (wariant MySQL)
+1. osobny `ALTER TABLE ... ADD COLUMN` na kolumnę (składnia wielokolumnowa różni się między H2 a MySQL),
+2. typ `DOUBLE`, nie `DOUBLE PRECISION`,
+3. objęcie **również tabel Envers** `thermo_recorder_models_aud` i `thermo_recorders_aud` — inaczej `PlannerEnversMySqlIntegrationTest` i walidacja schematu Hibernate zgłoszą niezgodność. Kolumny audytowe są bez `NOT NULL`: rewizja zapisuje stan sprzed dodania pola.
+
+> Gdyby przyszła zmiana wymagała składni dialektowej, wtedy — i tylko wtedy — trzeba rozbić skrypt na warianty `h2/` i `mysql/`.
+
+### 4.2. Skrypt `V34__Thermo_Recorder_Hardware_Limits.sql` (fragmenty)
 
 ```sql
--- 1. Model rejestratora: pojemność pamięci, zakres pracy, dane katalogowe baterii
-ALTER TABLE thermo_recorder_models
-    ADD COLUMN sample_capacity            INT     NOT NULL DEFAULT 16000,
-    ADD COLUMN min_operating_temp_c       DOUBLE  NULL,
-    ADD COLUMN max_operating_temp_c       DOUBLE  NULL,
-    ADD COLUMN battery_type               VARCHAR(50) NULL,
-    ADD COLUMN battery_replaceable        BOOLEAN NOT NULL DEFAULT TRUE,
-    ADD COLUMN battery_life_days          INT     NULL,
-    ADD COLUMN battery_life_ref_cycle_min INT     NOT NULL DEFAULT 15,
-    ADD COLUMN battery_life_ref_temp_c    DOUBLE  NULL,
-    ADD COLUMN operating_duration_days    INT     NULL,
-    ADD COLUMN battery_shelf_life_months  INT     NULL;
+-- 1. Model rejestratora: pojemność pamięci, zakres pracy, dane katalogowe baterii.
+--    Osobny ALTER na kolumnę — składnia wielokolumnowa różni się między H2 a MySQL.
+ALTER TABLE thermo_recorder_models ADD COLUMN sample_capacity INT DEFAULT 16000 NOT NULL;
+ALTER TABLE thermo_recorder_models ADD COLUMN min_operating_temp_c DOUBLE;
+ALTER TABLE thermo_recorder_models ADD COLUMN max_operating_temp_c DOUBLE;
+ALTER TABLE thermo_recorder_models ADD COLUMN battery_type VARCHAR(50);
+ALTER TABLE thermo_recorder_models ADD COLUMN battery_replaceable BOOLEAN DEFAULT TRUE NOT NULL;
+ALTER TABLE thermo_recorder_models ADD COLUMN battery_life_days INT;
+ALTER TABLE thermo_recorder_models ADD COLUMN battery_life_ref_cycle_min INT DEFAULT 15 NOT NULL;
+ALTER TABLE thermo_recorder_models ADD COLUMN battery_life_ref_temp_c DOUBLE;
+ALTER TABLE thermo_recorder_models ADD COLUMN operating_duration_days INT;
+ALTER TABLE thermo_recorder_models ADD COLUMN battery_shelf_life_months INT;
 
-ALTER TABLE thermo_recorder_models_aud
-    ADD COLUMN sample_capacity            INT     NULL,
-    ADD COLUMN min_operating_temp_c       DOUBLE  NULL,
-    ADD COLUMN max_operating_temp_c       DOUBLE  NULL,
-    ADD COLUMN battery_type               VARCHAR(50) NULL,
-    ADD COLUMN battery_replaceable        BOOLEAN NULL,
-    ADD COLUMN battery_life_days          INT     NULL,
-    ADD COLUMN battery_life_ref_cycle_min INT     NULL,
-    ADD COLUMN battery_life_ref_temp_c    DOUBLE  NULL,
-    ADD COLUMN operating_duration_days    INT     NULL,
-    ADD COLUMN battery_shelf_life_months  INT     NULL;
+-- Envers: te same kolumny, bez NOT NULL (rewizja zapisuje stan sprzed dodania pola)
+ALTER TABLE thermo_recorder_models_aud ADD COLUMN sample_capacity INT;
+ALTER TABLE thermo_recorder_models_aud ADD COLUMN min_operating_temp_c DOUBLE;
+-- ... pozostałe kolumny analogicznie
 
 -- 2. Dane katalogowe producenta (dopasowanie odporne na spacje i wielkość liter)
 UPDATE thermo_recorder_models SET
@@ -221,26 +220,24 @@ WHERE REPLACE(LOWER(name), ' ', '') LIKE '%184t4%';
 UPDATE thermo_recorder_models SET
     sample_capacity = 1000000, min_operating_temp_c = -35, max_operating_temp_c = 70,
     battery_type = '3xAAA AlMn', battery_life_days = 1095, battery_life_ref_temp_c = 25
-WHERE REPLACE(LOWER(name), ' ', '') LIKE '%175%';
+WHERE REPLACE(LOWER(name), ' ', '') LIKE '%175%'
+  AND REPLACE(LOWER(name), ' ', '') NOT LIKE '%184%';
 
 UPDATE thermo_recorder_models SET
     sample_capacity = 2000000, min_operating_temp_c = -40, max_operating_temp_c = 70,
     battery_type = 'AA', battery_life_days = 2920, battery_life_ref_temp_c = 25
-WHERE REPLACE(LOWER(name), ' ', '') LIKE '%176%';
+WHERE REPLACE(LOWER(name), ' ', '') LIKE '%176%'
+  AND REPLACE(LOWER(name), ' ', '') NOT LIKE '%184%';
 
 -- 3. Egzemplarz rejestratora: ostatni znany stan baterii
-ALTER TABLE thermo_recorders
-    ADD COLUMN last_battery_level_percent INT       NULL,
-    ADD COLUMN last_battery_read_at       TIMESTAMP NULL,
-    ADD COLUMN battery_replacement_date   DATE      NULL,
-    ADD COLUMN first_activation_date      DATE      NULL;
-
-ALTER TABLE thermo_recorders_aud
-    ADD COLUMN last_battery_level_percent INT       NULL,
-    ADD COLUMN last_battery_read_at       TIMESTAMP NULL,
-    ADD COLUMN battery_replacement_date   DATE      NULL,
-    ADD COLUMN first_activation_date      DATE      NULL;
+ALTER TABLE thermo_recorders ADD COLUMN last_battery_level_percent INT;
+ALTER TABLE thermo_recorders ADD COLUMN last_battery_read_at TIMESTAMP;
+ALTER TABLE thermo_recorders ADD COLUMN battery_replacement_date DATE;
+ALTER TABLE thermo_recorders ADD COLUMN first_activation_date DATE;
+-- oraz te same cztery kolumny na thermo_recorders_aud
 ```
+
+> Wykluczenie `NOT LIKE '%184%'` przy seriach 175 i 176 chroni przed nadpisaniem danych modelu 184 nazwą zawierającą oba oznaczenia.
 
 > **Uwaga o kruchości `LIKE`**: dopasowanie po nazwie jest podatne na literówki i warianty zapisu („testo 174 T", „Testo174T", „174-T"). Dopóki nie ma pliku referencyjnego (§7 pkt 5), po migracji należy raportem sprawdzić, czy żaden aktywny model nie został z domyślnymi 16 000 przez brak dopasowania.
 
@@ -249,6 +246,7 @@ ALTER TABLE thermo_recorders_aud
 1. **`ThermoRecorderModel.java`** — dodać: `sampleCapacity` (Integer), `minOperatingTempC` / `maxOperatingTempC` (Double), `batteryType` (String), `batteryReplaceable` (Boolean, domyślnie `true`), `batteryLifeDays` (Integer), `batteryLifeRefCycleMin` (Integer, domyślnie `15`), `batteryLifeRefTempC` (Double), `operatingDurationDays` (Integer), `batteryShelfLifeMonths` (Integer). Pole `channelCount` **już istnieje** (`ThermoRecorderModel.java:30-33`).
 2. **`ThermoRecorder.java`** — dodać: `lastBatteryLevelPercent` (Integer), `lastBatteryReadAt` (LocalDateTime), `batteryReplacementDate` (LocalDate), `firstActivationDate` (LocalDate). Aktualizacja `lastBatteryLevelPercent` przy każdym odczycie z ramki `ab31` (`TestoUsbImportService`), **z pominięciem wartości `-1`**.
 3. Obie encje są `@Audited` — zmiany muszą być odzwierciedlone w tabelach `_aud` (§4.1).
+4. **`ThermoRecorderModel`** dostaje dwie metody pomocnicze, żeby reguła nie powielała arytmetyki: `getSampleCapacityPerChannel()` (pojemność / `channelCount`) oraz `hasHardwareSpecification()` (czy kartoteka ma komplet danych do oceny W4).
 
 ---
 
@@ -258,89 +256,98 @@ ALTER TABLE thermo_recorders_aud
 com.mac.bry.desktop.service.planner
 ├── HardwareCapacityService.java                       [NEW] W4a/W4b/W4c
 ├── dto
-│   └── HardwareBudget.java                            [NEW] wynik: T_mem, D_avail, wiążące kryterium
+│   ├── HardwareBudget.java                            [NEW] T_mem, D_avail, T_mission, wiążące kryterium
+│   └── HardwareViolation.java                         [NEW] naruszenie + liczby stojące za odrzuceniem
 └── exception
-    ├── InsufficientRecorderCapacityException.java     [EXISTING] W4b
-    ├── InsufficientBatteryLevelException.java         [NEW] W4c
     ├── RecorderOutOfOperatingRangeException.java      [NEW] W4a
-    └── BatteryStatusUnknownException.java             [NEW] W4c, SoC = N/D
+    ├── InsufficientRecorderMemoryException.java       [NEW] W4b
+    ├── InsufficientBatteryLevelException.java         [NEW] W4c
+    └── HardwareDataIncompleteException.java           [NEW] brak danych do oceny
 ```
+
+**W4b dostaje własny wyjątek, a nie reużywa `InsufficientRecorderCapacityException`.** Tamten opisuje regułę W2 — niedobór **sztuk** sprzętu w oknie czasowym — i niesie `TaskResourceStatus.INSUFFICIENT_CAPACITY` („Brak wolnych rejestratorów") wraz z propozycją najbliższego wolnego okna. Użyty do braku pamięci mówiłby operatorowi „poczekaj na zwolnienie sprzętu", podczas gdy czekanie nie zmieni pojemności bufora; naprawą jest rozrzedzenie interwału albo inny model.
+
+Nowe statusy w `TaskResourceStatus`:
+
+| Status | Znaczenie |
+|---|---|
+| `HARDWARE_LIMITS_EXCEEDED` | sprzęt nie udźwignie badania — zakres pracy, pamięć albo budżet energii |
+| `HARDWARE_DATA_INCOMPLETE` | reguły nie da się rozstrzygnąć; **blokujący celowo**, bo w GxP „nie wiadomo" nie może znaczyć „wolno" |
 
 ### 5.1. Punkt wpięcia
 
 `RecorderAllocationService` **nie posiada metody `validateRecorderQualification(...)`**. Publiczne API klasy to `allocateRecorders(...)`, `releaseRecorders(...)` i `requireNoDoubleBooking(...)`, a filtrowanie kandydatów odbywa się w prywatnej metodzie `qualifiedChannelsOf(ThermoRecorder, CoolingChamber, ...)`.
 
-Walidację W4 wpinamy **w `qualifiedChannelsOf(...)`**, obok istniejącej kwalifikacji metrologicznej — dzięki temu rejestrator niespełniający W4 nie trafia do puli kandydatów, zamiast być odrzucanym dopiero po wyborze:
+Walidacja W4 wchodzi **do pętli filtrującej kandydatów w `allocateRecorders(...)`**, zaraz za kwalifikacją metrologiczną. Kluczowe: ocena **nie rzuca wyjątku** — zwraca `HardwareBudget`. Rzucenie wewnątrz `qualifiedChannelsOf(...)` przerwałoby całą alokację na pierwszym niepasującym rejestratorze, podczas gdy kandydat ma po prostu wypaść z puli, a planer szukać dalej:
 
 ```java
-// RecorderAllocationService.qualifiedChannelsOf(...)
-private List<Integer> qualifiedChannelsOf(ThermoRecorder recorder, CoolingChamber chamber,
-                                          ProcedureClassConfig config, ...) {
-    // W4a + W4b + W4c — twarde odrzucenie kandydata
-    hardwareCapacityService.validateHardwareBudget(recorder, config, chamber);
-
-    // ... istniejąca kwalifikacja metrologiczna i kalibracyjna
+// RecorderAllocationService.allocateRecorders(...)
+HardwareBudget budget = hardwareCapacityService.evaluate(recorder, config, chamber, missionStart);
+if (!budget.isAcceptable()) {
+    rejectedForHardware++;
+    if (firstHardwareViolation == null) {
+        firstHardwareViolation = budget.firstViolation();
+    }
+    continue;
 }
 ```
 
-Jeżeli reguła ma raportować przyczynę odrzucenia w UI planera (a nie tylko usuwać kandydata z puli), `HardwareCapacityService` powinien zwracać `HardwareBudget` z listą naruszeń, a `noQualifiedRecorder(...)` agregować je do komunikatu — analogicznie do obecnej obsługi `hasChannelRejectedOnlyForCalibration(...)`.
+Gdy **cała** pula odpadła na W4, `noQualifiedRecorder(...)` zwraca wyjątek zbudowany z pierwszego naruszenia (`hardwareCapacityService.exceptionFor(...)`) zamiast ogólnego komunikatu metrologicznego — odrzucenie sprzętowe niesie konkretne liczby (próbki, dni, zakres), więc jest najużyteczniejszą przyczyną, jaką planer może pokazać. Licznik odrzuceń sprzętowych trafia też do komunikatu `MetrologicalRangeMismatchException`, gdy przyczyny się mieszają.
 
-### 5.2. Szkic serwisu
+Dla **ręcznej podmiany sprzętu** w zaplanowanym zadaniu służy `HardwareCapacityService.require(...)` — wariant rzucający, analogiczny do `requireNoDoubleBooking(...)`.
+
+`missionStart` to `task.getPlannedStep1Time().toLocalDate()`: wiek baterii i zużyty limit loggerów jednorazowych liczą się na moment rozpoczęcia badania, nie na dzień planowania.
+
+### 5.2. Kontrakt serwisu
 
 ```java
-public HardwareBudget validateHardwareBudget(ThermoRecorder recorder,
-                                             ProcedureClassConfig config,
-                                             CoolingChamber chamber) {
-    ThermoRecorderModel model = recorder.getModel();
+/** Ocena bez rzucania wyjątku — kandydat ma wypaść z puli, nie przerwać alokacji. */
+public HardwareBudget evaluate(ThermoRecorder recorder, ProcedureClassConfig config,
+                               CoolingChamber chamber, LocalDate missionStart);
 
-    // --- W4a: zakres pracy urządzenia ---
-    Double chamberTemp = chamber.getEffectiveMinTempLimit();
-    if (chamberTemp == null) {
-        throw new RecorderOutOfOperatingRangeException(
-                "Komora " + chamber.getName() + " nie ma skonfigurowanego dolnego limitu temperatury");
-    }
-    if (model.getMinOperatingTempC() != null && chamberTemp < model.getMinOperatingTempC()) {
-        throw new RecorderOutOfOperatingRangeException(String.format(
-                "Rejestrator S/N:%s (%s) pracuje od %.1f°C, a komora wymaga %.1f°C",
-                recorder.getSerialNumber(), model.getName(),
-                model.getMinOperatingTempC(), chamberTemp));
-    }
+/** Wariant rzucający — ręczna podmiana sprzętu, gdzie operator oczekuje przyczyny odmowy. */
+public void require(ThermoRecorder recorder, ProcedureClassConfig config,
+                    CoolingChamber chamber, LocalDate missionStart);
 
-    // --- W4b: budżet pamięci (dzielony między kanały) ---
-    int perChannelCapacity = model.getSampleCapacity() / Math.max(1, model.getChannelCount());
-    int requiredSamples = config.getStep4SampleCount();
-    if (requiredSamples > perChannelCapacity) {
-        throw new InsufficientRecorderCapacityException(String.format(
-                "Rejestrator S/N:%s (%s) ma %d próbek na kanał (%d / %d kanałów), a procedura wymaga %d",
-                recorder.getSerialNumber(), model.getName(), perChannelCapacity,
-                model.getSampleCapacity(), model.getChannelCount(), requiredSamples));
-    }
-
-    // --- W4c: budżet energii ---
-    return batteryBudget(recorder, config, chamberTemp);
-}
+/** Przekład naruszenia na wyjątek alokacji z właściwym TaskResourceStatus. */
+public RecorderAllocationException exceptionFor(HardwareViolation violation);
 ```
+
+Kolejność sprawdzania wewnątrz `evaluate(...)`: **W4a → W4b → W4c**. Wszystkie trzy są oceniane (lista naruszeń bywa dłuższa niż jedno), ale `firstViolation()` zwraca najwcześniejsze w tej kolejności — bo zakres pracy jest przyczyną najbardziej podstawową.
+
+Pułapki wychwycone przy wdrożeniu:
+
+* `CoolingChamber.getEffectiveMinTempLimit()` zwraca **`Double`** — brak limitu komory to `DATA_INCOMPLETE`, nigdy `null → 0.0`.
+* `SoC < 0` (sentinel `-1` z importu PDF) nie wchodzi do żadnego działania arytmetycznego; kończy się `DATA_INCOMPLETE`.
+* Czas misji liczony w `long` — `step4IntervalMinutes × step4SampleCount` przy pojemnościach rzędu 10⁶ przekracza zakres `int`.
 
 ---
 
 ## 6. Scenariusze Testowe (W4 Test Suite)
 
-Miejsce docelowe: `HardwareCapacityServiceTest` oraz odblokowanie testu wyłączonego adnotacją
-`@Disabled("W4 odroczone: ThermoRecorder nie ma pól batteryLevel ani sampleCapacity")` w `RecorderAllocationServiceTest.java:278`.
+Zrealizowane w `HardwareCapacityServiceTest`; test wyłączony adnotacją
+`@Disabled("W4 odroczone: ThermoRecorder nie ma pól batteryLevel ani sampleCapacity")`
+w `RecorderAllocationServiceTest` został odblokowany i zastąpiony scenariuszami na poziomie puli.
+
+Przyjęte założenia liczbowe: $f_{safety} = 1{,}5$; „misja 21 dni" to `Δt = 10 min × 2950 próbek` plus 20 min umieszczenia, 6 h stabilizacji i 6 h buforu odczytu (razem 30 240 min).
 
 | ID | Warunki | Oczekiwany wynik |
 |---|---|---|
 | **ST-W4a-01** | Komora −80 °C, rejestrator testo 174 T (zakres −30…+70 °C), bateria 100 % | `RecorderOutOfOperatingRangeException`. **Odrzucenie na zakresie pracy, nie na baterii.** |
 | **ST-W4a-02** | Komora −80 °C, rejestrator testo 184 T4 (zakres −80…+70 °C) | W4a zaliczone, walidacja przechodzi dalej |
-| **ST-W4b-01** | Δt = 1 min, 14 dni → $N_{req}$ = 20 160; testo 174 T (16 000 / 1 kanał) | `InsufficientRecorderCapacityException` |
+| **ST-W4b-01** | Δt = 1 min, 14 dni → $N_{req}$ = 20 160; testo 174 T (16 000 / 1 kanał) | `InsufficientRecorderMemoryException`; $T_{mem} = 11{,}1$ dnia |
 | **ST-W4b-02** | $N_{req}$ = 20 160; testo 184 T3 (40 000 / 1 kanał) | Zaliczone (limit 40 000) |
-| **ST-W4b-03** | $N_{req}$ = 400 000; testo 175 T3 (1 000 000 / **3 kanały** → 333 333 na kanał) | `InsufficientRecorderCapacityException` — **regresja na dzielenie przez `channelCount`** |
-| **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, SoC = 60 %, misja 21 dni. $D_{avail} = 100 \cdot 1 \cdot 0{,}6 = 60$ dni; próg $60/1{,}5 = 40$ dni | Zaliczone |
-| **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, SoC = 25 %, misja 21 dni. $D_{avail} = 25$ dni; próg $16{,}7$ dni | `InsufficientBatteryLevelException` |
-| **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, SoC = 75 %. $D_{avail} = 500 \cdot (1/15) \cdot 0{,}75 = 25$ dni; $T_{mem} = 27{,}8$ dni | Wiąże **bateria**, nie pamięć — asercja na polu `bindingConstraint` |
-| **ST-W4c-04** | SoC = `-1` (odczyt z PDF bez informacji o baterii) | `BatteryStatusUnknownException`; **brak arytmetyki na wartości ujemnej** |
-| **ST-W4c-05** | 184 T1 (bateria niewymienna), 80 dni od `firstActivationDate`, misja 21 dni, limit 90 dni | `InsufficientBatteryLevelException` — obowiązuje `operatingDurationDays` |
-| **ST-W4c-06** | Misja obejmuje stabilizację 6 h + Krok 4 + bufor odczytu 6 h; budżet mieści wyłącznie Krok 4 | Odrzucenie — **regresja na pełny $T_{mission}$**, nie sam Krok 4 |
+| **ST-W4b-03** | $N_{req}$ = 400 000; testo 175 T3 (1 000 000 / **3 kanały** → 333 333 na kanał) | `InsufficientRecorderMemoryException` — **regresja na dzielenie przez `channelCount`** |
+| **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, SoC = 60 %, misja 21 dni. $D_{avail} = 100 \cdot \tfrac{10}{15} \cdot 0{,}60 = 40{,}0$ dnia; próg $40{,}0/1{,}5 = 26{,}7$ dnia | Zaliczone |
+| **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, SoC = 25 %, misja 21 dni. $D_{avail} = 100 \cdot \tfrac{10}{15} \cdot 0{,}25 = 16{,}7$ dnia; próg $11{,}1$ dnia | `InsufficientBatteryLevelException` |
+| **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, SoC = 75 %. $D_{avail} = 500 \cdot \tfrac{1}{15} \cdot 0{,}75 = 25{,}0$ dnia; $T_{mem} = 27{,}8$ dnia | Wiąże **bateria**, nie pamięć — asercja na `HardwareBudget.binding()` |
+| **ST-W4c-04** | SoC = `-1` (odczyt z PDF bez informacji o baterii) oraz SoC = `null` (nigdy nieodczytany) | `HardwareDataIncompleteException`; $D_{avail}$ = `NaN`, **brak arytmetyki na wartości ujemnej** |
+| **ST-W4c-05** | 184 T1 (bateria niewymienna), 80 dni od `firstActivationDate`, misja 21 dni, limit 90 dni | `InsufficientBatteryLevelException` — obowiązuje `operatingDurationDays`; brak odczytu % **nie** jest tu brakiem danych |
+| **ST-W4c-06** | Δt = 15 min × 96 próbek; budżet 1,5 dnia mieści sam Krok 4 (1,0 dnia), ale nie pełną misję (1,51 dnia) | Odrzucenie — **regresja na pełny $T_{mission}$**, nie sam Krok 4 |
+
+Dodatkowo pokryte: przeterminowana bateria mimo wysokiego SoC (`batteryShelfLifeMonths`), zastrzeżenie temperaturowe jako ostrzeżenie bez blokady, mapowanie każdego naruszenia na właściwy typ wyjątku w `require(...)`, oraz na poziomie `RecorderAllocationServiceTest` — odrzucenie całej puli na pamięci i na braku odczytu baterii.
+
+> **Uwaga o locale**: komunikaty naruszeń formatują liczby przez `String.format`, więc separator dziesiętny zależy od locale JVM. Asercje tekstowe muszą budować oczekiwany fragment tym samym wywołaniem — inaczej test przechodzi lokalnie (`pl-PL`), a pada na CI (`en-US`).
 
 ---
 
@@ -348,7 +355,7 @@ Miejsce docelowe: `HardwareCapacityServiceTest` oraz odblokowanie testu wyłącz
 
 Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla dokumentacji GxP wymagane jest oświadczenie producenta lub pomiar własny udokumentowany protokołem:
 
-1. **Żywotność baterii poza warunkami referencyjnymi.** Testo publikuje jeden punkt (15 min, +25 °C lub −80 °C). Dla 174 T / 184 T3 pracujących w −20 °C brak danych. Do czasu ich uzyskania obowiązuje ścieżka ręcznego zatwierdzenia (§3.3).
+1. **Żywotność baterii poza warunkami referencyjnymi.** Testo publikuje jeden punkt (15 min, +25 °C lub −80 °C). Dla 174 T / 184 T3 pracujących w −20 °C brak danych. Do czasu ich uzyskania planer wystawia **ostrzeżenie**, ale nie blokuje (§3.3) — wymuszenie akceptacji Kierownika Walidacji wymaga ścieżki zatwierdzania, której planer jeszcze nie ma. **To jest świadomie przyjęte ryzyko rezydualne, wymagające decyzji przy zatwierdzaniu walidacyjnym.**
 2. **Kształt zależności zużycia od cyklu pomiarowego.** Przyjęty człon $\min(1, \Delta t/\Delta t_{ref})$ jest zachowawczy (zakłada zużycie proporcjonalne do liczby odczytów poniżej 15 min i brak zysku powyżej). Rzeczywisty pobór to suma składowej spoczynkowej i pomiarowej — dwa punkty pomiarowe od producenta pozwoliłyby zastąpić go modelem $D = Q/(I_q + q/\Delta t)$.
 3. **Zachowanie przy zapełnionej pamięci: zatrzymanie zapisu czy nadpisanie najstarszych odczytów (ring buffer).** Instrukcje wskazują na kryterium stopu „memory full", ale jeśli którykolwiek model nadpisuje dane, przekroczenie W4b oznacza **cichą utratę fragmentu serii pomiarowej**, a nie tylko jej skrócenie — co jest naruszeniem integralności danych wg 21 CFR Part 11 i wymaga podniesienia rangi alertu.
 4. **Interpretacja wskazania procentowego baterii z ramki `ab31`.** Nie jest udokumentowane, czy jest to pomiar napięcia, czy licznik zużycia — a to determinuje, czy mnożenie $D_{spec} \cdot SoC/100$ jest uprawnione.
@@ -356,16 +363,18 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 
 ---
 
-## 8. Harmonogram Wdrożenia Suplementu W4
+## 8. Stan Wdrożenia Suplementu W4
 
-| Krok | Zakres | Zależności |
+| Krok | Zakres | Stan |
 |---|---|---|
-| **1** | Migracje `V34__Thermo_Recorder_Hardware_Limits.sql` w `h2/` **i** `mysql/`, wraz z tabelami `_aud`; aktualizacja encji `ThermoRecorder` i `ThermoRecorderModel` | — |
-| **2** | `HardwareCapacityService` z kryteriami W4a/W4b/W4c i typem wynikowym `HardwareBudget` | Krok 1 |
-| **3** | Zapis `lastBatteryLevelPercent` przy imporcie USB (z filtrowaniem sentinela `-1`) | Krok 1 |
-| **4** | Wpięcie w `RecorderAllocationService.qualifiedChannelsOf(...)` i aktywacja W4 w `RevalidationSchedulerEngine` | Kroki 2–3 |
-| **5** | Testy `HardwareCapacityServiceTest` (ST-W4a/b/c) + odblokowanie `RecorderAllocationServiceTest:278` | Krok 4 |
-| **6** | Aktualizacja BA v5.0: zmiana statusu W4 z *deferred* na *active*; rejestracja kwestii otwartych z §7 w dokumentacji walidacyjnej | Krok 5 |
+| **1** | Migracja `common/V34__Thermo_Recorder_Hardware_Limits.sql` wraz z tabelami `_aud`; aktualizacja encji `ThermoRecorder` i `ThermoRecorderModel` | ✅ zrobione |
+| **2** | `HardwareCapacityService` z kryteriami W4a/W4b/W4c i typem wynikowym `HardwareBudget` | ✅ zrobione |
+| **3** | Zapis `lastBatteryLevelPercent` przy imporcie USB i PDF (z filtrowaniem sentinela `-1`) | ✅ zrobione |
+| **4** | Wpięcie w pętlę filtrującą kandydatów w `RecorderAllocationService.allocateRecorders(...)` | ✅ zrobione |
+| **5** | Testy `HardwareCapacityServiceTest` (ST-W4a/b/c) + odblokowanie testu W4 w `RecorderAllocationServiceTest` | ✅ zrobione |
+| **6** | Aktualizacja BA v5.0: zmiana statusu W4 z *deferred* na *active*; rejestracja kwestii otwartych z §7 w dokumentacji walidacyjnej | ⬜ do zrobienia |
+| **7** | Ścieżka zatwierdzania przez Kierownika Walidacji dla zastrzeżeń z `HardwareBudget.warnings()` (§7 pkt 1) | ⬜ do zrobienia |
+| **8** | Zastąpienie dopasowania `LIKE` plikiem referencyjnym `testo_models.yml` (§7 pkt 5) | ⬜ do zrobienia |
 
 ---
 
