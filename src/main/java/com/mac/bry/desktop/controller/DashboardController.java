@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.controller;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.controller.helper.AccessLogsTableHelper;
 import com.mac.bry.desktop.dto.ChartSeries;
 import com.mac.bry.desktop.dto.DashboardStatistics;
@@ -30,7 +31,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -80,21 +80,21 @@ public class DashboardController {
         if (auth != null && auth.isAuthenticated()) {
             if (auth.getPrincipal() instanceof User) {
                 User user = (User) auth.getPrincipal();
-                welcomeLabel.setText("Witaj w systemie, " + user.getFullName() + "!");
+                welcomeLabel.setText(I18n.t("dashboard.header.welcome", user.getFullName()));
             } else {
-                welcomeLabel.setText("Witaj w systemie, " + auth.getName() + "!");
+                welcomeLabel.setText(I18n.t("dashboard.header.welcome", auth.getName()));
             }
 
             String roles = auth.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .map(r -> r.replace("ROLE_", ""))
                     .collect(Collectors.joining(", "));
-            roleLabel.setText("Uprawnienia: " + (roles.isEmpty() ? "Brak" : roles));
+            roleLabel.setText(I18n.t("dashboard.header.roles",
+                    roles.isEmpty() ? I18n.t("dashboard.header.noRoles") : roles));
         }
 
         LocalDate now = LocalDate.now();
-        Locale plLocale = new Locale("pl");
-        dateLabel.setText(now.format(DateTimeFormatter.ofPattern("d MMMM yyyy", plLocale)));
+        dateLabel.setText(now.format(DateTimeFormatter.ofPattern("d MMMM yyyy", I18n.getLocale())));
         timeLabel.setText(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
     }
 
@@ -221,17 +221,17 @@ public class DashboardController {
             if (gxpAlertBox != null) {
                 gxpAlertBox.setVisible(true);
                 gxpAlertBox.setManaged(true);
-                StringBuilder msg = new StringBuilder("Wymagana uwaga! System wykrył: ");
+                StringBuilder msg = new StringBuilder(I18n.t("dashboard.alert.gxp.prefix")).append(' ');
                 if (stats.getCalibrations().getExpired() > 0) {
-                    msg.append(String.format("%d przeterminowanych wzorcowań. ", stats.getCalibrations().getExpired()));
+                    msg.append(I18n.t("dashboard.alert.gxp.expired", stats.getCalibrations().getExpired())).append(' ');
                 }
                 if (stats.getCalibrations().getExpiringSoon() > 0) {
-                    msg.append(String.format("%d wygasających do 30 dni. ", stats.getCalibrations().getExpiringSoon()));
+                    msg.append(I18n.t("dashboard.alert.gxp.expiringSoon", stats.getCalibrations().getExpiringSoon())).append(' ');
                 }
                 if (stats.getDevices().getWarningChambers() > 0) {
-                    msg.append(String.format("%d komór z ostrzeżeniem GxP. ", stats.getDevices().getWarningChambers()));
+                    msg.append(I18n.t("dashboard.alert.gxp.warningChambers", stats.getDevices().getWarningChambers())).append(' ');
                 }
-                msg.append("Przeprowadź Procedurę Rewalidacji GxP.");
+                msg.append(I18n.t("dashboard.alert.gxp.action"));
                 gxpAlertMessage.setText(msg.toString());
             }
         } else {
