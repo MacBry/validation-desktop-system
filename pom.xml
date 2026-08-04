@@ -25,6 +25,16 @@
         <testcontainers.version>1.21.4</testcontainers.version>
         <!-- Nadpisanie wersji z BOM: 3.20.0 łata CVE-2025-48924 (commons-lang3). -->
         <commons-lang3.version>3.20.0</commons-lang3.version>
+        <!-- Nadpisanie wersji z BOM (2.21.4): 2.21.5 łata CVE-2026-54515 - włączona
+             deserializacja case-insensitive po cichu gubiła per-property
+             @JsonIgnoreProperties (mass assignment). -->
+        <jackson-bom.version>2.21.5</jackson-bom.version>
+        <!-- Nadpisanie wersji z BOM (9.7.0): 26.7.0 to wydanie z Oracle CPU lipiec 2026
+             (nowa numeracja kalendarzowa, następca linii 9.7). Łata CVE-2026-60586 (7.7)
+             i CVE-2026-60623 (7.1) w komponencie Connector/J. Oracle deklaruje wsparcie
+             dla serwera MySQL 8.4+, ale zgodność z docelowym 8.0 zweryfikowana testami
+             Testcontainers (MySqlMigrationIntegrationTest, PlannerEnversMySqlIntegrationTest). -->
+        <mysql.version>26.7.0</mysql.version>
     </properties>
 
     <dependencies>
