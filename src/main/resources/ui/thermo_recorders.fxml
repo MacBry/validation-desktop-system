@@ -47,7 +47,7 @@
             <TableColumn fx:id="deptColumn" prefWidth="180" text="%common.dzial_pracownia" />
             <TableColumn fx:id="statusColumn" prefWidth="120" text="%common.status" style="-fx-alignment: CENTER;" />
             <TableColumn fx:id="calibrationColumn" prefWidth="200" text="%thermorecorders.waznosc_wzorcowania" style="-fx-alignment: CENTER;" />
-            <TableColumn fx:id="actionsColumn" prefWidth="250" text="%common.akcje" style="-fx-alignment: CENTER;" />
+            <TableColumn fx:id="actionsColumn" prefWidth="340" text="%common.akcje" style="-fx-alignment: CENTER;" />
         </columns>
         <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

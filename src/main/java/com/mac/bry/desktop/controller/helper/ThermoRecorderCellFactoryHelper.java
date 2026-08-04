@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.controller.helper;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.model.RecorderStatus;
 import com.mac.bry.desktop.model.ThermoRecorder;
 import atlantafx.base.theme.Styles;
@@ -90,19 +91,23 @@ public class ThermoRecorderCellFactoryHelper {
             TableColumn<ThermoRecorder, Void> actionsColumn,
             Consumer<ThermoRecorder> onEdit,
             Consumer<ThermoRecorder> onHistory,
-            Consumer<ThermoRecorder> onAudit) {
+            Consumer<ThermoRecorder> onAudit,
+            Consumer<ThermoRecorder> onDetails) {
 
         actionsColumn.setCellFactory(param -> new TableCell<>() {
-            private final Button editBtn = new Button("Edytuj");
-            private final Button historyBtn = new Button("Wzorcowania");
-            private final Button auditBtn = new Button("Audit");
-            private final HBox container = new HBox(6, editBtn, historyBtn, auditBtn);
+            private final Button detailsBtn = new Button(I18n.t("thermorecorders.action.details"));
+            private final Button editBtn = new Button(I18n.t("thermorecorders.action.edit"));
+            private final Button historyBtn = new Button(I18n.t("thermorecorders.action.calibrations"));
+            private final Button auditBtn = new Button(I18n.t("thermorecorders.action.audit"));
+            private final HBox container = new HBox(6, detailsBtn, editBtn, historyBtn, auditBtn);
 
             {
+                detailsBtn.getStyleClass().add("button-sm");
                 editBtn.getStyleClass().addAll("button-sm", "success");
                 historyBtn.getStyleClass().addAll("button-sm", "accent");
                 auditBtn.getStyleClass().addAll("button-sm", "danger");
 
+                detailsBtn.setOnAction(e -> onDetails.accept(getTableView().getItems().get(getIndex())));
                 editBtn.setOnAction(e -> onEdit.accept(getTableView().getItems().get(getIndex())));
                 historyBtn.setOnAction(e -> onHistory.accept(getTableView().getItems().get(getIndex())));
                 auditBtn.setOnAction(e -> onAudit.accept(getTableView().getItems().get(getIndex())));
