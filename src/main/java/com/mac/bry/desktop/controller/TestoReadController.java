@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.controller;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.model.ThermoMeasurementPoint;
 import com.mac.bry.desktop.service.TestoPdfReportService;
 import com.mac.bry.desktop.service.TestoUsbImportService;
@@ -305,7 +306,7 @@ public class TestoReadController {
         });
 
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Temperatura (°C)");
+        series.setName(I18n.t("testoread.chart.temperature"));
 
         DateTimeFormatter tooltipTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 

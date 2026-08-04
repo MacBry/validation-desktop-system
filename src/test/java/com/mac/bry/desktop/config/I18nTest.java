@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -89,6 +90,56 @@ class I18nTest {
         I18n.init("en");
         assertThat(I18n.t("main.user.loggedInAs", "jkowalski"))
                 .isEqualTo("Logged in as: jkowalski");
+    }
+
+    @Test
+    @DisplayName("TC-I18N-006: Liczby w t() formatują się wg locale aplikacji, nie domyślnego JVM")
+    void tc_i18n_006_numbersFollowAppLocale() {
+        Locale jvmDefault = Locale.getDefault();
+        try {
+            // Domyślne locale JVM celowo przeciwne do locale aplikacji — separator
+            // dziesiętny musi iść za aplikacją, inaczej wynik zależałby od maszyny
+            // (stacja PL vs runner CI EN).
+            Locale.setDefault(Locale.forLanguageTag("en"));
+            I18n.init("pl");
+            assertThat(I18n.t("statsdiagnosticsdialog.spc.indices", 1.5, 1.25, 2.0, 8.0))
+                    .contains("1,500")
+                    .doesNotContain("1.500");
+
+            Locale.setDefault(Locale.forLanguageTag("pl"));
+            I18n.init("en");
+            assertThat(I18n.t("statsdiagnosticsdialog.spc.indices", 1.5, 1.25, 2.0, 8.0))
+                    .contains("1.500")
+                    .doesNotContain("1,500");
+        } finally {
+            Locale.setDefault(jvmDefault);
+        }
+    }
+
+    @Test
+    @DisplayName("TC-I18N-007: Żadna etykieta serii/wycinka wykresu nie jest literałem w kodzie")
+    void tc_i18n_007_noHardcodedChartLabels() throws IOException {
+        // Legenda i opisy wycinków pochodzą z modelu danych JavaFX, więc %klucz z FXML
+        // ich nie obejmuje — bez tej bramki tłumaczenia po cichu omijają wykresy.
+        Pattern hardcoded = Pattern.compile("(setName|new PieChart\\.Data)\\(\"");
+        Set<String> offenders = new TreeSet<>();
+
+        try (Stream<Path> files = Files.walk(Paths.get("src/main/java"))) {
+            files.filter(p -> p.toString().endsWith(".java")).forEach(java -> {
+                try {
+                    Matcher m = hardcoded.matcher(Files.readString(java));
+                    while (m.find()) {
+                        offenders.add(java.getFileName().toString() + " -> " + m.group(1));
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        }
+
+        assertThat(offenders)
+                .as("Etykiety wykresów wpisane na sztywno — użyj I18n.t(), patrz docs/i18n.md")
+                .isEmpty();
     }
 
     @Test

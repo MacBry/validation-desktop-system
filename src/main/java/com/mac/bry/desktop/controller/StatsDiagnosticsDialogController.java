@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.controller;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.dto.stats.CapabilityIndexes;
 import com.mac.bry.desktop.dto.stats.ControlChartData;
 import com.mac.bry.desktop.dto.stats.DefrostCycle;
@@ -79,7 +80,7 @@ public class StatsDiagnosticsDialogController {
     public void setSensorData(ThermoMeasurementSeries series, String positionLabel, Double minLimit, Double maxLimit) {
         if (series == null) return;
 
-        lblSensorTitle.setText("Zaawansowana Diagnostyka SPC & Defrost dla pozycji: " + positionLabel);
+        lblSensorTitle.setText(I18n.t("statsdiagnosticsdialog.title.sensor", positionLabel));
 
         List<ThermoMeasurementPoint> measurements = series.getMeasurements();
         double[] rawData = measurements.stream()
@@ -91,10 +92,8 @@ public class StatsDiagnosticsDialogController {
         double usl = maxLimit != null ? maxLimit : 8.0;
         CapabilityIndexes cpIndex = SpcEngine.calculateCapability(rawData, lsl, usl);
 
-        lblSpcStats.setText(String.format(
-                "Wskaźnik Cp: %.3f | Wskaźnik Cpk: %.3f (Limity specyfikacji: %.1f - %.1f °C)",
-                cpIndex.getCp(), cpIndex.getCpk(), lsl, usl
-        ));
+        lblSpcStats.setText(I18n.t("statsdiagnosticsdialog.spc.indices",
+                cpIndex.getCp(), cpIndex.getCpk(), lsl, usl));
 
         // 2. Obliczenie granic i limitów dla obu modeli (Shewhart oraz I-MR)
         ControlChartData spcData = ControlChartCalculator.calculateShewhartLimits(rawData);
@@ -123,6 +122,13 @@ public class StatsDiagnosticsDialogController {
         defrostTable.setItems(FXCollections.observableArrayList(defrostCycles));
     }
 
+    /**
+     * Lista naruszeń reguł Nelsona zostaje po polsku świadomie: treść naruszenia
+     * ({@code Violation#getDescription}) i interpretacja pochodzą z warstwy serwisowej,
+     * która zasila też raporty GxP — te pozostają polskie do czasu decyzji o języku
+     * dokumentacji (docs/i18n.md). Przetłumaczenie samych etykiet jednostki dałoby
+     * zdanie pół po angielsku, pół po polsku.
+     */
     private void setupNelsonListView(ListView<String> listView,
                                      List<NelsonRulesDetector.Violation> card1Violations,
                                      List<NelsonRulesDetector.Violation> card2Violations,
@@ -171,13 +177,13 @@ public class StatsDiagnosticsDialogController {
         xBarChart.getData().clear();
 
         XYChart.Series<Number, Number> meanSeries = new XYChart.Series<>();
-        meanSeries.setName("Średnie podgrup");
+        meanSeries.setName(I18n.t("statsdiagnosticsdialog.chart.xbar.mean"));
         XYChart.Series<Number, Number> uclSeries = new XYChart.Series<>();
-        uclSeries.setName("UCL (Górna Granica)");
+        uclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.xbar.ucl"));
         XYChart.Series<Number, Number> lclSeries = new XYChart.Series<>();
-        lclSeries.setName("LCL (Dolna Granica)");
+        lclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.xbar.lcl"));
         XYChart.Series<Number, Number> clSeries = new XYChart.Series<>();
-        clSeries.setName("CL (Średnia globalna)");
+        clSeries.setName(I18n.t("statsdiagnosticsdialog.chart.xbar.cl"));
 
         List<Double> means = data.getSubgroupMeans();
         for (int i = 0; i < means.size(); i++) {
@@ -195,13 +201,13 @@ public class StatsDiagnosticsDialogController {
         sChart.getData().clear();
 
         XYChart.Series<Number, Number> sSeries = new XYChart.Series<>();
-        sSeries.setName("Odchylenia podgrup");
+        sSeries.setName(I18n.t("statsdiagnosticsdialog.chart.s.stdDev"));
         XYChart.Series<Number, Number> uclSeries = new XYChart.Series<>();
-        uclSeries.setName("UCL");
+        uclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.ucl"));
         XYChart.Series<Number, Number> lclSeries = new XYChart.Series<>();
-        lclSeries.setName("LCL");
+        lclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.lcl"));
         XYChart.Series<Number, Number> clSeries = new XYChart.Series<>();
-        clSeries.setName("CL");
+        clSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.cl"));
 
         List<Double> stdDevs = data.getSubgroupStdDevs();
         for (int i = 0; i < stdDevs.size(); i++) {
@@ -220,13 +226,13 @@ public class StatsDiagnosticsDialogController {
         iChart.getData().clear();
 
         XYChart.Series<Number, Number> valSeries = new XYChart.Series<>();
-        valSeries.setName("Wartości indywidualne");
+        valSeries.setName(I18n.t("statsdiagnosticsdialog.chart.i.individual"));
         XYChart.Series<Number, Number> uclSeries = new XYChart.Series<>();
-        uclSeries.setName("UCL");
+        uclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.ucl"));
         XYChart.Series<Number, Number> lclSeries = new XYChart.Series<>();
-        lclSeries.setName("LCL");
+        lclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.lcl"));
         XYChart.Series<Number, Number> clSeries = new XYChart.Series<>();
-        clSeries.setName("CL");
+        clSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.cl"));
 
         List<Double> values = data.getIndividualValues();
         for (int i = 0; i < values.size(); i++) {
@@ -244,13 +250,13 @@ public class StatsDiagnosticsDialogController {
         mrChart.getData().clear();
 
         XYChart.Series<Number, Number> mrSeries = new XYChart.Series<>();
-        mrSeries.setName("Ruchomy rozstęp (MR)");
+        mrSeries.setName(I18n.t("statsdiagnosticsdialog.chart.mr.movingRange"));
         XYChart.Series<Number, Number> uclSeries = new XYChart.Series<>();
-        uclSeries.setName("UCL");
+        uclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.ucl"));
         XYChart.Series<Number, Number> lclSeries = new XYChart.Series<>();
-        lclSeries.setName("LCL");
+        lclSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.lcl"));
         XYChart.Series<Number, Number> clSeries = new XYChart.Series<>();
-        clSeries.setName("CL");
+        clSeries.setName(I18n.t("statsdiagnosticsdialog.chart.limit.cl"));
 
         List<Double> mrValues = data.getMovingRanges();
         for (int i = 0; i < mrValues.size(); i++) {
