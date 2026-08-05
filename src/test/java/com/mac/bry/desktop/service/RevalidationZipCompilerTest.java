@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -135,6 +136,59 @@ public class RevalidationZipCompilerTest {
             assertThat(app3Entry).isNotNull();
             assertThat(app3Entry.getSize()).isGreaterThan(0);
         }
+    }
+
+    @Test
+    @DisplayName("Sentinel -1 (brak odczytu baterii) trafia do raportu jako N/D, nie jako '-1%'")
+    void shouldRenderBatterySentinelAsNotAvailable(@TempDir Path tempDir) throws Exception {
+        // Given — seria z importu PDF 184, gdzie źródło nie podaje stanu baterii.
+        Department department = new Department();
+        department.setName("Dział Walidacji");
+
+        CoolingDevice device = CoolingDevice.builder()
+                .inventoryNumber("DEV-777").name("Liebherr Fridge").department(department).build();
+        CoolingChamber chamber = CoolingChamber.builder()
+                .chamberType(ChamberType.FRIDGE).minOperatingTemp(2.0).maxOperatingTemp(6.0).build();
+
+        ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
+                .minTemperature(3.5).maxTemperature(4.5).avgTemperature(4.0)
+                .batteryLevelPercent(-1)
+                .loggingIntervalMinutes(15).measurementsCount(2).startDelayMinutes(0)
+                .firstMeasurementTimeLocal(LocalDateTime.of(2026, 5, 20, 10, 0))
+                .build();
+
+        Map<GridPosition, PositionData> assignedPositions = new HashMap<>();
+        assignedPositions.put(GridPosition.TOP_FRONT_LEFT,
+                PositionData.builder().serialNumber("SN-184").series(series).build());
+
+        RevalidationSession session = RevalidationSession.builder()
+                .coolingDevice(device).coolingChamber(chamber)
+                .assignedPositions(assignedPositions)
+                .procedureType(GxPProcedureType.PERIODIC_REVALIDATION)
+                .build();
+
+        File mainChartPng = tempDir.resolve("chart.png").toFile();
+        mainChartPng.createNewFile();
+        File indChartPng = tempDir.resolve("individual_chart.png").toFile();
+        indChartPng.createNewFile();
+
+        doNothing().when(pdfService).generateRevalidationReport(any(), any(), any());
+        when(pdfService.getShortCode(GridPosition.TOP_FRONT_LEFT)).thenReturn("GPL");
+        when(chartRenderer.renderSeriesToPng(any())).thenReturn(indChartPng);
+        doNothing().when(pdfReportService).generatePdfReport(any(), any(), any());
+
+        // When
+        zipCompiler.compile(session, mainChartPng, tempDir.resolve("pkg.zip").toFile());
+
+        // Then
+        ArgumentCaptor<TestoPdfReportService.TestoReportData> captor =
+                ArgumentCaptor.forClass(TestoPdfReportService.TestoReportData.class);
+        verify(pdfReportService).generatePdfReport(captor.capture(), any(), any());
+
+        assertThat(captor.getValue().batteryLevel)
+                .as("wartość niemierzona nie może trafić do dokumentu GxP jako liczba")
+                .isEqualTo("N/D")
+                .doesNotContain("-1");
     }
 
     @Test

@@ -95,7 +95,28 @@ Format `int16 BE` jest spójny, elegancki i idealnie tłumaczy cały zakres temp
 | **Count** | `uint16 BE` | Odpowiedź `ab 31` (GET_STATUS), bajty 4-5 | Liczba zapisanych pomiarów w pamięci |
 | **Start Delay** | `uint3` (3B BE) | Odpowiedź `ab 31` (GET_STATUS), bajty 6-8 | Opóźnienie startu pierwszego pomiaru (w minutach) |
 | **Prog Time** | `BCD / 6B` | Odpowiedź `ab 31` (GET_STATUS), bajty 9-14 | Data i godzina zaprogramowania (UTC) |
+| **Alarm Upper** | `int16 BE` | Odpowiedź `ab 31` (GET_STATUS), bajty 19-20 | Górny próg alarmowy (dziesiąte °C) |
+| **Alarm Lower** | `int16 BE` | Odpowiedź `ab 31` (GET_STATUS), bajty 21-22 | Dolny próg alarmowy (dziesiąte °C) |
+| **Probe Limit** | `int16 BE` | Odpowiedź `ab 31` (GET_STATUS), bajty 23-24 | Maksymalny limit sondy (typowo `03 E8` = 100,0 °C) |
+| **Battery Days** | `uint16 BE` | Odpowiedź `ab 01 0a` (GET_BATTERY_DAYS), bajty 3-4 | **Pozostały czas pracy baterii w dniach** |
 | **Temperatures** | `int16 BE` | Odpowiedź `ab 32` (READ_DATA) | Temperatura w dziesiątych częściach °C |
+
+### 🔧 Uzupełnienie 2026-08-05 — stan baterii i progi alarmowe
+
+Powyższa tabela pierwotnie kończyła się na temperaturach, a stan baterii był brany z **bajtu 20 ramki `ab 31`**. To było błędne: bajt 20 to młodszy bajt **górnego progu alarmowego**, przez co każdy rejestrator ustawiony na 2…8 °C raportował „80 % baterii" (8,0 °C = 80 = `0x0050`).
+
+Prawdziwy stan baterii ma **własną komendę**, której wcześniej nie wysyłaliśmy:
+
+```
+TX:  ab 01 0a 00 00 05
+RX:  ab 01 0a <uint16 BE = POZOSTAŁE DNI> <crc>
+```
+
+Zweryfikowane na dwóch egzemplarzach 174 T zestawionych ze wskazaniem oryginalnego oprogramowania: `00 2a` → 42 dni, `01 84` → 388 dni. Urządzenie podaje **dni**, nie procenty.
+
+Suma kontrolna zapytań rodziny `ab 01 xx`: **`crc = 0x0F − cmd`**.
+
+Widoczne w surowych ramkach `ab 31` przytoczonych wyżej w tym dokumencie sekwencje `... 00 50 00 14 03 e8 00 00` to zatem kolejno: górny próg 8,0 °C, dolny próg 2,0 °C, limit sondy 100,0 °C — a nie „bateria 80 %".
 
 ---
 
@@ -108,5 +129,7 @@ Nasz pythonowy dekoder `testo_174_decoder.py` może teraz zostać w pełni zaktu
 3. Wylicz czas pierwszego pomiaru jako `programming_date + timedelta(minutes=start_delay_minutes)`.
 4. Przekonwertuj ten czas na czas lokalny hosta (uwzględniając przesunięcie strefy czasowej w zależności od pory roku).
 5. Kolejne pomiary temperatur z bloków `ab 32` parsuj co 2 bajty jako `int16 BE / 10.0` i dodawaj kolejno wielokrotność interwału.
+6. Wyślij `ab 01 0a 00 00 05` i odczytaj pozostałe dni pracy baterii — **osobna komenda, nie pole ramki `ab 31`**.
+7. Progi alarmowe odczytaj z bajtów 19-22 ramki `ab 31` jako `int16 BE / 10.0` (w zamrażarce wartości ujemne).
 
 
