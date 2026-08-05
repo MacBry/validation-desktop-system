@@ -39,18 +39,29 @@ import java.util.List;
  * chemii ogniwa, nie deratingiem. Mnożenie stanu naładowania przez „współczynnik
  * temperaturowy" i porównywanie do progu procentowego nie ma pokrycia w danych
  * producenta — i myli dwie różne wielkości. Szczegóły: {@code REVALIDATION_PLANNER_W4_SUPPLEMENT.md} §2-§3.
+ *
+ * <h2>Czego producent nie dostarcza</h2>
+ * Potwierdzone na sprzęcie (174 T, sierpień 2026): oprogramowanie Testo pokazuje
+ * stan baterii jako <i>liczbę dni referencyjnych</i> — 388 dni przy 77,6 %
+ * naładowania i katalogowych 500 dniach — i wskazanie to <b>nie zmienia się</b>
+ * po zmianie interwału. Producent nie publikuje więc żadnej zależności czasu
+ * pracy od cyklu pomiarowego; człon {@code cycleFactor} w
+ * {@code replaceableBatteryBudget} jest <b>naszym własnym, zachowawczym
+ * założeniem</b>, a nie daną katalogową. Zakres alarmowy komory (np. 2…8 °C) nie
+ * wpływa na czas pracy ani u producenta, ani u nas.
+ * <p>
+ * Z tego samego powodu <b>nie modelujemy deratingu temperaturowego</b>. Wcześniej
+ * powstawało tu zastrzeżenie „praca poniżej temperatury referencyjnej”, ale
+ * dotyczyło każdej chłodziarki i każdej zamrażarki, nie zmieniało wyniku i nie
+ * docierało do żadnego odbiorcy — w dokumentacji walidacyjnej wyglądało na
+ * zabezpieczenie, którego faktycznie nie było. Temperatura wchodzi do reguły W4
+ * wyłącznie jako bramka W4a (czy urządzenie w tej komorze w ogóle pracuje);
+ * {@code batteryLifeRefTempC} pozostaje daną informacyjną karty rejestratora.
  */
 @Service
 public class HardwareCapacityService {
 
     private static final double MINUTES_PER_DAY = 1440.0;
-
-    /**
-     * Poniżej tej różnicy wobec temperatury referencyjnej specyfikacji nie
-     * zgłaszamy zastrzeżenia — chodzi o realną pracę w chłodzie, nie o szum
-     * zaokrągleń limitu komory.
-     */
-    private static final double REF_TEMP_TOLERANCE_C = 0.5;
 
     private final double batterySafetyFactor;
 
@@ -70,14 +81,13 @@ public class HardwareCapacityService {
     public HardwareBudget evaluate(ThermoRecorder recorder, ProcedureClassConfig config,
                                    CoolingChamber chamber, LocalDate missionStart) {
         List<HardwareViolation> violations = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
 
         ThermoRecorderModel model = recorder.getModel();
         if (model == null) {
             violations.add(new HardwareViolation(HardwareViolation.Rule.DATA_INCOMPLETE, String.format(
                     "Rejestrator S/N:%s nie ma przypisanego modelu — reguły W4 nie da się ocenić",
                     recorder.getSerialNumber())));
-            return new HardwareBudget(violations, warnings, Double.NaN, Double.NaN, Double.NaN,
+            return new HardwareBudget(violations, Double.NaN, Double.NaN, Double.NaN,
                     HardwareBudget.BindingConstraint.UNKNOWN);
         }
 
@@ -86,9 +96,9 @@ public class HardwareCapacityService {
         checkOperatingRange(recorder, model, chamber, violations);
         double memoryLimitDays = checkMemory(recorder, model, config, violations);
         double batteryLimitDays =
-                checkBattery(recorder, model, config, chamber, missionStart, missionDays, violations, warnings);
+                checkBattery(recorder, model, config, chamber, missionStart, missionDays, violations);
 
-        return new HardwareBudget(violations, warnings, memoryLimitDays, batteryLimitDays, missionDays,
+        return new HardwareBudget(violations, memoryLimitDays, batteryLimitDays, missionDays,
                 binding(memoryLimitDays, batteryLimitDays));
     }
 
@@ -161,12 +171,21 @@ public class HardwareCapacityService {
         }
     }
 
-    /** @return maksymalny czas rejestracji wynikający z pamięci [dni] */
+    /**
+     * @return maksymalny czas rejestracji wynikający z pamięci [dni]
+     * <p>
+     * Liczba <b>interwałów</b> to o jeden mniej niż liczba próbek — pierwszy
+     * odczyt zapada w chwili startu. Tak samo liczy oprogramowanie producenta:
+     * 174 T (16 000 próbek) przy 1 min pokazuje „11d 2h 39m" = 15 999 min,
+     * a przy 10 min „111d 2h 30m" = 15 999 × 10 min. Bez odjęcia jedynki
+     * zawyżalibyśmy limit o cały interwał, co przy Δt = 24 h jest całą dobą.
+     */
     private double checkMemory(ThermoRecorder recorder, ThermoRecorderModel model,
                                ProcedureClassConfig config, List<HardwareViolation> violations) {
         int perChannel = model.getSampleCapacityPerChannel();
         int required = config.getStep4SampleCount();
-        double memoryLimitDays = perChannel * (double) config.getStep4IntervalMinutes() / MINUTES_PER_DAY;
+        double memoryLimitDays = Math.max(0, perChannel - 1)
+                * (double) config.getStep4IntervalMinutes() / MINUTES_PER_DAY;
 
         if (required > perChannel) {
             violations.add(new HardwareViolation(HardwareViolation.Rule.MEMORY, String.format(
@@ -183,25 +202,42 @@ public class HardwareCapacityService {
     private double checkBattery(ThermoRecorder recorder, ThermoRecorderModel model,
                                 ProcedureClassConfig config, CoolingChamber chamber,
                                 LocalDate missionStart, double missionDays,
-                                List<HardwareViolation> violations, List<String> warnings) {
-        double availableDays = Boolean.FALSE.equals(model.getBatteryReplaceable())
+                                List<HardwareViolation> violations) {
+        BatteryBasis basis = Boolean.FALSE.equals(model.getBatteryReplaceable())
                 ? disposableLoggerBudget(recorder, model, missionStart, violations)
-                : replaceableBatteryBudget(recorder, model, config, chamber, missionStart, violations, warnings);
+                : replaceableBatteryBudget(recorder, model, config, missionStart, violations);
 
-        if (Double.isNaN(availableDays)) {
+        if (Double.isNaN(basis.availableDays())) {
             return Double.NaN;
         }
 
-        double allowedDays = availableDays / batterySafetyFactor;
+        double allowedDays = basis.availableDays() / batterySafetyFactor;
         if (missionDays > allowedDays) {
             violations.add(new HardwareViolation(HardwareViolation.Rule.BATTERY, String.format(
-                    "Rejestrator S/N:%s (%s): budżet energii %.1f dnia (dopuszczalne %.1f dnia przy zapasie ×%.1f), "
+                    "Rejestrator S/N:%s (%s): %s; dopuszczalne %.1f dnia przy zapasie ×%.1f, "
                             + "a badanie w komorze %s trwa %.1f dnia",
-                    recorder.getSerialNumber(), model.getName(), availableDays, allowedDays,
+                    recorder.getSerialNumber(), model.getName(), basis.derivation(), allowedDays,
                     batterySafetyFactor, chamber.getChamberName(), missionDays),
-                    missionDays, availableDays));
+                    missionDays, basis.availableDays()));
         }
-        return availableDays;
+        return basis.availableDays();
+    }
+
+    /**
+     * Budżet energii wraz z jego wyprowadzeniem.
+     * <p>
+     * Operator widzi w oprogramowaniu producenta stan ogniwa wyrażony w dniach
+     * (np. „388 dni”) i porównuje go z naszą liczbą. Bez pokazania, skąd bierze
+     * się różnica — zachowawcze przeliczenie na cykl pomiarowy i zapas
+     * bezpieczeństwa — rozbieżność wygląda na błąd aplikacji. Dlatego komunikat
+     * odrzucenia niesie całe wyprowadzenie, a nie sam wynik.
+     *
+     * @param availableDays dostępny budżet [dni]; {@code NaN} gdy nieznany
+     * @param derivation    człon komunikatu opisujący, z czego ta liczba wynika
+     */
+    private record BatteryBasis(double availableDays, String derivation) {
+
+        static final BatteryBasis UNKNOWN = new BatteryBasis(Double.NaN, null);
     }
 
     /**
@@ -210,29 +246,32 @@ public class HardwareCapacityService {
      * urządzenia. Brak {@code firstActivationDate} czytamy jako „jeszcze nie
      * uruchomiony", czyli pełny budżet.
      */
-    private double disposableLoggerBudget(ThermoRecorder recorder, ThermoRecorderModel model,
-                                          LocalDate missionStart, List<HardwareViolation> violations) {
+    private BatteryBasis disposableLoggerBudget(ThermoRecorder recorder, ThermoRecorderModel model,
+                                                LocalDate missionStart, List<HardwareViolation> violations) {
         Integer limitDays = model.getOperatingDurationDays();
         if (limitDays == null) {
             violations.add(new HardwareViolation(HardwareViolation.Rule.DATA_INCOMPLETE, String.format(
                     "Model %s ma baterię niewymienną, ale w kartotece brak limitu pracy urządzenia",
                     model.getName())));
-            return Double.NaN;
+            return BatteryBasis.UNKNOWN;
         }
 
         LocalDate activation = recorder.getFirstActivationDate();
         long usedDays = activation == null ? 0 : Math.max(0, ChronoUnit.DAYS.between(activation, missionStart));
-        return Math.max(0, limitDays - usedDays);
+        double remaining = Math.max(0, limitDays - usedDays);
+
+        return new BatteryBasis(remaining, String.format(
+                "z limitu pracy urządzenia %d dni zużyto %d, zostaje %.1f dnia",
+                limitDays, usedDays, remaining));
     }
 
-    private double replaceableBatteryBudget(ThermoRecorder recorder, ThermoRecorderModel model,
-                                            ProcedureClassConfig config, CoolingChamber chamber,
-                                            LocalDate missionStart,
-                                            List<HardwareViolation> violations, List<String> warnings) {
+    private BatteryBasis replaceableBatteryBudget(ThermoRecorder recorder, ThermoRecorderModel model,
+                                                  ProcedureClassConfig config, LocalDate missionStart,
+                                                  List<HardwareViolation> violations) {
         if (model.getBatteryLifeDays() == null) {
             violations.add(new HardwareViolation(HardwareViolation.Rule.DATA_INCOMPLETE, String.format(
                     "Model %s nie ma w kartotece katalogowej żywotności baterii", model.getName())));
-            return Double.NaN;
+            return BatteryBasis.UNKNOWN;
         }
 
         Integer soc = recorder.getLastBatteryLevelPercent();
@@ -240,21 +279,35 @@ public class HardwareCapacityService {
             violations.add(new HardwareViolation(HardwareViolation.Rule.DATA_INCOMPLETE, String.format(
                     "Rejestrator S/N:%s nie ma odczytanego stanu baterii — zczytaj urządzenie w stacji Testo USB "
                             + "przed zaplanowaniem badania", recorder.getSerialNumber())));
-            return Double.NaN;
+            return BatteryBasis.UNKNOWN;
         }
 
         checkBatteryAge(recorder, model, missionStart, violations);
-        warnIfBelowReferenceTemperature(model, chamber, warnings);
 
-        // Specyfikacja obowiązuje przy cyklu referencyjnym (15 min). Gęstsze
-        // próbkowanie zużywa więcej energii; przy rzadszym nie zakładamy zysku,
+        // Stan ogniwa w dniach referencyjnych — ta sama wielkość, którą pokazuje
+        // oprogramowanie producenta (174 T: 77,6 % z 500 dni = 388 dni), więc
+        // operator może zestawić ją z tym, co widzi w stacji Testo.
+        double referenceRuntimeDays = model.getBatteryLifeDays() * (soc / 100.0);
+
+        // ZAŁOŻENIE WŁASNE, nie dana producenta. Testo podaje żywotność przy
+        // cyklu referencyjnym (15 min) i nie publikuje zależności od interwału —
+        // wskazanie stanu baterii w oryginalnym oprogramowaniu jest identyczne
+        // przy 1 min i przy 10 min. Skracamy budżet przy gęstszym próbkowaniu,
+        // bo każdy pomiar kosztuje energię; przy rzadszym nie zakładamy zysku,
         // bo pobór spoczynkowy (LCD, zegar, NFC) płynie niezależnie od pomiarów.
+        // Współczynnik jest zachowawczy w obie strony i czeka na pomiar
+        // empiryczny — patrz REVALIDATION_PLANNER_W4_SUPPLEMENT.md §7.
         int refCycle = model.getBatteryLifeRefCycleMin() != null && model.getBatteryLifeRefCycleMin() > 0
                 ? model.getBatteryLifeRefCycleMin()
                 : 15;
         double cycleFactor = Math.min(1.0, (double) config.getStep4IntervalMinutes() / refCycle);
+        double availableDays = referenceRuntimeDays * cycleFactor;
 
-        return model.getBatteryLifeDays() * cycleFactor * (soc / 100.0);
+        return new BatteryBasis(availableDays, String.format(
+                "stan ogniwa %.1f dnia (%d %% z %d dni katalogowych), po zachowawczym przeliczeniu "
+                        + "na cykl %d min → %.1f dnia",
+                referenceRuntimeDays, soc, model.getBatteryLifeDays(),
+                config.getStep4IntervalMinutes(), availableDays));
     }
 
     private void checkBatteryAge(ThermoRecorder recorder, ThermoRecorderModel model,
@@ -270,29 +323,6 @@ public class HardwareCapacityService {
                     recorder.getSerialNumber(), recorder.getBatteryReplacementDate(),
                     model.getBatteryShelfLifeMonths(), expiry)));
         }
-    }
-
-    /**
-     * Producent podaje żywotność w jednym punkcie temperaturowym. Praca poniżej
-     * niego (np. 174 T w zamrażarce -20 °C przy specyfikacji dla +25 °C) skraca
-     * realny czas pracy o nieznaną wartość.
-     * <p>
-     * Świadomie <b>nie</b> jest to blokada: zablokowanie każdego mapowania
-     * zamrażarki uniemożliwiłoby normalną pracę pracowni, a wartości deratingu
-     * nie da się zmyślić. Zastrzeżenie idzie do Kierownika Walidacji — patrz
-     * kwestia otwarta nr 1 w suplemencie W4.
-     */
-    private void warnIfBelowReferenceTemperature(ThermoRecorderModel model, CoolingChamber chamber,
-                                                 List<String> warnings) {
-        Double refTemp = model.getBatteryLifeRefTempC();
-        Double chamberMin = chamber.getEffectiveMinTempLimit();
-        if (refTemp == null || chamberMin == null || chamberMin >= refTemp - REF_TEMP_TOLERANCE_C) {
-            return;
-        }
-        warnings.add(String.format(
-                "Żywotność baterii modelu %s jest specyfikowana dla %.1f°C, a komora %s pracuje przy %.1f°C — "
-                        + "budżet energii jest oszacowaniem i wymaga zatwierdzenia przez Kierownika Walidacji",
-                model.getName(), refTemp, chamber.getChamberName(), chamberMin));
     }
 
     private HardwareBudget.BindingConstraint binding(double memoryLimitDays, double batteryLimitDays) {

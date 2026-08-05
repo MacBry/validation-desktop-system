@@ -66,6 +66,25 @@ Interwał pomiarowy w serii 184: **1 min … 24 h**.
 | Liczba kanałów modelu | `ThermoRecorderModel.channelCount` | **Pole już istnieje** — nie wymaga migracji |
 | Sentinel „brak danych” | `TestoRevalidationService.java:112` | `batteryLevelPercent = -1` oznacza **N/D** (odczyt z PDF nie zawiera baterii) |
 
+### 2.3. Weryfikacja na sprzęcie — testo 174 T, 2026-08-05
+
+Egzemplarz 174 T podłączony do stacji USB, odczyt w oryginalnym oprogramowaniu producenta zestawiony z odczytem naszego importu. **Cztery ustalenia, wszystkie potwierdzone pomiarem, nie wywnioskowane z karty katalogowej:**
+
+**U1 — „Okres” nad cyklem zapisu to limit pamięci, nie baterii.**
+
+| Ustawiony interwał | Wskazanie producenta | Rozkład |
+|---|---|---|
+| 1 min | `11d 2h 39m` | 15 999 min = 15 999 × 1 min |
+| 10 min | `111d 2h 30m` | 159 990 min = 15 999 × 10 min |
+
+Liczba **interwałów** to 15 999 = 16 000 − 1; pierwszy odczyt zapada w chwili startu. Potwierdza to pojemność 16 000 przyjętą w `V34` i wymusza korektę wzoru $T_{mem}$ (§3.2).
+
+**U2 — zmiana zakresu alarmowego (2…8 °C) nie zmienia „Okresu”.** Producent nie wiąże progów alarmowych z czasem pracy. Nasza reguła też nie — zgodność potwierdzona.
+
+**U3 — wskazanie stanu baterii jest podawane w dniach i nie zależy od interwału.** Urządzenie pokazywało `Stan baterii: 388 dni` **identycznie przy 1 min i przy 10 min**. Przy katalogowych 500 dniach daje to $388/500 = 77{,}6\%$. Wskazanie producenta to zatem **stan naładowania wyrażony w dniach referencyjnych**, a nie prognoza czasu pracy dla ustawionego cyklu — Testo takiej prognozy w ogóle nie oferuje. Konsekwencja dla §3.3: producent **nie dostarcza żadnej zależności zużycia od interwału**, więc człon $\min(1, \Delta t/\Delta t_{ref})$ jest naszym własnym założeniem inżynierskim i musi być tak opisany.
+
+**U4 — bajt `payload_31[20]` jest procentem, ale rozdzielczość pozostaje nieustalona.** Nasz import zwrócił dla tego samego egzemplarza **80 %**, podczas gdy proporcja z wskazania producenta daje **77,6 %**. Skala 0–255 została **wykluczona** (zwrócono 80, nie ~198). Różnica 2,4 pp = 12 dni budżetu, w kierunku **optymistycznym**. Hipoteza robocza: bajt ma granulację 5 % (77,6 → 80). Nierozstrzygnięte — patrz §7 pkt 4.
+
 ---
 
 ## 3. Model Matematyczny Reguły W4
@@ -101,7 +120,9 @@ $$N_{req} \le \left\lfloor \frac{N_{max}}{n_{ch}} \right\rfloor$$
 
 Równoważnie, maksymalny czas rejestracji wynikający z pamięci:
 
-$$T_{mem}[\text{dni}] = \frac{N_{max}}{n_{ch}} \cdot \frac{\Delta t}{1440}$$
+$$T_{mem}[\text{dni}] = \left(\left\lfloor \frac{N_{max}}{n_{ch}} \right\rfloor - 1\right) \cdot \frac{\Delta t}{1440}$$
+
+**Odjęcie jedynki nie jest kosmetyką.** Liczba interwałów jest o jeden mniejsza od liczby próbek, bo pierwszy odczyt zapada w chwili startu — tak liczy oprogramowanie producenta (§2.3 U1: 15 999, nie 16 000). Bez tej korekty zawyżamy limit dokładnie o jeden interwał, co przy $\Delta t$ = 24 h oznacza całą dobę wpisaną do dokumentacji walidacyjnej jako dostępna, a faktycznie nieistniejącą. Regresja: **ST-W4b-04**.
 
 * **Błąd walidacji**: `InsufficientRecorderMemoryException` — nowa klasa, **nie** reużycie `InsufficientRecorderCapacityException` (ta opisuje regułę W2, patrz §5).
 * **Uwaga**: $N_{req}$ bierzemy wprost z `config.getStep4SampleCount()`. Wzoru $N_{req} = T_{map}/\Delta t$ **nie stosujemy** — `ProcedureClassConfig` przechowuje interwał i liczbę próbek jako dwa niezależne pola (`ProcedureClassConfig.java:64-75`), a wyprowadzanie jednego z drugiego może dać wynik rozbieżny z konfiguracją zatwierdzoną przez QA.
@@ -124,9 +145,15 @@ $$T_{mission}[\text{min}] = \text{step2Placement} + 60 \cdot \text{step3StabHour
 
 (Krok 3 nie zużywa pamięci — start jest opóźniony zgodnie z regułą W3 — ale zużywa energię.)
 
-**Dostępny budżet energii** wyznaczamy z danych katalogowych, skalowanych cyklem pomiarowym i stanem naładowania:
+Liczymy w **dwóch krokach**, bo są to dwie różne wielkości i operator widzi je obie.
 
-$$D_{avail}[\text{dni}] = D_{spec} \cdot \min\!\left(1,\ \frac{\Delta t}{\Delta t_{ref}}\right) \cdot \frac{SoC}{100}$$
+**Krok 1 — stan ogniwa w dniach referencyjnych.** Ta sama wielkość, którą pokazuje oprogramowanie producenta (§2.3 U3):
+
+$$D_{ref}[\text{dni}] = D_{spec} \cdot \frac{SoC}{100}$$
+
+**Krok 2 — budżet dla tego konkretnego badania**, po zachowawczym przeliczeniu na cykl pomiarowy:
+
+$$D_{avail}[\text{dni}] = D_{ref} \cdot \min\!\left(1,\ \frac{\Delta t}{\Delta t_{ref}}\right)$$
 
 **Warunek dopuszczenia:**
 
@@ -134,8 +161,9 @@ $$\frac{T_{mission}}{1440} \le \frac{D_{avail}}{f_{safety}}, \qquad f_{safety} =
 
 * **Błąd walidacji**: `InsufficientBatteryLevelException`.
 * **Dobór $D_{spec}$**: bierzemy wartość katalogową **dla warunków najbliższych warunkom misji**. Dla 184 T4 w −80 °C jest to wprost 100 dni. Dla 174 T w zamrażarce −20 °C producent nie publikuje wartości — patrz §7 (kwestia otwarta).
-* **Praca poniżej $T_{ref}$ jest zastrzeżeniem, nie blokadą.** Rejestrator dostaje wpis w `HardwareBudget.warnings()` z treścią dla Kierownika Walidacji, ale alokacja przechodzi. Blokowanie automatyczne odpadło z dwóch powodów: producent nie publikuje współczynnika deratingu (a zmyślony nie ma wartości walidacyjnej), a odrzucanie każdego mapowania zamrażarki unieruchomiłoby pracownię. Egzekwowanie ręcznego zatwierdzenia wymaga ścieżki akceptacji, której planer jeszcze nie ma — to osobne zadanie.
-* **Uzasadnienie członu $\min(1, \Delta t/\Delta t_{ref})$**: specyfikacja jest podana przy 15 min; przy szybszym cyklu zużycie rośnie, przy wolniejszym nie zakładamy zysku (pobór spoczynkowy: LCD, zegar, NFC). Człon jest zachowawczy w obie strony — patrz §7.
+* **$\min(1, \Delta t/\Delta t_{ref})$ jest założeniem własnym, nie daną producenta.** Rozstrzygnięte pomiarem: wskazanie stanu baterii w oryginalnym oprogramowaniu jest **identyczne przy 1 min i przy 10 min** (§2.3 U3), więc producent nie publikuje ani nie implikuje żadnej zależności czasu pracy od interwału. Człon przyjmujemy jako zachowawczy w obie strony: przy gęstszym cyklu zakładamy zużycie proporcjonalne do liczby odczytów, przy rzadszym nie zakładamy zysku (pobór spoczynkowy — LCD, zegar, NFC — płynie niezależnie od pomiarów). **Ta wartość czeka na pomiar empiryczny** — §7 pkt 2.
+* **Deratingu temperaturowego świadomie nie modelujemy.** Wcześniejsza wersja wystawiała ostrzeżenie „praca poniżej temperatury referencyjnej” do `HardwareBudget.warnings()`. Mechanizm został **usunięty**, bo dotyczył każdej chłodziarki i każdej zamrażarki bez wyjątku, nie zmieniał wyniku oceny i nie miał odbiorcy — w dokumentacji walidacyjnej wyglądał na zabezpieczenie, którego faktycznie nie było. Temperatura wchodzi do W4 wyłącznie jako bramka W4a. `batteryLifeRefTempC` pozostaje daną informacyjną karty rejestratora. **To jest świadomie przyjęte ryzyko rezydualne** — §7 pkt 1.
+* **Rozbieżność wobec stacji Testo musi być czytelna dla operatora.** Operator widzi w oryginalnym oprogramowaniu „388 dni”, a w planerze budżet po przeliczeniu na cykl i po zapasie — dla $\Delta t$ = 1 min różnica jest ponad dwudziestokrotna. Dlatego komunikat `InsufficientBatteryLevelException` niesie **całe wyprowadzenie**, nie samą liczbę końcową: *„stan ogniwa 400,0 dnia (80 % z 500 dni katalogowych), po zachowawczym przeliczeniu na cykl 1 min → 26,7 dnia; dopuszczalne 17,8 dnia przy zapasie ×1,5, a badanie w komorze X trwa 21,4 dnia”*. Bez tego rozbieżność wygląda na błąd aplikacji.
 * **Sentinel N/D**: jeżeli $SoC < 0$ (wartość `-1`), reguła W4c **nie liczy nic** — zwraca status `UNKNOWN` i blokuje zadanie z komunikatem o konieczności odczytu stanu baterii ze stacji USB. Arytmetyka na `-1` jest niedopuszczalna.
 * **Bateria niewymienna (184 T1/T2)**: zamiast $D_{avail}$ obowiązuje pozostały limit `operatingDurationDays`, liczony od `firstActivationDate`.
 
@@ -338,6 +366,7 @@ Przyjęte założenia liczbowe: $f_{safety} = 1{,}5$; „misja 21 dni" to `Δt =
 | **ST-W4b-01** | Δt = 1 min, 14 dni → $N_{req}$ = 20 160; testo 174 T (16 000 / 1 kanał) | `InsufficientRecorderMemoryException`; $T_{mem} = 11{,}1$ dnia |
 | **ST-W4b-02** | $N_{req}$ = 20 160; testo 184 T3 (40 000 / 1 kanał) | Zaliczone (limit 40 000) |
 | **ST-W4b-03** | $N_{req}$ = 400 000; testo 175 T3 (1 000 000 / **3 kanały** → 333 333 na kanał) | `InsufficientRecorderMemoryException` — **regresja na dzielenie przez `channelCount`** |
+| **ST-W4b-04** | testo 174 T, $\Delta t$ = 1 min oraz 10 min | $T_{mem}$ = 15 999 min i 159 990 min — **zgodność co do minuty ze wskazaniem stacji Testo** (§2.3 U1); regresja na odjęcie jedynki |
 | **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, SoC = 60 %, misja 21 dni. $D_{avail} = 100 \cdot \tfrac{10}{15} \cdot 0{,}60 = 40{,}0$ dnia; próg $40{,}0/1{,}5 = 26{,}7$ dnia | Zaliczone |
 | **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, SoC = 25 %, misja 21 dni. $D_{avail} = 100 \cdot \tfrac{10}{15} \cdot 0{,}25 = 16{,}7$ dnia; próg $11{,}1$ dnia | `InsufficientBatteryLevelException` |
 | **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, SoC = 75 %. $D_{avail} = 500 \cdot \tfrac{1}{15} \cdot 0{,}75 = 25{,}0$ dnia; $T_{mem} = 27{,}8$ dnia | Wiąże **bateria**, nie pamięć — asercja na `HardwareBudget.binding()` |
@@ -345,7 +374,7 @@ Przyjęte założenia liczbowe: $f_{safety} = 1{,}5$; „misja 21 dni" to `Δt =
 | **ST-W4c-05** | 184 T1 (bateria niewymienna), 80 dni od `firstActivationDate`, misja 21 dni, limit 90 dni | `InsufficientBatteryLevelException` — obowiązuje `operatingDurationDays`; brak odczytu % **nie** jest tu brakiem danych |
 | **ST-W4c-06** | Δt = 15 min × 96 próbek; budżet 1,5 dnia mieści sam Krok 4 (1,0 dnia), ale nie pełną misję (1,51 dnia) | Odrzucenie — **regresja na pełny $T_{mission}$**, nie sam Krok 4 |
 
-Dodatkowo pokryte: przeterminowana bateria mimo wysokiego SoC (`batteryShelfLifeMonths`), zastrzeżenie temperaturowe jako ostrzeżenie bez blokady, mapowanie każdego naruszenia na właściwy typ wyjątku w `require(...)`, oraz na poziomie `RecorderAllocationServiceTest` — odrzucenie całej puli na pamięci i na braku odczytu baterii.
+Dodatkowo pokryte: przeterminowana bateria mimo wysokiego SoC (`batteryShelfLifeMonths`), **niezależność budżetu energii od temperatury komory** (ten sam rejestrator w chłodziarce i w zamrażarce −20 °C dostaje identyczny budżet — regresja na usunięty derating), **obecność pełnego wyprowadzenia w komunikacie odrzucenia** — osobno dla baterii wymiennej („stan ogniwa … % z … dni katalogowych … cykl … min”) i dla loggera jednorazowego („z limitu pracy urządzenia … dni zużyto …”), mapowanie każdego naruszenia na właściwy typ wyjątku w `require(...)`, oraz na poziomie `RecorderAllocationServiceTest` — odrzucenie całej puli na pamięci i na braku odczytu baterii.
 
 > **Uwaga o locale**: komunikaty naruszeń formatują liczby przez `String.format`, więc separator dziesiętny zależy od locale JVM. Asercje tekstowe muszą budować oczekiwany fragment tym samym wywołaniem — inaczej test przechodzi lokalnie (`pl-PL`), a pada na CI (`en-US`).
 
@@ -355,10 +384,18 @@ Dodatkowo pokryte: przeterminowana bateria mimo wysokiego SoC (`batteryShelfLife
 
 Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla dokumentacji GxP wymagane jest oświadczenie producenta lub pomiar własny udokumentowany protokołem:
 
-1. **Żywotność baterii poza warunkami referencyjnymi.** Testo publikuje jeden punkt (15 min, +25 °C lub −80 °C). Dla 174 T / 184 T3 pracujących w −20 °C brak danych. Do czasu ich uzyskania planer wystawia **ostrzeżenie**, ale nie blokuje (§3.3) — wymuszenie akceptacji Kierownika Walidacji wymaga ścieżki zatwierdzania, której planer jeszcze nie ma. **To jest świadomie przyjęte ryzyko rezydualne, wymagające decyzji przy zatwierdzaniu walidacyjnym.**
-2. **Kształt zależności zużycia od cyklu pomiarowego.** Przyjęty człon $\min(1, \Delta t/\Delta t_{ref})$ jest zachowawczy (zakłada zużycie proporcjonalne do liczby odczytów poniżej 15 min i brak zysku powyżej). Rzeczywisty pobór to suma składowej spoczynkowej i pomiarowej — dwa punkty pomiarowe od producenta pozwoliłyby zastąpić go modelem $D = Q/(I_q + q/\Delta t)$.
+1. **Żywotność baterii poza warunkami referencyjnymi.** Testo publikuje jeden punkt (15 min, +25 °C lub −80 °C). Dla 174 T / 184 T3 pracujących w −20 °C brak danych. Deratingu **nie modelujemy w ogóle** — decyzja z 2026-08-05, uzasadnienie w §3.3. Wcześniejsze ostrzeżenie zostało usunięte jako pozorne zabezpieczenie (powstawało dla każdej komory chłodniczej i nie miało odbiorcy). **To jest świadomie przyjęte ryzyko rezydualne, wymagające decyzji przy zatwierdzaniu walidacyjnym.** Gdyby Kierownik Walidacji uznał je za nieakceptowalne, właściwą reakcją jest pełna ścieżka zatwierdzania (§8 krok 7), a nie przywrócenie ostrzeżenia bez odbiorcy.
+2. **Kształt zależności zużycia od cyklu pomiarowego.** Przyjęty człon $\min(1, \Delta t/\Delta t_{ref})$ jest **założeniem własnym** — pomiar z 2026-08-05 wykluczył istnienie danych producenta na ten temat (§2.3 U3). Rzeczywisty pobór to suma składowej spoczynkowej i pomiarowej; docelowo model $D = Q/(I_q + q/\Delta t)$.
+
+   **Protokół pomiaru własnego** (rozstrzyga bez udziału producenta): dwa egzemplarze o zbliżonym wskazaniu w dniach, zapisać stan wyjściowy, zaprogramować jeden na tydzień przy $\Delta t$ = 1 min, drugi na tydzień przy $\Delta t$ = 15 min, zczytać i porównać spadek wskazania. Tydzień to minimum, żeby spadek przekroczył granulację wskazania (§7 pkt 4).
+   * oba spadły o ~7 dni → licznik jest kalendarzowy, człon cyklu należy usunąć;
+   * spadki różne → iloraz daje **zmierzony** współczynnik, lepszy od jakiegokolwiek założenia.
+
+   Zakres skutków: dla 174 T decyzja jest obojętna operacyjnie (poniżej 15 min oba człony są liniowe w $\Delta t$, więc pamięć wiąże wcześniej; powyżej — współczynnik wynosi 1). Realna różnica dotyczy **184 T4 w −80 °C**: przy $\Delta t$ = 5 min i SoC 80 % budżet dopuszczalny wynosi 17,8 dnia z członem cyklu wobec 53,3 dnia bez niego.
 3. **Zachowanie przy zapełnionej pamięci: zatrzymanie zapisu czy nadpisanie najstarszych odczytów (ring buffer).** Instrukcje wskazują na kryterium stopu „memory full", ale jeśli którykolwiek model nadpisuje dane, przekroczenie W4b oznacza **cichą utratę fragmentu serii pomiarowej**, a nie tylko jej skrócenie — co jest naruszeniem integralności danych wg 21 CFR Part 11 i wymaga podniesienia rangi alertu.
-4. **Interpretacja wskazania procentowego baterii z ramki `ab31`.** Nie jest udokumentowane, czy jest to pomiar napięcia, czy licznik zużycia — a to determinuje, czy mnożenie $D_{spec} \cdot SoC/100$ jest uprawnione.
+4. **Rozdzielczość wskazania baterii z ramki `ab31`.** Częściowo rozstrzygnięte 2026-08-05 (§2.3 U4): mnożenie $D_{spec} \cdot SoC/100$ **jest uprawnione** — producent stosuje dokładnie tę arytmetykę (77,6 % × 500 dni = 388 dni). Skala 0–255 wykluczona. **Otwarte pozostaje**, czy bajt ma rozdzielczość 1 %, czy granulację 5 % — nasz import zwrócił 80 % tam, gdzie proporcja daje 77,6 %, czyli **zawyżamy budżet o 12 dni w kierunku optymistycznym**.
+
+   **Pomiar rozstrzygający**: zczytać 3–4 egzemplarze o wyraźnie różnym zużyciu i sprawdzić rozkład zwracanych wartości. Jeżeli wszystkie są wielokrotnościami 5, przy imporcie należy zaokrąglać **w dół** do granulacji — udawanie rozdzielczości 1 % jest w GxP gorsze niż jawna utrata precyzji w bezpiecznym kierunku. Do czasu pomiaru **nie zmieniamy niczego**, bo korekta bez danych byłaby zgadywaniem; alternatywą przygotowaną na wynik jest parametr `app.planner.w4.soc-reading-tolerance-pp` odejmowany od SoC.
 5. **Źródło danych katalogowych.** Zasilanie tabeli modeli przez `LIKE` na nazwie jest kruche (§4.2). Docelowo: plik referencyjny `testo_models.yml` wersjonowany w repozytorium, z odnośnikiem do karty katalogowej przy każdej wartości.
 
 ---
@@ -373,8 +410,13 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 | **4** | Wpięcie w pętlę filtrującą kandydatów w `RecorderAllocationService.allocateRecorders(...)` | ✅ zrobione |
 | **5** | Testy `HardwareCapacityServiceTest` (ST-W4a/b/c) + odblokowanie testu W4 w `RecorderAllocationServiceTest` | ✅ zrobione |
 | **6** | Aktualizacja BA v5.0: zmiana statusu W4 z *deferred* na *active*; rejestracja kwestii otwartych z §7 w dokumentacji walidacyjnej | ⬜ do zrobienia |
-| **7** | Ścieżka zatwierdzania przez Kierownika Walidacji dla zastrzeżeń z `HardwareBudget.warnings()` (§7 pkt 1) | ⬜ do zrobienia |
+| **7** | Ścieżka zatwierdzania przez Kierownika Walidacji dla pracy poniżej temperatury referencyjnej (§7 pkt 1) | ⬜ do zrobienia — `HardwareBudget.warnings()` usunięte, ścieżkę trzeba zbudować od zera, gdy zapadnie decyzja |
 | **8** | Zastąpienie dopasowania `LIKE` plikiem referencyjnym `testo_models.yml` (§7 pkt 5) | ⬜ do zrobienia |
+| **9** | Weryfikacja na sprzęcie: „Okres”, niezmienność wskazania baterii wobec interwału, wykluczenie skali 0–255 (§2.3) | ✅ zrobione 2026-08-05 |
+| **10** | Korekta $T_{mem}$ o jeden interwał + zgodność co do minuty ze stacją Testo (ST-W4b-04) | ✅ zrobione |
+| **11** | Wyprowadzenie budżetu energii w komunikacie odrzucenia (rozbieżność wobec wskazania stacji Testo) | ✅ zrobione |
+| **12** | Pomiar zależności zużycia od cyklu — protokół w §7 pkt 2 | ⬜ do wykonania na sprzęcie |
+| **13** | Pomiar granulacji bajtu `ab31[20]` — protokół w §7 pkt 4 | ⬜ do wykonania na sprzęcie |
 
 ---
 
