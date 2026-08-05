@@ -60,7 +60,9 @@ Interwał pomiarowy w serii 184: **1 min … 24 h**.
 
 | Dana | Źródło | Uwagi |
 |---|---|---|
-| Stan naładowania baterii [%] | `testo_usb_reader.py:423` → `payload_31[20]` (ramka `ab31`) | Mapowane na `ThermoMeasurementSeries.batteryLevelPercent` |
+| ~~Stan naładowania baterii [%]~~ | ~~`testo_usb_reader.py:423` → `payload_31[20]`~~ | **WYCOFANE 2026-08-05** — to nie była bateria, tylko młodszy bajt progu alarmowego (§2.3 U4) |
+| Pozostały czas pracy baterii [dni] | ramka `ab010a` → `uint16 BE` | Podawany przez urządzenie wprost; jednostka zgodna z modelem W4c (§2.3 U5) |
+| Progi alarmowe temperatury [°C] | `payload_31[19:20]` i `[21:22]`, `int16 BE` ×0,1 | Ta sama struktura co payload komendy `AB 61` |
 | Żywotność katalogowa [dni] | `testo_184_config.py:620` → pole XDP `<battery>500</battery>` | Wartość 500 odpowiada karcie katalogowej 184 T3 |
 | Interwał pomiaru | `TestoUsbImportService.ImportedSession.intervalMinutes` | |
 | Liczba kanałów modelu | `ThermoRecorderModel.channelCount` | **Pole już istnieje** — nie wymaga migracji |
@@ -83,7 +85,38 @@ Liczba **interwałów** to 15 999 = 16 000 − 1; pierwszy odczyt zapada w chwil
 
 **U3 — wskazanie stanu baterii jest podawane w dniach i nie zależy od interwału.** Urządzenie pokazywało `Stan baterii: 388 dni` **identycznie przy 1 min i przy 10 min**. Przy katalogowych 500 dniach daje to $388/500 = 77{,}6\%$. Wskazanie producenta to zatem **stan naładowania wyrażony w dniach referencyjnych**, a nie prognoza czasu pracy dla ustawionego cyklu — Testo takiej prognozy w ogóle nie oferuje. Konsekwencja dla §3.3: producent **nie dostarcza żadnej zależności zużycia od interwału**, więc człon $\min(1, \Delta t/\Delta t_{ref})$ jest naszym własnym założeniem inżynierskim i musi być tak opisany.
 
-**U4 — bajt `payload_31[20]` jest procentem, ale rozdzielczość pozostaje nieustalona.** Nasz import zwrócił dla tego samego egzemplarza **80 %**, podczas gdy proporcja z wskazania producenta daje **77,6 %**. Skala 0–255 została **wykluczona** (zwrócono 80, nie ~198). Różnica 2,4 pp = 12 dni budżetu, w kierunku **optymistycznym**. Hipoteza robocza: bajt ma granulację 5 % (77,6 → 80). Nierozstrzygnięte — patrz §7 pkt 4.
+**U4 — `payload_31[20]` NIE JEST STANEM BATERII.** *(Ustalenie skorygowane 2026-08-05 po zbadaniu kolejnych egzemplarzy — pierwotnie zapisano tu hipotezę „procent z granulacją 5 %", która okazała się błędna.)*
+
+Trzy egzemplarze o skrajnie różnym stanie baterii zwróciły **tę samą wartość 80**:
+
+| Egzemplarz | Wskazanie stacji | Rzeczywisty stan | Nasz odczyt |
+|---|---|---|---|
+| #1 | 388 dni | 77,6 % | 80 % |
+| #2 | 42 dni | 8,4 % | 80 % |
+| #3 | 40 dni | 8,0 % | 80 % |
+
+Bajt 20 to **młodszy bajt górnego progu alarmowego temperatury**. Wszystkie trzy rejestratory miały ustawione 2…8 °C, a 8,0 °C = 80 = `0x0050`, którego młodszy bajt to `0x50` = 80. Rejestrator w zamrażarce (próg −20,0 °C = −200 = `0xFF38`) raportuje „56 %".
+
+Pełna struktura, potwierdzona zrzutami USB i **zgodna z istniejącym opisem payloadu komendy `AB 61`** w `TESTO_USB_PROGRAMMING_TECHNICAL_SPEC.md` §3:
+
+| Offset | Typ | Znaczenie |
+|---|---|---|
+| `[19:20]` | `int16 BE` ×0,1 | górny próg alarmowy |
+| `[21:22]` | `int16 BE` ×0,1 | dolny próg alarmowy |
+| `[23:24]` | `int16 BE` ×0,1 | limit sondy (typowo 100,0 °C) |
+
+**Skutek dla reguły W4c:** budżet energii był liczony z progu alarmowego. Rejestrator z 42 dniami życia planer widział jako 80 % z 500 dni katalogowych = **400 dni referencyjnych** — zawyżenie ~10×, w kierunku optymistycznym. Sprzeczność istniała w repozytorium od dawna: dokument programowania opisywał te bajty poprawnie, dokument odczytu (`TESTO_USB_ANALYSIS.md:46`) błędnie.
+
+**U5 — stan baterii ma własną komendę, której nie wysyłaliśmy.**
+
+```
+TX:  ab 01 0a 00 00 05
+RX:  ab 01 0a <uint16 BE = POZOSTAŁE DNI> <crc>
+```
+
+Zweryfikowane: `00 2a` → 42 dni, `01 84` → 388 dni — zgodność co do jedności ze wskazaniem stacji. Urządzenie podaje **dni**, nie procenty; procent bywa liczony wtórnie jako `dni / żywotność katalogowa`, ale nie jest wielkością mierzoną. Suma kontrolna rodziny `ab 01 xx`: `crc = 0x0F − cmd`.
+
+**To upraszcza model W4c**: `D_ref` przestaje być wyprowadzane z `D_spec × SoC/100` i przychodzi wprost ze sprzętu — znika zależność od poprawności `battery_life_days` w kartotece modelu.
 
 ---
 
@@ -393,9 +426,9 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 
    Zakres skutków: dla 174 T decyzja jest obojętna operacyjnie (poniżej 15 min oba człony są liniowe w $\Delta t$, więc pamięć wiąże wcześniej; powyżej — współczynnik wynosi 1). Realna różnica dotyczy **184 T4 w −80 °C**: przy $\Delta t$ = 5 min i SoC 80 % budżet dopuszczalny wynosi 17,8 dnia z członem cyklu wobec 53,3 dnia bez niego.
 3. **Zachowanie przy zapełnionej pamięci: zatrzymanie zapisu czy nadpisanie najstarszych odczytów (ring buffer).** Instrukcje wskazują na kryterium stopu „memory full", ale jeśli którykolwiek model nadpisuje dane, przekroczenie W4b oznacza **cichą utratę fragmentu serii pomiarowej**, a nie tylko jej skrócenie — co jest naruszeniem integralności danych wg 21 CFR Part 11 i wymaga podniesienia rangi alertu.
-4. **Rozdzielczość wskazania baterii z ramki `ab31`.** Częściowo rozstrzygnięte 2026-08-05 (§2.3 U4): mnożenie $D_{spec} \cdot SoC/100$ **jest uprawnione** — producent stosuje dokładnie tę arytmetykę (77,6 % × 500 dni = 388 dni). Skala 0–255 wykluczona. **Otwarte pozostaje**, czy bajt ma rozdzielczość 1 %, czy granulację 5 % — nasz import zwrócił 80 % tam, gdzie proporcja daje 77,6 %, czyli **zawyżamy budżet o 12 dni w kierunku optymistycznym**.
+4. **~~Rozdzielczość wskazania baterii z ramki `ab31`~~ — ZAMKNIĘTE 2026-08-05.** Kwestia okazała się źle postawiona: bajt w ogóle nie był stanem baterii (§2.3 U4). Stan baterii pochodzi z osobnej komendy `ab010a` i jest podawany w **dniach**, więc pytanie o rozdzielczość procentu przestaje mieć sens. Zaproponowany wcześniej parametr `app.planner.w4.soc-reading-tolerance-pp` **nie jest już potrzebny** i nie został wdrożony.
 
-   **Pomiar rozstrzygający**: zczytać 3–4 egzemplarze o wyraźnie różnym zużyciu i sprawdzić rozkład zwracanych wartości. Jeżeli wszystkie są wielokrotnościami 5, przy imporcie należy zaokrąglać **w dół** do granulacji — udawanie rozdzielczości 1 % jest w GxP gorsze niż jawna utrata precyzji w bezpiecznym kierunku. Do czasu pomiaru **nie zmieniamy niczego**, bo korekta bez danych byłaby zgadywaniem; alternatywą przygotowaną na wynik jest parametr `app.planner.w4.soc-reading-tolerance-pp` odejmowany od SoC.
+   Pozostaje jedno pytanie pochodne: **przy jakim cyklu pomiarowym urządzenie wyznacza te dni**. Obserwacja z §2.3 U3 (wskazanie niezmienne przy 1 min i 10 min) wskazuje na dni referencyjne, nie prognozę dla ustawionego interwału — co utrzymuje w mocy człon cyklu z §3.3, ale już na twardej podstawie zamiast na wyliczeniu z procentu.
 5. **Źródło danych katalogowych.** Zasilanie tabeli modeli przez `LIKE` na nazwie jest kruche (§4.2). Docelowo: plik referencyjny `testo_models.yml` wersjonowany w repozytorium, z odnośnikiem do karty katalogowej przy każdej wartości.
 
 ---
@@ -416,7 +449,10 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 | **10** | Korekta $T_{mem}$ o jeden interwał + zgodność co do minuty ze stacją Testo (ST-W4b-04) | ✅ zrobione |
 | **11** | Wyprowadzenie budżetu energii w komunikacie odrzucenia (rozbieżność wobec wskazania stacji Testo) | ✅ zrobione |
 | **12** | Pomiar zależności zużycia od cyklu — protokół w §7 pkt 2 | ⬜ do wykonania na sprzęcie |
-| **13** | Pomiar granulacji bajtu `ab31[20]` — protokół w §7 pkt 4 | ⬜ do wykonania na sprzęcie |
+| **13** | ~~Pomiar granulacji bajtu `ab31[20]`~~ | ❌ nieaktualne — bajt nie był baterią (§2.3 U4) |
+| **14** | Odkrycie komendy `ab010a` i korekta map protokołu (`TESTO_USB_ANALYSIS.md`, `ANALIZA_TESTO_174T_FINAL.md`) | ✅ zrobione 2026-08-05 |
+| **15** | Odczyt pozostałych dni i progów alarmowych w `testo_usb_reader.py`; sentinel `-1` zamiast fałszywego procentu | ✅ zrobione 2026-08-05 |
+| **16** | Model danych w **dniach** zamiast procentów (`ThermoRecorder`, `ThermoMeasurementSeries`, W4c, karta rejestratora) | ⬜ osobny PR |
 
 ---
 

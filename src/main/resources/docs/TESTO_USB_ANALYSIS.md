@@ -38,12 +38,39 @@ Wysłanie bajtów inicjalizujących w celu wybudzenia rejestratora w kołysce:
 
 ### 2.3. Pobranie Statusu Sesji i Czasu (GET_STATUS)
 *   **Komenda (TX):** `ab 31 00 42 1b 66`
-*   **Odpowiedź (RX):** Zawiera kluczowe metadane pomiarowe.
+*   **Odpowiedź (RX):** Zawiera kluczowe metadane pomiarowe. Payload ma **27 bajtów** i jest **identyczny strukturalnie z payloadem konfiguracyjnym komendy `AB 61`** (programowanie) — pełna mapa w `TESTO_USB_PROGRAMMING_TECHNICAL_SPEC.md` §3.
     *   Bajty 2-3 (Payload 2-3): **Interwał zapisu** (w minutach, `uint16 BE`).
     *   Bajty 4-5 (Payload 4-5): **Liczba zapisanych próbek** (`count`, `uint16 BE`).
     *   Bajty 6-8 (Payload 6-8): **Opóźnienie startu** (Start Delay w minutach, `3B uint BE`).
     *   Bajty 9-14 (Payload 9-14): **Czas Programowania** (Programming Time BCD - 6 bajtów: Rok, Miesiąc, Dzień, Godzina, Minuta, Sekunda).
-    *   Bajt 20 (Payload 20): **Stan baterii** (%).
+    *   Bajty 19-20 (Payload 19-20): **Górny próg alarmowy temperatury** (`int16 BE`, dziesiąte °C).
+    *   Bajty 21-22 (Payload 21-22): **Dolny próg alarmowy temperatury** (`int16 BE`, dziesiąte °C).
+    *   Bajty 23-24 (Payload 23-24): **Maksymalny limit sondy** (`int16 BE`, dziesiąte °C — typowo `03 E8` = 100,0 °C).
+
+> ### ⚠️ WYCOFANE: „Bajt 20 (Payload 20): Stan baterii (%)"
+>
+> **Ten wpis był błędny i został usunięty 2026-08-05.** Bajt 20 to **młodszy bajt górnego progu alarmowego**, a nie stan baterii.
+>
+> Skutek pomyłki: każdy rejestrator skonfigurowany na 2…8 °C raportował „80 % baterii", bo górny próg 8,0 °C = 80 = `0x0050`, którego młodszy bajt to `0x50` = 80. Rejestrator w zamrażarce (−20,0 °C = −200 = `0xFF38`) raportował „56 %". Wartość nie miała żadnego związku ze stanem ogniwa, a reguła W4c liczyła z niej budżet energii.
+>
+> Wykryte przez zestawienie zrzutów USB (Wireshark + USBPcap) dwóch egzemplarzy 174 T ze wskazaniami oryginalnego oprogramowania. Sprzeczność była obecna w repozytorium od dawna: `TESTO_USB_PROGRAMMING_TECHNICAL_SPEC.md` §3 opisywał te bajty **poprawnie** jako progi alarmowe.
+
+### 2.3b. Pobranie Stanu Baterii (GET_BATTERY_DAYS)
+*   **Komenda (TX):** `ab 01 0a 00 00 05`
+*   **Odpowiedź (RX):** `ab 01 0a <uint16 BE> <crc>` — **pozostały czas pracy baterii w DNIACH**, podany wprost przez urządzenie.
+*   **Weryfikacja na sprzęcie (2026-08-05):** `ab 01 0a 00 2a 2f` → 42 dni oraz `ab 01 0a 01 84 80` → 388 dni; obie wartości zgodne co do jedności ze wskazaniem stacji Testo.
+*   **Uwaga:** urządzenie **nie podaje stanu naładowania w procentach**. Procent bywa liczony wtórnie jako `dni / żywotność katalogowa`, ale nie jest wielkością mierzoną.
+
+#### Rodzina komend `ab 01 xx` i ich suma kontrolna
+Suma kontrolna zapytań tej rodziny to **`crc = 0x0F − cmd`** (zweryfikowane na wszystkich obserwowanych komendach):
+
+| Komenda | Znaczenie | Odpowiedź (przykład) |
+|---|---|---|
+| `ab 01 0d 00 00 02` | HELLO / inicjalizacja | `ab 01 0d 00 01 03` |
+| `ab 01 0c 00 00 03` | typ urządzenia (stała 24) | `ab 01 0c 00 18 1b` |
+| `ab 01 0b 00 00 04` | stan rejestracji | `ab 01 0b 00 01 05` |
+| `ab 01 0a 00 00 05` | **pozostałe dni pracy baterii** | `ab 01 0a 01 84 80` (388) |
+| `ab 01 09 00 00 06` | START_DUMP (strumieniowanie pomiarów) | strumień ramek `ab 32` |
 
 ### 2.4. Żądanie Zrzutu Pamięci Pomiarów (START_DUMP)
 *   **Komenda (TX):** `ab 01 09 00 00 06`

@@ -45,7 +45,28 @@ public class TestoUsbImportService {
     }
 
     public static class SessionInfo {
+
+        /**
+         * Sentinel {@code -1} = N/D. Urządzenie <b>nie</b> raportuje stanu
+         * naładowania w procentach — do 2026-08-05 czytaliśmy tu młodszy bajt
+         * górnego progu alarmowego. Miarą, którą podaje sprzęt, jest
+         * {@link #batteryRemainingDays}.
+         */
         public int batteryLevelPercent;
+
+        /**
+         * Pozostały czas pracy baterii [dni] z ramki {@code ab010a}; {@code -1}
+         * gdy urządzenie nie odpowiedziało. Ta sama liczba, którą pokazuje
+         * oryginalne oprogramowanie Testo („Stan baterii: 388 dni").
+         */
+        public int batteryRemainingDays;
+
+        /** Górny próg alarmowy temperatury [°C] z {@code ab31[19:20]}. */
+        public Double alarmLimitUpperC;
+
+        /** Dolny próg alarmowy temperatury [°C] z {@code ab31[21:22]}. */
+        public Double alarmLimitLowerC;
+
         public int intervalMinutes;
         public int measurementsCount;
         public String programmingTimeUtc;

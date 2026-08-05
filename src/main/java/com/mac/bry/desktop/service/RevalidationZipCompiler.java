@@ -144,7 +144,10 @@ public class RevalidationZipCompiler {
         TestoPdfReportService.TestoReportData rd = new TestoPdfReportService.TestoReportData();
         rd.model = data.getModel() != null ? data.getModel().getName() : "Nieznany";
         rd.serialNumber = data.getSerialNumber();
-        rd.batteryLevel = data.getSeries().getBatteryLevelPercent() + "%";
+        // Sentinel -1 oznacza "N/D" (źródło nie podało stanu baterii). Bez tego
+        // filtra raport GxP drukował "-1%" jako zmierzoną wartość.
+        Integer battery = data.getSeries().getBatteryLevelPercent();
+        rd.batteryLevel = (battery != null && battery >= 0) ? battery + "%" : "N/D";
         rd.interval = data.getSeries().getLoggingIntervalMinutes() + " minut";
         Integer startDelay = data.getSeries().getStartDelayMinutes();
         rd.startDelay = (startDelay != null && startDelay > 0)
