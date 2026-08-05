@@ -12,15 +12,12 @@ import java.util.List;
  * ma sens tylko w pierwszym przypadku.
  *
  * @param violations      naruszenia blokujące alokację; pusta lista = sprzęt dopuszczony
- * @param warnings        zastrzeżenia niepodlegające automatycznej blokadzie (np. praca poniżej
- *                        temperatury referencyjnej specyfikacji), do decyzji Kierownika Walidacji
  * @param memoryLimitDays maksymalny czas rejestracji z pojemności pamięci [dni]
  * @param batteryLimitDays dostępny budżet energii [dni]; {@code NaN} gdy nieznany
  * @param missionDays     czas od umieszczenia w komorze do terminu odczytu [dni]
  * @param binding         ograniczenie, które wiąże jako pierwsze
  */
 public record HardwareBudget(List<HardwareViolation> violations,
-                             List<String> warnings,
                              double memoryLimitDays,
                              double batteryLimitDays,
                              double missionDays,

@@ -209,6 +209,29 @@ class HardwareCapacityServiceTest {
         }
 
         @Test
+        @DisplayName("ST-W4b-04: limit pamięci zgadza się co do minuty ze wskazaniem stacji Testo")
+        void st_w4b_04_memoryLimitMatchesManufacturerSoftware() {
+            // Odczytane z oryginalnego oprogramowania dla testo 174 T (16 000 próbek):
+            //   Δt =  1 min → "Okres  11d 2h 39m" = 15 999 min
+            //   Δt = 10 min → "Okres 111d 2h 30m" = 159 990 min
+            // Liczba interwałów to 15 999, nie 16 000 — pierwszy odczyt zapada
+            // w chwili startu.
+            double atOneMinute = service.evaluate(
+                    recorder(testo174T(), 100), config(1, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
+                    .memoryLimitDays();
+            double atTenMinutes = service.evaluate(
+                    recorder(testo174T(), 100), config(10, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
+                    .memoryLimitDays();
+
+            assertThat(atOneMinute * 1440.0)
+                    .as("11d 2h 39m")
+                    .isCloseTo(15_999.0, org.assertj.core.data.Offset.offset(0.001));
+            assertThat(atTenMinutes * 1440.0)
+                    .as("111d 2h 30m")
+                    .isCloseTo(159_990.0, org.assertj.core.data.Offset.offset(0.001));
+        }
+
+        @Test
         @DisplayName("ST-W4b-02: te same 20 160 próbek mieści się w testo 184 T3 (40 000)")
         void st_w4b_02_largerMemoryAccepts() {
             HardwareBudget budget = service.evaluate(
@@ -367,17 +390,59 @@ class HardwareCapacityServiceTest {
         }
 
         @Test
-        @DisplayName("Praca poniżej temperatury referencyjnej to zastrzeżenie, nie blokada")
-        void workBelowReferenceTemperatureOnlyWarns() {
-            // 174 T ma żywotność podaną dla +25 °C; w zamrażarce -20 °C mieści się
-            // w zakresie pracy (-30 °C), ale budżet energii jest oszacowaniem.
-            HardwareBudget budget = service.evaluate(
+        @DisplayName("Praca poniżej temperatury referencyjnej nie zmienia budżetu energii")
+        void referenceTemperatureDoesNotDerateBudget() {
+            // 174 T ma żywotność podaną dla +25 °C. Producent nie publikuje
+            // współczynnika deratingu, więc go nie modelujemy: ten sam rejestrator
+            // w chłodziarce i w zamrażarce dostaje identyczny budżet, a temperatura
+            // decyduje wyłącznie przez bramkę W4a.
+            HardwareBudget inFridge = service.evaluate(
+                    recorder(testo174T(), 90), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+            HardwareBudget inFreezer = service.evaluate(
                     recorder(testo174T(), 90), config(15, 100), chamber("Zamrażarka -20", -20.0, -15.0),
                     MISSION_START);
 
-            assertThat(budget.isAcceptable()).isTrue();
-            assertThat(budget.warnings()).hasSize(1);
-            assertThat(budget.warnings().get(0)).contains("Kierownika Walidacji");
+            assertThat(inFridge.isAcceptable()).isTrue();
+            assertThat(inFreezer.isAcceptable()).isTrue();
+            assertThat(inFreezer.batteryLimitDays()).isEqualTo(inFridge.batteryLimitDays());
+        }
+
+        @Test
+        @DisplayName("Komunikat odrzucenia niesie wyprowadzenie, nie samą liczbę końcową")
+        void rejectionMessageExplainsWhereTheNumberComesFrom() {
+            // Operator widzi w stacji Testo stan ogniwa w dniach (80 % z 500 = 400)
+            // i musi móc powiązać go z naszym budżetem, inaczej różnica wygląda
+            // na błąd aplikacji. 184 T3: 30 000 próbek mieści się w pamięci
+            // (40 000), więc odrzucenie jest wyłącznie energetyczne.
+            //   misja   = 20 min + 6 h + 1 min × 30 000 + 6 h = 21,35 dnia
+            //   budżet  = 500 × 0,80 × (1/15) = 26,7 → dopuszczalne 17,8 dnia
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T3(), 80), config(1, 30000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            HardwareViolation battery = budget.violations().stream()
+                    .filter(v -> v.rule() == HardwareViolation.Rule.BATTERY)
+                    .findFirst().orElseThrow();
+
+            assertThat(battery.message())
+                    .contains("stan ogniwa")
+                    .contains("80 %")
+                    .contains("500 dni katalogowych")
+                    .contains("cykl 1 min");
+        }
+
+        @Test
+        @DisplayName("Logger jednorazowy tłumaczy odrzucenie limitem pracy, nie stanem ogniwa")
+        void disposableRejectionMessageUsesOperatingLimit() {
+            ThermoRecorder used = recorder(testo184T1(), null);
+            used.setFirstActivationDate(MISSION_START.minusDays(80));
+
+            HardwareBudget budget = service.evaluate(
+                    used, mission21Days(), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.firstViolation().message())
+                    .contains("limitu pracy urządzenia 90 dni")
+                    .contains("zużyto 80")
+                    .doesNotContain("stan ogniwa");
         }
     }
 
