@@ -2,6 +2,7 @@ package com.mac.bry.desktop.controller;
 
 import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.model.ThermoMeasurementPoint;
+import com.mac.bry.desktop.service.RecorderBatteryService;
 import com.mac.bry.desktop.service.TestoPdfReportService;
 import com.mac.bry.desktop.service.TestoUsbImportService;
 import com.mac.bry.desktop.service.TestoSimulationService;
@@ -46,6 +47,7 @@ public class TestoReadController {
 
     private final TestoUsbImportService testoUsbImportService;
     private final Testo184UsbImportService testo184UsbImportService;
+    private final RecorderBatteryService recorderBatteryService;
     private final TestoPdfReportService testoPdfReportService;
     private final com.mac.bry.desktop.security.service.AuditService auditService;
     private final TestoSimulationService testoSimulationService;
@@ -202,8 +204,8 @@ public class TestoReadController {
             // Dane urządzenia
             modelField.setText(results.device.model);
             serialNumberField.setText(results.device.serialNumber);
-            batteryLevelField.setText(results.session.batteryLevelPercent >= 0 ? results.session.batteryLevelPercent + "%" : "N/D");
-            
+            String batteryStatus = applyBatteryReading(results);
+
             // Metadane sesji
             intervalField.setText(results.session.intervalMinutes + " minut");
             delayField.setText(results.session.startDelayMinutes > 0 ? results.session.startDelayMinutes + " minut" : "Brak opóźnienia");
@@ -214,7 +216,8 @@ public class TestoReadController {
 
             exportCsvButton.setDisable(false);
             reportPdfButton.setDisable(false);
-            statusLabel.setText("Status: Pomyślnie odczytano z portu USB: " + pointsList.size() + " punktów pomiarowych.");
+            statusLabel.setText("Status: Pomyślnie odczytano z portu USB: " + pointsList.size()
+                    + " punktów pomiarowych." + batteryStatus);
             log.info("Pomyślnie wczytano dane z rzeczywistego USB Testo.");
 
             // Zapis do Audit Trail (Historia Odczytów)
@@ -243,6 +246,37 @@ public class TestoReadController {
         });
 
         new Thread(task).start();
+    }
+
+    /**
+     * Pokazuje stan baterii i <b>zapisuje go do kartoteki rejestratora</b>.
+     * <p>
+     * Zapis jest tu konieczny, nie kosmetyczny: pozostałe dni pracy są daną wejściową
+     * reguły W4c planera. Bez niego operator widzi na ekranie „388 dni”, a planer nadal
+     * uważa stan baterii za nieznany i blokuje zaplanowanie badania — a od migracji V36
+     * wszystkie egzemplarze startują właśnie bez tej danej.
+     * <p>
+     * Jednostką są <b>dni</b> z ramki {@code ab010a}, nie procenty: wartość, którą system
+     * czytał wcześniej jako procent naładowania, była młodszym bajtem górnego progu
+     * alarmowego temperatury.
+     *
+     * @return fragment doklejany do komunikatu statusu — operator musi wiedzieć, czy
+     *         kartoteka została zaktualizowana, bo od tego zależy, czy planer go przepuści
+     */
+    private String applyBatteryReading(TestoUsbImportService.TestoImportResult results) {
+        int remainingDays = results.session.batteryRemainingDays;
+
+        if (remainingDays < 0) {
+            batteryLevelField.setText(I18n.t("testoread.battery.notAvailable"));
+            return "";
+        }
+
+        batteryLevelField.setText(I18n.t("testoread.battery.days", remainingDays));
+
+        boolean saved = recorderBatteryService.recordReading(results.device.serialNumber, remainingDays);
+        return " " + (saved
+                ? I18n.t("testoread.battery.saved", remainingDays)
+                : I18n.t("testoread.battery.notInRegistry", results.device.serialNumber));
     }
 
     private void runSimulation() {
@@ -549,8 +583,10 @@ public class TestoReadController {
             // Dane urządzenia
             modelField.setText(results.device.model);
             serialNumberField.setText(results.device.serialNumber);
-            batteryLevelField.setText(results.session.batteryLevelPercent >= 0 ? results.session.batteryLevelPercent + "%" : "N/D");
-            
+            // Raport PDF 184 nie niesie stanu baterii — wtedy metoda zostawia „N/D”
+            // i nie dotyka kartoteki.
+            String batteryStatus = applyBatteryReading(results);
+
             // Metadane sesji
             intervalField.setText(results.session.intervalMinutes + " minut");
             delayField.setText(results.session.startDelayMinutes > 0 ? results.session.startDelayMinutes + " minut" : "Brak opóźnienia");
@@ -561,7 +597,8 @@ public class TestoReadController {
 
             exportCsvButton.setDisable(false);
             reportPdfButton.setDisable(false);
-            statusLabel.setText("Status: Pomyślnie zaimportowano z raportu PDF: " + pointsList.size() + " punktów.");
+            statusLabel.setText("Status: Pomyślnie zaimportowano z raportu PDF: " + pointsList.size()
+                    + " punktów." + batteryStatus);
             log.info("Pomyślnie wczytano dane z raportu PDF Testo 184.");
 
             // Zapis do Audit Trail (Historia Odczytów)
