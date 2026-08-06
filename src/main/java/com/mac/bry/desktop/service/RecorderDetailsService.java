@@ -106,8 +106,8 @@ public class RecorderDetailsService {
     private void appendBattery(List<RecorderDetailProperty> rows, ThermoRecorder recorder) {
         String section = I18n.t("recorderdetails.section.battery");
         add(rows, section, "recorderdetails.batteryLevel",
-                recorder.getLastBatteryLevelPercent() != null
-                        ? recorder.getLastBatteryLevelPercent() + " %"
+                recorder.getBatteryRemainingDays() != null
+                        ? I18n.t("recorderdetails.value.batteryDays", recorder.getBatteryRemainingDays())
                         : null);
         add(rows, section, "recorderdetails.batteryReadAt", formatDateTime(recorder.getLastBatteryReadAt()));
         add(rows, section, "recorderdetails.batteryReplacementDate",
@@ -160,8 +160,8 @@ public class RecorderDetailsService {
         add(rows, section, "recorderdetails.lastReadoutBy", readout.importedBy());
         add(rows, section, "recorderdetails.lastReadoutChamber", readout.chamberName());
         add(rows, section, "recorderdetails.lastReadoutBattery",
-                readout.batteryLevelPercent() != null && readout.batteryLevelPercent() >= 0
-                        ? readout.batteryLevelPercent() + " %"
+                readout.batteryRemainingDays() != null && readout.batteryRemainingDays() >= 0
+                        ? I18n.t("recorderdetails.value.batteryDays", readout.batteryRemainingDays())
                         : null);
         add(rows, section, "recorderdetails.lastReadoutInterval",
                 readout.loggingIntervalMinutes() != null ? readout.loggingIntervalMinutes() + " min" : null);
@@ -209,10 +209,10 @@ public class RecorderDetailsService {
 
     /**
      * Referencyjny budżet pracy — świadomie NIE jest to prognoza dla konkretnego
-     * badania. Realny czas zależy od cyklu pomiarowego i temperatury komory,
-     * więc pełne wyliczenie robi {@code HardwareCapacityService} dopiero przy
-     * planowaniu. Tutaj pokazujemy wartość przy cyklu referencyjnym producenta,
-     * tą samą arytmetyką (żywotność katalogowa × stan naładowania).
+     * badania. Realny czas zależy od cyklu pomiarowego, więc pełne wyliczenie
+     * robi {@code HardwareCapacityService} dopiero przy planowaniu. Tutaj
+     * pokazujemy to, co raportuje samo urządzenie, żeby operator mógł zestawić
+     * kartę z tym, co widzi w stacji Testo.
      */
     private String estimatedRuntime(ThermoRecorder recorder) {
         ThermoRecorderModel model = recorder.getModel();
@@ -234,12 +234,11 @@ public class RecorderDetailsService {
                     Math.max(0, limitDays - used), limitDays);
         }
 
-        Integer soc = recorder.getLastBatteryLevelPercent();
-        if (model.getBatteryLifeDays() == null || soc == null || soc < 0) {
+        Integer remainingDays = recorder.getBatteryRemainingDays();
+        if (remainingDays == null || remainingDays < 0) {
             return null;
         }
-        double days = model.getBatteryLifeDays() * (soc / 100.0);
-        return I18n.t("recorderdetails.value.runtimeReference", days, refCycleMinutes(model));
+        return I18n.t("recorderdetails.value.runtimeReference", remainingDays, refCycleMinutes(model));
     }
 
     private int refCycleMinutes(ThermoRecorderModel model) {

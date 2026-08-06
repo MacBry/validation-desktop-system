@@ -109,14 +109,15 @@ public class TestoRevalidationService {
                         : result.session.firstMeasurementTimeLocal
         );
 
-        // batteryLevelPercent = -1 oznacza "N/D" (PDF nie zawiera tej informacji)
-        recordBatteryLevel(recorder, result.session.batteryLevelPercent);
+        // Import z PDF 184 nie niesie stanu baterii — obie wielkości zostają N/D.
+        recordBatteryDays(recorder, result.session.batteryRemainingDays);
 
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
-                .batteryLevelPercent(result.session.batteryLevelPercent >= 0
-                        ? result.session.batteryLevelPercent : -1)
+                .batteryRemainingDays(result.session.batteryRemainingDays >= 0
+                        ? result.session.batteryRemainingDays : null)
+                .batteryLevelPercent(-1)
                 .loggingIntervalMinutes(result.session.intervalMinutes)
                 .measurementsCount(result.measurements.size())
                 .programmingTimeUtc(LocalDateTime.parse(
@@ -163,24 +164,25 @@ public class TestoRevalidationService {
     }
 
     /**
-     * Zapisuje na rejestratorze ostatni znany stan baterii — dane wejściowe
+     * Zapisuje na rejestratorze pozostały czas pracy baterii [dni] — dane wejściowe
      * reguły W4c (budżet energii przy planowaniu kolejnych badań).
      * <p>
-     * Sentinel {@code -1} („N/D", gdy źródło nie raportuje baterii — np. import
-     * z PDF) jest odrzucany: w kartotece ma zostać ostatni <b>rzeczywisty</b>
-     * odczyt, a nie znacznik braku danych. Nadpisanie go zerem albo minus jedynką
-     * dałoby planerowi fałszywą podstawę do wyliczeń.
+     * Wartość pochodzi z ramki {@code ab010a} i jest tą samą liczbą, którą pokazuje
+     * oryginalne oprogramowanie producenta. Sentinel {@code -1} („N/D", gdy źródło
+     * nie raportuje baterii — np. import z PDF 184) jest odrzucany: w kartotece ma
+     * zostać ostatni <b>rzeczywisty</b> odczyt, a nie znacznik braku danych.
      */
-    private void recordBatteryLevel(ThermoRecorder recorder, int batteryLevelPercent) {
-        if (batteryLevelPercent < 0 || batteryLevelPercent > 100) {
-            log.debug("Pomijam zapis stanu baterii dla {} — źródło nie podało poziomu ({})",
-                    recorder.getSerialNumber(), batteryLevelPercent);
+    private void recordBatteryDays(ThermoRecorder recorder, int batteryRemainingDays) {
+        if (batteryRemainingDays < 0) {
+            log.debug("Pomijam zapis stanu baterii dla {} — źródło nie podało pozostałych dni ({})",
+                    recorder.getSerialNumber(), batteryRemainingDays);
             return;
         }
-        recorder.setLastBatteryLevelPercent(batteryLevelPercent);
+        recorder.setBatteryRemainingDays(batteryRemainingDays);
         recorder.setLastBatteryReadAt(LocalDateTime.now());
         thermoRecorderRepository.save(recorder);
-        log.info("Zaktualizowano stan baterii rejestratora {}: {}%", recorder.getSerialNumber(), batteryLevelPercent);
+        log.info("Zaktualizowano stan baterii rejestratora {}: pozostało {} dni",
+                recorder.getSerialNumber(), batteryRemainingDays);
     }
 
     @Transactional
@@ -247,11 +249,13 @@ public class TestoRevalidationService {
                 : usbResult.session.firstMeasurementTimeLocal
         );
 
-        recordBatteryLevel(recorder, usbResult.session.batteryLevelPercent);
+        recordBatteryDays(recorder, usbResult.session.batteryRemainingDays);
 
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
+                .batteryRemainingDays(usbResult.session.batteryRemainingDays >= 0
+                        ? usbResult.session.batteryRemainingDays : null)
                 .batteryLevelPercent(usbResult.session.batteryLevelPercent)
                 .loggingIntervalMinutes(usbResult.session.intervalMinutes)
                 .measurementsCount(usbResult.measurements.size())

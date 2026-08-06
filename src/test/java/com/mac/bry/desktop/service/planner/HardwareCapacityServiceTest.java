@@ -87,11 +87,16 @@ class HardwareCapacityServiceTest {
                 .build();
     }
 
-    private ThermoRecorder recorder(ThermoRecorderModel model, Integer batteryPercent) {
+    /**
+     * @param batteryRemainingDays pozostałe dni pracy z ramki {@code ab010a} —
+     *                             wielkość czytana wprost z urządzenia, nie
+     *                             wyprowadzana z żywotności katalogowej
+     */
+    private ThermoRecorder recorder(ThermoRecorderModel model, Integer batteryRemainingDays) {
         return ThermoRecorder.builder()
                 .id(1L).serialNumber("SN-001").status(RecorderStatus.ACTIVE)
                 .model(model)
-                .lastBatteryLevelPercent(batteryPercent)
+                .batteryRemainingDays(batteryRemainingDays)
                 .build();
     }
 
@@ -131,7 +136,7 @@ class HardwareCapacityServiceTest {
         @DisplayName("ST-W4a-01: testo 174 T w -80 °C odpada na zakresie pracy, nie na baterii")
         void st_w4a_01_recorderOutsideOperatingRangeIsRejectedRegardlessOfBattery() {
             HardwareBudget budget = service.evaluate(
-                    recorder(testo174T(), 100), config(10, 100), chamber("Zamrażarka -80", -80.0, -60.0),
+                    recorder(testo174T(), 400), config(10, 100), chamber("Zamrażarka -80", -80.0, -60.0),
                     MISSION_START);
 
             assertThat(budget.isAcceptable()).isFalse();
@@ -151,7 +156,7 @@ class HardwareCapacityServiceTest {
         @DisplayName("ST-W4a-02: testo 184 T4 w -80 °C mieści się w zakresie")
         void st_w4a_02_t4CoversUltraLowTemperature() {
             HardwareBudget budget = service.evaluate(
-                    recorder(testo184T4(), 100), config(15, 100), chamber("Zamrażarka -80", -80.0, -60.0),
+                    recorder(testo184T4(), 90), config(15, 100), chamber("Zamrażarka -80", -80.0, -60.0),
                     MISSION_START);
 
             assertThat(budget.violations())
@@ -179,7 +184,7 @@ class HardwareCapacityServiceTest {
             CoolingChamber noLimits = CoolingChamber.builder().id(2L).chamberName("Komora bez limitów").build();
 
             HardwareBudget budget = service.evaluate(
-                    recorder(testo174T(), 100), config(15, 100), noLimits, MISSION_START);
+                    recorder(testo174T(), 400), config(15, 100), noLimits, MISSION_START);
 
             assertThat(budget.violations())
                     .extracting(HardwareViolation::rule)
@@ -197,7 +202,7 @@ class HardwareCapacityServiceTest {
         @DisplayName("ST-W4b-01: 14 dni co 1 min = 20 160 próbek > 16 000 w testo 174 T")
         void st_w4b_01_memoryOverflowIsRejected() {
             HardwareBudget budget = service.evaluate(
-                    recorder(testo174T(), 100), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo174T(), 400), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             HardwareViolation memory = budget.violations().stream()
                     .filter(v -> v.rule() == HardwareViolation.Rule.MEMORY)
@@ -217,10 +222,10 @@ class HardwareCapacityServiceTest {
             // Liczba interwałów to 15 999, nie 16 000 — pierwszy odczyt zapada
             // w chwili startu.
             double atOneMinute = service.evaluate(
-                    recorder(testo174T(), 100), config(1, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
+                    recorder(testo174T(), 400), config(1, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
                     .memoryLimitDays();
             double atTenMinutes = service.evaluate(
-                    recorder(testo174T(), 100), config(10, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
+                    recorder(testo174T(), 400), config(10, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
                     .memoryLimitDays();
 
             assertThat(atOneMinute * 1440.0)
@@ -235,7 +240,7 @@ class HardwareCapacityServiceTest {
         @DisplayName("ST-W4b-02: te same 20 160 próbek mieści się w testo 184 T3 (40 000)")
         void st_w4b_02_largerMemoryAccepts() {
             HardwareBudget budget = service.evaluate(
-                    recorder(testo184T3(), 100), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo184T3(), 400), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             assertThat(budget.violations())
                     .extracting(HardwareViolation::rule)
@@ -246,7 +251,7 @@ class HardwareCapacityServiceTest {
         @DisplayName("ST-W4b-03: testo 175 T3 dzieli 1 mln odczytów na 3 kanały → 333 333 na kanał")
         void st_w4b_03_memoryIsSharedBetweenChannels() {
             HardwareBudget budget = service.evaluate(
-                    recorder(testo175T3(), 100), config(1, 400000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo175T3(), 400), config(1, 400000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             HardwareViolation memory = budget.violations().stream()
                     .filter(v -> v.rule() == HardwareViolation.Rule.MEMORY)
@@ -272,20 +277,20 @@ class HardwareCapacityServiceTest {
         }
 
         @Test
-        @DisplayName("ST-W4c-01: 184 T4 w -80 °C, 60 % baterii, misja 21 dni → dopuszczony")
+        @DisplayName("ST-W4c-01: 184 T4 w -80 °C, urządzenie raportuje 60 dni, misja 21 dni → dopuszczony")
         void st_w4c_01_sufficientBudgetPasses() {
             HardwareBudget budget = service.evaluate(
                     recorder(testo184T4(), 60), mission21Days(), chamber("Zamrażarka -80", -80.0, -60.0),
                     MISSION_START);
 
-            // 100 dni × min(1; 10/15) × 0,60 = 40,0 dnia; dopuszczalne 40/1,5 = 26,7 > 21
+            // 60 dni × min(1; 10/15) = 40,0 dnia; dopuszczalne 40/1,5 = 26,7 > 21
             assertThat(budget.batteryLimitDays()).isCloseTo(40.0, org.assertj.core.data.Offset.offset(0.1));
             assertThat(budget.missionDays()).isCloseTo(21.0, org.assertj.core.data.Offset.offset(0.01));
             assertThat(budget.isAcceptable()).isTrue();
         }
 
         @Test
-        @DisplayName("ST-W4c-02: ten sam scenariusz przy 25 % baterii → odrzucony")
+        @DisplayName("ST-W4c-02: ten sam scenariusz przy 25 dniach → odrzucony")
         void st_w4c_02_insufficientBudgetIsRejected() {
             HardwareBudget budget = service.evaluate(
                     recorder(testo184T4(), 25), mission21Days(), chamber("Zamrażarka -80", -80.0, -60.0),
@@ -302,11 +307,11 @@ class HardwareCapacityServiceTest {
         @Test
         @DisplayName("ST-W4c-03: przy gęstym próbkowaniu wiąże bateria, nie pamięć")
         void st_w4c_03_bindingConstraintIsReported() {
-            // 184 T3, +4 °C, Δt = 1 min, 75 % baterii:
-            //   pamięć  = 40 000 × 1 min       = 27,8 dnia
-            //   bateria = 500 × (1/15) × 0,75  = 25,0 dnia → dopuszczalne 16,7
+            // 184 T3, +4 °C, Δt = 1 min, urządzenie raportuje 375 dni:
+            //   pamięć  = 39 999 × 1 min  = 27,8 dnia
+            //   bateria = 375 × (1/15)    = 25,0 dnia → dopuszczalne 16,7
             HardwareBudget budget = service.evaluate(
-                    recorder(testo184T3(), 75), config(1, 20000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo184T3(), 375), config(1, 20000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             assertThat(budget.memoryLimitDays()).isCloseTo(27.8, org.assertj.core.data.Offset.offset(0.1));
             assertThat(budget.batteryLimitDays()).isCloseTo(25.0, org.assertj.core.data.Offset.offset(0.1));
@@ -350,9 +355,10 @@ class HardwareCapacityServiceTest {
         @Test
         @DisplayName("ST-W4c-06: budżet liczy pełną misję, nie sam Krok 4")
         void st_w4c_06_missionIncludesStabilisationAndReadoutBuffer() {
-            // Model dobrany tak, by budżet leżał między czasem samego Kroku 4
-            // (1,0 dnia) a pełnym czasem misji (1,51 dnia): gdyby reguła liczyła
-            // tylko pomiar, rejestrator zostałby dopuszczony.
+            // Budżet dobrany tak, by próg dopuszczenia (2 dni / 1,5 = 1,33) leżał
+            // między czasem samego Kroku 4 (1,0 dnia) a pełnym czasem misji
+            // (1,51 dnia): gdyby reguła liczyła tylko pomiar, rejestrator
+            // zostałby dopuszczony.
             ThermoRecorderModel shortLived = ThermoRecorderModel.builder()
                     .name("TEST-SHORT").channelCount(1).sampleCapacity(40000)
                     .minOperatingTempC(-35.0).maxOperatingTempC(70.0)
@@ -361,23 +367,23 @@ class HardwareCapacityServiceTest {
                     .build();
 
             HardwareBudget budget = service.evaluate(
-                    recorder(shortLived, 50), config(15, 96), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(shortLived, 2), config(15, 96), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             assertThat(budget.missionDays())
                     .as("20 min + 6 h stabilizacji + 24 h pomiaru + 6 h na odczyt")
                     .isCloseTo(1.514, org.assertj.core.data.Offset.offset(0.01));
-            assertThat(budget.batteryLimitDays()).isEqualTo(1.5); // 3 dni × 1,0 × 0,50
+            assertThat(budget.batteryLimitDays()).isEqualTo(2.0); // 2 dni z urządzenia × cykl 1,0
             assertThat(budget.violations())
                     .extracting(HardwareViolation::rule)
                     .containsExactly(HardwareViolation.Rule.BATTERY);
         }
 
         @Test
-        @DisplayName("Przeterminowana bateria blokuje mimo wysokiego stanu naładowania")
+        @DisplayName("Przeterminowana bateria blokuje mimo dużego zapasu dni")
         void expiredBatteryIsRejected() {
             ThermoRecorderModel model = testo184T3();
             model.setBatteryShelfLifeMonths(24);
-            ThermoRecorder old = recorder(model, 95);
+            ThermoRecorder old = recorder(model, 475);
             old.setBatteryReplacementDate(MISSION_START.minusMonths(30));
 
             HardwareBudget budget = service.evaluate(
@@ -397,9 +403,9 @@ class HardwareCapacityServiceTest {
             // w chłodziarce i w zamrażarce dostaje identyczny budżet, a temperatura
             // decyduje wyłącznie przez bramkę W4a.
             HardwareBudget inFridge = service.evaluate(
-                    recorder(testo174T(), 90), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo174T(), 450), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
             HardwareBudget inFreezer = service.evaluate(
-                    recorder(testo174T(), 90), config(15, 100), chamber("Zamrażarka -20", -20.0, -15.0),
+                    recorder(testo174T(), 450), config(15, 100), chamber("Zamrażarka -20", -20.0, -15.0),
                     MISSION_START);
 
             assertThat(inFridge.isAcceptable()).isTrue();
@@ -410,23 +416,23 @@ class HardwareCapacityServiceTest {
         @Test
         @DisplayName("Komunikat odrzucenia niesie wyprowadzenie, nie samą liczbę końcową")
         void rejectionMessageExplainsWhereTheNumberComesFrom() {
-            // Operator widzi w stacji Testo stan ogniwa w dniach (80 % z 500 = 400)
-            // i musi móc powiązać go z naszym budżetem, inaczej różnica wygląda
-            // na błąd aplikacji. 184 T3: 30 000 próbek mieści się w pamięci
-            // (40 000), więc odrzucenie jest wyłącznie energetyczne.
-            //   misja   = 20 min + 6 h + 1 min × 30 000 + 6 h = 21,35 dnia
-            //   budżet  = 500 × 0,80 × (1/15) = 26,7 → dopuszczalne 17,8 dnia
+            // Operator widzi w stacji Testo liczbę dni i musi móc powiązać ją
+            // z naszym budżetem, inaczej różnica wygląda na błąd aplikacji.
+            // 184 T3: 30 000 próbek mieści się w pamięci (40 000), więc
+            // odrzucenie jest wyłącznie energetyczne.
+            //   misja  = 20 min + 6 h + 1 min × 30 000 + 6 h = 21,35 dnia
+            //   budżet = 400 dni × (1/15) = 26,7 → dopuszczalne 17,8 dnia
             HardwareBudget budget = service.evaluate(
-                    recorder(testo184T3(), 80), config(1, 30000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo184T3(), 400), config(1, 30000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             HardwareViolation battery = budget.violations().stream()
                     .filter(v -> v.rule() == HardwareViolation.Rule.BATTERY)
                     .findFirst().orElseThrow();
 
             assertThat(battery.message())
-                    .contains("stan ogniwa")
-                    .contains("80 %")
-                    .contains("500 dni katalogowych")
+                    .as("liczba z urządzenia musi być widoczna w komunikacie, "
+                            + "żeby dała się zestawić ze stacją Testo")
+                    .contains("urządzenie raportuje 400 dni")
                     .contains("cykl 1 min");
         }
 
@@ -456,12 +462,12 @@ class HardwareCapacityServiceTest {
         @DisplayName("Każde kryterium ma własny typ wyjątku")
         void violationsMapToDedicatedExceptions() {
             assertThatThrownBy(() -> service.require(
-                    recorder(testo174T(), 100), config(15, 100), chamber("Zamrażarka -80", -80.0, -60.0),
+                    recorder(testo174T(), 400), config(15, 100), chamber("Zamrażarka -80", -80.0, -60.0),
                     MISSION_START))
                     .isInstanceOf(RecorderOutOfOperatingRangeException.class);
 
             assertThatThrownBy(() -> service.require(
-                    recorder(testo174T(), 100), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START))
+                    recorder(testo174T(), 400), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START))
                     .isInstanceOf(InsufficientRecorderMemoryException.class)
                     .satisfies(e -> assertThat(((InsufficientRecorderMemoryException) e).getAvailableSamples())
                             .isEqualTo(16000));
@@ -479,7 +485,7 @@ class HardwareCapacityServiceTest {
         @Test
         @DisplayName("Sprzęt spełniający wszystkie kryteria przechodzi bez wyjątku")
         void acceptableHardwarePasses() {
-            service.require(recorder(testo184T3(), 90), config(15, 100),
+            service.require(recorder(testo184T3(), 450), config(15, 100),
                     chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
         }
     }

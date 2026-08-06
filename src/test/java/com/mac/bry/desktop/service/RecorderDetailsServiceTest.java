@@ -112,22 +112,25 @@ class RecorderDetailsServiceTest {
         List<RecorderDetailProperty> rows = detailsService.buildDetails(recorderWith(replaceableModel()));
 
         // Rejestrator bez odczytu baterii — reguła W4c nie ma z czego liczyć budżetu.
-        assertThat(valueOf(rows, "Ostatni odczytany poziom baterii")).isEqualTo("— brak danych");
+        assertThat(valueOf(rows, "Pozostały czas pracy baterii")).isEqualTo("— brak danych");
         assertThat(valueOf(rows, "Szacowany czas pracy")).isEqualTo("— brak danych");
         assertThat(valueOf(rows, "Pracownia")).isEqualTo("— brak danych");
         assertThat(rows).extracting(RecorderDetailProperty::value).doesNotContainNull();
     }
 
     @Test
-    @DisplayName("Budżet pracy baterii wymiennej powinien skalować żywotność katalogową stanem naładowania")
-    void shouldScaleRuntimeByStateOfCharge() {
+    @DisplayName("Karta pokazuje liczbę dni raportowaną przez urządzenie, bez przeliczania")
+    void shouldShowRuntimeReportedByDevice() {
         ThermoRecorder recorder = recorderWith(replaceableModel());
-        recorder.setLastBatteryLevelPercent(50);
+        recorder.setBatteryRemainingDays(250);
 
         List<RecorderDetailProperty> rows = detailsService.buildDetails(recorder);
 
-        // 500 dni katalogowo × 50% naładowania = 250 dni przy cyklu referencyjnym.
-        assertThat(valueOf(rows, "Szacowany czas pracy")).isEqualTo("≈ 250,0 dni przy cyklu referencyjnym 15 min");
+        // Wartość musi dać się zestawić 1:1 z tym, co operator widzi w stacji Testo —
+        // żadnego mnożenia przez żywotność katalogową ani przez stan naładowania.
+        assertThat(valueOf(rows, "Pozostały czas pracy baterii")).isEqualTo("250 dni pozostało");
+        assertThat(valueOf(rows, "Szacowany czas pracy"))
+                .isEqualTo("250 dni wg wskazania urządzenia (cykl referencyjny 15 min)");
     }
 
     @Test
@@ -195,12 +198,12 @@ class RecorderDetailsServiceTest {
         assertThat(valueOf(rows, "Ostatni odczyt")).isEqualTo("15.07.2026 09:30");
         assertThat(valueOf(rows, "Odczyt wykonał")).isEqualTo("jkowalski");
         assertThat(valueOf(rows, "Komora")).isEqualTo("Komora A");
-        assertThat(valueOf(rows, "Poziom baterii przy odczycie")).isEqualTo("87 %");
+        assertThat(valueOf(rows, "Stan baterii przy odczycie")).isEqualTo("87 dni pozostało");
         assertThat(valueOf(rows, "Liczba odczytów w historii")).isEqualTo("7");
     }
 
     @Test
-    @DisplayName("Sentinel -1 z importu PDF nie powinien udawać poziomu baterii")
+    @DisplayName("Sentinel -1 z importu PDF nie powinien udawać stanu baterii")
     void shouldNotShowSentinelBatteryLevel() {
         when(seriesRepository.findReadoutSummaries(anyLong(), any())).thenReturn(List.of(
                 new RecorderReadoutSummary(LocalDateTime.of(2026, 7, 15, 9, 30),
@@ -208,7 +211,7 @@ class RecorderDetailsServiceTest {
 
         List<RecorderDetailProperty> rows = detailsService.buildDetails(recorderWith(replaceableModel()));
 
-        assertThat(valueOf(rows, "Poziom baterii przy odczycie")).isEqualTo("— brak danych");
+        assertThat(valueOf(rows, "Stan baterii przy odczycie")).isEqualTo("— brak danych");
         assertThat(valueOf(rows, "Komora")).isEqualTo("— brak danych");
     }
 
@@ -227,14 +230,14 @@ class RecorderDetailsServiceTest {
     void shouldTranslateCard() {
         I18n.init("en");
         ThermoRecorder recorder = recorderWith(replaceableModel());
-        recorder.setLastBatteryLevelPercent(50);
+        recorder.setBatteryRemainingDays(250);
 
         List<RecorderDetailProperty> rows = detailsService.buildDetails(recorder);
 
         assertThat(rows).extracting(RecorderDetailProperty::section).contains("Identification");
         assertThat(valueOf(rows, "Serial number")).isEqualTo("SN-001");
         assertThat(valueOf(rows, "Estimated runtime"))
-                .isEqualTo("≈ 250.0 days at the 15 min reference cycle");
+                .isEqualTo("250 days as reported by the device (15 min reference cycle)");
         assertThat(valueOf(rows, "Laboratory")).isEqualTo("— no data");
     }
 
