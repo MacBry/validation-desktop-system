@@ -49,7 +49,7 @@ public interface ThermoMeasurementSeriesRepository extends JpaRepository<ThermoM
      */
     @Query("""
             select new com.mac.bry.desktop.dto.RecorderReadoutSummary(
-                s.importedAt, s.importedBy, s.batteryLevelPercent,
+                s.importedAt, s.importedBy, s.batteryRemainingDays,
                 s.loggingIntervalMinutes, s.measurementsCount, c.chamberName)
             from ThermoMeasurementSeries s
             left join s.coolingChamber c

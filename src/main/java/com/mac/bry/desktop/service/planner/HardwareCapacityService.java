@@ -40,10 +40,21 @@ import java.util.List;
  * temperaturowy" i porównywanie do progu procentowego nie ma pokrycia w danych
  * producenta — i myli dwie różne wielkości. Szczegóły: {@code REVALIDATION_PLANNER_W4_SUPPLEMENT.md} §2-§3.
  *
+ * <h2>Skąd bierze się stan baterii</h2>
+ * <b>Wprost z urządzenia</b>, jako liczba pozostałych dni (ramka {@code ab010a},
+ * pole {@code ThermoRecorder.batteryRemainingDays}). Do sierpnia 2026 wielkość ta
+ * była wyprowadzana jako {@code batteryLifeDays × SoC/100}, gdzie „SoC" pochodził
+ * z bajtu, który w rzeczywistości był <i>młodszym bajtem górnego progu alarmowego</i>
+ * — rejestrator z 42 dniami życia wyceniano wtedy na 400 dni. Szczegóły i dowód:
+ * {@code TESTO_USB_ANALYSIS.md} §2.3b oraz suplement W4 §2.3.
+ * <p>
+ * Konsekwencja projektowa: budżet energii nie zależy już od poprawności
+ * {@code battery_life_days} w kartotece modelu. Ta wartość pozostaje daną
+ * informacyjną karty rejestratora.
+ *
  * <h2>Czego producent nie dostarcza</h2>
- * Potwierdzone na sprzęcie (174 T, sierpień 2026): oprogramowanie Testo pokazuje
- * stan baterii jako <i>liczbę dni referencyjnych</i> — 388 dni przy 77,6 %
- * naładowania i katalogowych 500 dniach — i wskazanie to <b>nie zmienia się</b>
+ * Potwierdzone na sprzęcie (174 T, sierpień 2026): wskazanie stanu baterii
+ * <b>nie zmienia się</b>
  * po zmianie interwału. Producent nie publikuje więc żadnej zależności czasu
  * pracy od cyklu pomiarowego; człon {@code cycleFactor} w
  * {@code replaceableBatteryBudget} jest <b>naszym własnym, zachowawczym
@@ -268,14 +279,13 @@ public class HardwareCapacityService {
     private BatteryBasis replaceableBatteryBudget(ThermoRecorder recorder, ThermoRecorderModel model,
                                                   ProcedureClassConfig config, LocalDate missionStart,
                                                   List<HardwareViolation> violations) {
-        if (model.getBatteryLifeDays() == null) {
-            violations.add(new HardwareViolation(HardwareViolation.Rule.DATA_INCOMPLETE, String.format(
-                    "Model %s nie ma w kartotece katalogowej żywotności baterii", model.getName())));
-            return BatteryBasis.UNKNOWN;
-        }
-
-        Integer soc = recorder.getLastBatteryLevelPercent();
-        if (soc == null || soc < 0) {
+        // Stan ogniwa w dniach referencyjnych — czytany WPROST z urządzenia
+        // (ramka ab010a), ta sama liczba, którą pokazuje oprogramowanie
+        // producenta. Nie wyprowadzamy jej już z żywotności katalogowej ani
+        // z procentu, więc budżet nie zależy od poprawności `battery_life_days`
+        // w kartotece modelu.
+        Integer referenceRuntimeDays = recorder.getBatteryRemainingDays();
+        if (referenceRuntimeDays == null || referenceRuntimeDays < 0) {
             violations.add(new HardwareViolation(HardwareViolation.Rule.DATA_INCOMPLETE, String.format(
                     "Rejestrator S/N:%s nie ma odczytanego stanu baterii — zczytaj urządzenie w stacji Testo USB "
                             + "przed zaplanowaniem badania", recorder.getSerialNumber())));
@@ -284,19 +294,13 @@ public class HardwareCapacityService {
 
         checkBatteryAge(recorder, model, missionStart, violations);
 
-        // Stan ogniwa w dniach referencyjnych — ta sama wielkość, którą pokazuje
-        // oprogramowanie producenta (174 T: 77,6 % z 500 dni = 388 dni), więc
-        // operator może zestawić ją z tym, co widzi w stacji Testo.
-        double referenceRuntimeDays = model.getBatteryLifeDays() * (soc / 100.0);
-
-        // ZAŁOŻENIE WŁASNE, nie dana producenta. Testo podaje żywotność przy
-        // cyklu referencyjnym (15 min) i nie publikuje zależności od interwału —
-        // wskazanie stanu baterii w oryginalnym oprogramowaniu jest identyczne
-        // przy 1 min i przy 10 min. Skracamy budżet przy gęstszym próbkowaniu,
-        // bo każdy pomiar kosztuje energię; przy rzadszym nie zakładamy zysku,
-        // bo pobór spoczynkowy (LCD, zegar, NFC) płynie niezależnie od pomiarów.
-        // Współczynnik jest zachowawczy w obie strony i czeka na pomiar
-        // empiryczny — patrz REVALIDATION_PLANNER_W4_SUPPLEMENT.md §7.
+        // ZAŁOŻENIE WŁASNE, nie dana producenta. Urządzenie podaje dni przy cyklu
+        // referencyjnym (15 min) — wskazanie nie zmienia się przy przejściu z 1 min
+        // na 10 min, więc nie jest prognozą dla ustawionego interwału. Skracamy
+        // budżet przy gęstszym próbkowaniu, bo każdy pomiar kosztuje energię;
+        // przy rzadszym nie zakładamy zysku, bo pobór spoczynkowy (LCD, zegar, NFC)
+        // płynie niezależnie od pomiarów. Współczynnik jest zachowawczy w obie
+        // strony i czeka na pomiar empiryczny — patrz suplement W4 §7 pkt 2.
         int refCycle = model.getBatteryLifeRefCycleMin() != null && model.getBatteryLifeRefCycleMin() > 0
                 ? model.getBatteryLifeRefCycleMin()
                 : 15;
@@ -304,10 +308,9 @@ public class HardwareCapacityService {
         double availableDays = referenceRuntimeDays * cycleFactor;
 
         return new BatteryBasis(availableDays, String.format(
-                "stan ogniwa %.1f dnia (%d %% z %d dni katalogowych), po zachowawczym przeliczeniu "
+                "urządzenie raportuje %d dni pozostałej pracy, po zachowawczym przeliczeniu "
                         + "na cykl %d min → %.1f dnia",
-                referenceRuntimeDays, soc, model.getBatteryLifeDays(),
-                config.getStep4IntervalMinutes(), availableDays));
+                referenceRuntimeDays, config.getStep4IntervalMinutes(), availableDays));
     }
 
     private void checkBatteryAge(ThermoRecorder recorder, ThermoRecorderModel model,

@@ -84,7 +84,8 @@ class RecorderAllocationServiceTest {
                 .serialNumber(serial)
                 .status(RecorderStatus.ACTIVE)
                 .model(model)
-                .lastBatteryLevelPercent(100)
+                // świeże ogniwo: tyle dni raportuje 174 T zaraz po wymianie (ramka ab010a)
+                .batteryRemainingDays(500)
                 .calibrations(new ArrayList<>())
                 .build();
 
@@ -344,7 +345,7 @@ class RecorderAllocationServiceTest {
     @DisplayName("ST-W4-02: rejestrator bez odczytanego stanu baterii nie trafia do puli")
     void st_w4_02_unknownBatteryBlocksAllocation() {
         List<ThermoRecorder> neverRead = pool(4, 9);
-        neverRead.forEach(r -> r.setLastBatteryLevelPercent(null));
+        neverRead.forEach(r -> r.setBatteryRemainingDays(null));
         when(recorderRepository.findByStatusOrderBySerialNumberAsc(RecorderStatus.ACTIVE))
                 .thenReturn(neverRead);
 

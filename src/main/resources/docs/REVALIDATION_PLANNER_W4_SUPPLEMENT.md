@@ -3,7 +3,7 @@
 **System**: `validation-desktop` (JavaFX / Spring Boot / GxP / ISO 17025)
 **Dokument nadrzędny**: `src/main/resources/docs/REVALIDATION_PLANNER_BA.md` (BA v5.0, reguła W4)
 **Data opracowania**: 2026-07-30
-**Data korekty**: 2026-07-31 (wersja 1.2)
+**Data korekty**: 2026-08-06 (wersja 1.3)
 **Status**: Reguła W4 wdrożona (Hardware Limits: zakres pracy, pamięć, budżet baterii)
 
 ---
@@ -14,6 +14,7 @@
 |---|---|---|
 | 1.0 | 2026-07-30 | Pierwsza wersja planu W4 (model `Battery_eff = Battery × k_temp`) |
 | 1.1 | 2026-07-31 | **Korekta modelu matematycznego.** Procentowy derating baterii zastąpiony budżetem czasu pracy w dniach, zgodnym z kartami katalogowymi Testo; dodana twarda bramka zakresu pracy urządzenia; poprawione pojemności pamięci (175 ≠ 176, 184 T1 ≠ T3); uwzględniona liczba kanałów i pełny czas misji; poprawiony punkt wpięcia w `RecorderAllocationService`; migracja rozbita na `h2`/`mysql` wraz z tabelami Envers. |
+| 1.3 | 2026-08-06 | **Jednostką stanu baterii są dni.** $D_{ref}$ przestaje być wyprowadzane z $D_{spec} \cdot SoC/100$ i jest czytane wprost z urządzenia (ramka `ab010a`, §2.3 U5) — symbol $SoC$ znika z modelu, a $D_{spec}$ zostaje daną informacyjną, wiążącą już tylko dla baterii niewymiennych. Migracja jednostki `common/V36__Battery_Remaining_Days.sql` wraz z wyczyszczeniem fałszywego `last_battery_level_percent` na egzemplarzach; przeliczone scenariusze ST-W4c-01…04 i przykład wyprowadzenia w komunikacie odrzucenia. |
 | 1.2 | 2026-07-31 | **Synchronizacja z wdrożeniem.** Poprawiona arytmetyka ST-W4c-01/02 (pominięty współczynnik cyklu); migracja scalona do jednej przenośnej w `common/`; W4b dostaje własny wyjątek zamiast reużycia W2-owego; ocena zwraca `HardwareBudget` zamiast rzucać wyjątkiem wewnątrz filtra kandydatów; zastrzeżenie temperaturowe opisane jako ostrzeżenie, nie blokada. |
 
 ---
@@ -66,7 +67,7 @@ Interwał pomiarowy w serii 184: **1 min … 24 h**.
 | Żywotność katalogowa [dni] | `testo_184_config.py:620` → pole XDP `<battery>500</battery>` | Wartość 500 odpowiada karcie katalogowej 184 T3 |
 | Interwał pomiaru | `TestoUsbImportService.ImportedSession.intervalMinutes` | |
 | Liczba kanałów modelu | `ThermoRecorderModel.channelCount` | **Pole już istnieje** — nie wymaga migracji |
-| Sentinel „brak danych” | `TestoRevalidationService.java:112` | `batteryLevelPercent = -1` oznacza **N/D** (odczyt z PDF nie zawiera baterii) |
+| Sentinel „brak danych” | `TestoRevalidationService.recordBatteryDays(...)` | `batteryRemainingDays < 0` oznacza **N/D** (źródło nie podaje stanu baterii) — do kartoteki i do serii trafia wtedy `null`, nigdy liczba ujemna |
 
 ### 2.3. Weryfikacja na sprzęcie — testo 174 T, 2026-08-05
 
@@ -132,9 +133,9 @@ Oznaczenia:
 | $N_{req}$ | liczba próbek GxP | `config.step4SampleCount` |
 | $T_{mission}$ | pełny czas pracy rejestratora [min] | patrz §3.3 |
 | $T_{chamber}$ | temperatura pracy komory [°C] | `chamber.getEffectiveMinTempLimit()` |
-| $D_{spec}$ | katalogowa żywotność baterii [dni] | `model.batteryLifeDays` |
+| $D_{spec}$ | katalogowa żywotność baterii [dni] | `model.batteryLifeDays` — **dana informacyjna**, do W4c nie wchodzi |
 | $\Delta t_{ref}$, $T_{ref}$ | warunki referencyjne specyfikacji | `model.batteryLifeRefCycleMin` (15 min), `model.batteryLifeRefTempC` |
-| $SoC$ | ostatni odczytany stan naładowania [%] | `recorder.lastBatteryLevelPercent` |
+| $D_{ref}$ | pozostały czas pracy odczytany z urządzenia [dni] | `recorder.batteryRemainingDays` (ramka `ab010a`) |
 
 ### 3.1. Kryterium W4a — Zakres pracy (bramka twarda)
 
@@ -180,9 +181,11 @@ $$T_{mission}[\text{min}] = \text{step2Placement} + 60 \cdot \text{step3StabHour
 
 Liczymy w **dwóch krokach**, bo są to dwie różne wielkości i operator widzi je obie.
 
-**Krok 1 — stan ogniwa w dniach referencyjnych.** Ta sama wielkość, którą pokazuje oprogramowanie producenta (§2.3 U3):
+**Krok 1 — stan ogniwa w dniach referencyjnych.** Ta sama wielkość, którą pokazuje oprogramowanie producenta (§2.3 U3), czytana **wprost z urządzenia** ramką `ab010a` (§2.3 U5):
 
-$$D_{ref}[\text{dni}] = D_{spec} \cdot \frac{SoC}{100}$$
+$$D_{ref}[\text{dni}] = \text{recorder.batteryRemainingDays}$$
+
+Do sierpnia 2026 wielkość ta była wyprowadzana jako $D_{spec} \cdot SoC/100$, gdzie „$SoC$” pochodził z bajtu okazującego się **młodszym bajtem górnego progu alarmowego** (§2.3 U4) — rejestrator z 42 dniami życia wyceniano wtedy na 400 dni. Wraz z odczytem wprost znika z modelu zarówno $SoC$, jak i zależność od poprawności `battery_life_days` w kartotece modelu. Migracja jednostki: `V36__Battery_Remaining_Days.sql`.
 
 **Krok 2 — budżet dla tego konkretnego badania**, po zachowawczym przeliczeniu na cykl pomiarowy:
 
@@ -193,16 +196,16 @@ $$D_{avail}[\text{dni}] = D_{ref} \cdot \min\!\left(1,\ \frac{\Delta t}{\Delta t
 $$\frac{T_{mission}}{1440} \le \frac{D_{avail}}{f_{safety}}, \qquad f_{safety} = 1{,}5 \ \text{(domyślnie, konfigurowalne w SOP)}$$
 
 * **Błąd walidacji**: `InsufficientBatteryLevelException`.
-* **Dobór $D_{spec}$**: bierzemy wartość katalogową **dla warunków najbliższych warunkom misji**. Dla 184 T4 w −80 °C jest to wprost 100 dni. Dla 174 T w zamrażarce −20 °C producent nie publikuje wartości — patrz §7 (kwestia otwarta).
+* **$D_{spec}$ nie wchodzi już do W4c dla baterii wymiennych.** Kwestia doboru wartości katalogowej „dla warunków najbliższych misji” dotyczyła modelu wyprowadzanego z procentu i wraz z nim odpada: urządzenie raportuje pozostałe dni bez odnoszenia ich do pojemności katalogowej. `battery_life_days` pozostaje daną informacyjną karty rejestratora. Wartość katalogowa nadal wiąże wyłącznie przy **bateriach niewymiennych** (`operating_duration_days`, patrz niżej), bo tam urządzenie nie podaje nic.
 * **$\min(1, \Delta t/\Delta t_{ref})$ jest założeniem własnym, nie daną producenta.** Rozstrzygnięte pomiarem: wskazanie stanu baterii w oryginalnym oprogramowaniu jest **identyczne przy 1 min i przy 10 min** (§2.3 U3), więc producent nie publikuje ani nie implikuje żadnej zależności czasu pracy od interwału. Człon przyjmujemy jako zachowawczy w obie strony: przy gęstszym cyklu zakładamy zużycie proporcjonalne do liczby odczytów, przy rzadszym nie zakładamy zysku (pobór spoczynkowy — LCD, zegar, NFC — płynie niezależnie od pomiarów). **Ta wartość czeka na pomiar empiryczny** — §7 pkt 2.
 * **Deratingu temperaturowego świadomie nie modelujemy.** Wcześniejsza wersja wystawiała ostrzeżenie „praca poniżej temperatury referencyjnej” do `HardwareBudget.warnings()`. Mechanizm został **usunięty**, bo dotyczył każdej chłodziarki i każdej zamrażarki bez wyjątku, nie zmieniał wyniku oceny i nie miał odbiorcy — w dokumentacji walidacyjnej wyglądał na zabezpieczenie, którego faktycznie nie było. Temperatura wchodzi do W4 wyłącznie jako bramka W4a. `batteryLifeRefTempC` pozostaje daną informacyjną karty rejestratora. **To jest świadomie przyjęte ryzyko rezydualne** — §7 pkt 1.
-* **Rozbieżność wobec stacji Testo musi być czytelna dla operatora.** Operator widzi w oryginalnym oprogramowaniu „388 dni”, a w planerze budżet po przeliczeniu na cykl i po zapasie — dla $\Delta t$ = 1 min różnica jest ponad dwudziestokrotna. Dlatego komunikat `InsufficientBatteryLevelException` niesie **całe wyprowadzenie**, nie samą liczbę końcową: *„stan ogniwa 400,0 dnia (80 % z 500 dni katalogowych), po zachowawczym przeliczeniu na cykl 1 min → 26,7 dnia; dopuszczalne 17,8 dnia przy zapasie ×1,5, a badanie w komorze X trwa 21,4 dnia”*. Bez tego rozbieżność wygląda na błąd aplikacji.
-* **Sentinel N/D**: jeżeli $SoC < 0$ (wartość `-1`), reguła W4c **nie liczy nic** — zwraca status `UNKNOWN` i blokuje zadanie z komunikatem o konieczności odczytu stanu baterii ze stacji USB. Arytmetyka na `-1` jest niedopuszczalna.
+* **Rozbieżność wobec stacji Testo musi być czytelna dla operatora.** Operator widzi w oryginalnym oprogramowaniu „388 dni”, a w planerze budżet po przeliczeniu na cykl i po zapasie — dla $\Delta t$ = 1 min różnica jest ponad dwudziestokrotna. Dlatego komunikat `InsufficientBatteryLevelException` niesie **całe wyprowadzenie**, nie samą liczbę końcową: *„urządzenie raportuje 388 dni pozostałej pracy, po zachowawczym przeliczeniu na cykl 1 min → 25,9 dnia; dopuszczalne 17,2 dnia przy zapasie ×1,5, a badanie w komorze X trwa 21,4 dnia”*. Bez tego rozbieżność wygląda na błąd aplikacji. Teraz pierwszy człon komunikatu jest **dokładnie tą liczbą, którą operator ma na ekranie stacji** — wcześniej trzeba było w nim tłumaczyć również przeliczenie z procentu.
+* **Brak odczytu**: jeżeli `batteryRemainingDays` jest `null` albo ujemne, reguła W4c **nie liczy nic** — zwraca status `UNKNOWN` i blokuje zadanie z komunikatem o konieczności zczytania rejestratora w stacji USB. Arytmetyka na wartości zastępczej jest niedopuszczalna. Dotyczy to również **każdego rejestratora zastanego w bazie przed migracją V36**: fałszywe `last_battery_level_percent` zostało wyczyszczone, więc do ponownego odczytu sprzęt jest dla planera bez stanu baterii. To zachowanie zamierzone — brak danych jest uczciwy, fikcyjna liczba nie.
 * **Bateria niewymienna (184 T1/T2)**: zamiast $D_{avail}$ obowiązuje pozostały limit `operatingDurationDays`, liczony od `firstActivationDate`.
 
 ### 3.4. Które kryterium wiąże jako pierwsze
 
-Punkt przecięcia $T_{mem} = D_{avail}$ (przy $SoC = 100\%$, $f_{safety} = 1$):
+Punkt przecięcia $T_{mem} = D_{avail}$ (przy świeżym ogniwie, tj. $D_{ref} = D_{spec}$, oraz $f_{safety} = 1$):
 
 | Model | Przecięcie | Interpretacja |
 |---|---|---|
@@ -305,7 +308,7 @@ ALTER TABLE thermo_recorders ADD COLUMN first_activation_date DATE;
 ### 4.3. Modyfikacja encji JPA
 
 1. **`ThermoRecorderModel.java`** — dodać: `sampleCapacity` (Integer), `minOperatingTempC` / `maxOperatingTempC` (Double), `batteryType` (String), `batteryReplaceable` (Boolean, domyślnie `true`), `batteryLifeDays` (Integer), `batteryLifeRefCycleMin` (Integer, domyślnie `15`), `batteryLifeRefTempC` (Double), `operatingDurationDays` (Integer), `batteryShelfLifeMonths` (Integer). Pole `channelCount` **już istnieje** (`ThermoRecorderModel.java:30-33`).
-2. **`ThermoRecorder.java`** — dodać: `lastBatteryLevelPercent` (Integer), `lastBatteryReadAt` (LocalDateTime), `batteryReplacementDate` (LocalDate), `firstActivationDate` (LocalDate). Aktualizacja `lastBatteryLevelPercent` przy każdym odczycie z ramki `ab31` (`TestoUsbImportService`), **z pominięciem wartości `-1`**.
+2. **`ThermoRecorder.java`** — dodać: `batteryRemainingDays` (Integer), `lastBatteryReadAt` (LocalDateTime), `batteryReplacementDate` (LocalDate), `firstActivationDate` (LocalDate). Aktualizacja `batteryRemainingDays` przy każdym odczycie ramką `ab010a` (`TestoRevalidationService`), **z pominięciem wartości `-1`**. Pole `lastBatteryLevelPercent` z pierwotnego wdrożenia **pozostaje w schemacie i encji jako `@Deprecated`** — kolumna jest śladem audytowym tego, co system zapisywał przed korektą protokołu (V36 §3).
 3. Obie encje są `@Audited` — zmiany muszą być odzwierciedlone w tabelach `_aud` (§4.1).
 4. **`ThermoRecorderModel`** dostaje dwie metody pomocnicze, żeby reguła nie powielała arytmetyki: `getSampleCapacityPerChannel()` (pojemność / `channelCount`) oraz `hasHardwareSpecification()` (czy kartoteka ma komplet danych do oceny W4).
 
@@ -379,7 +382,7 @@ Kolejność sprawdzania wewnątrz `evaluate(...)`: **W4a → W4b → W4c**. Wszy
 Pułapki wychwycone przy wdrożeniu:
 
 * `CoolingChamber.getEffectiveMinTempLimit()` zwraca **`Double`** — brak limitu komory to `DATA_INCOMPLETE`, nigdy `null → 0.0`.
-* `SoC < 0` (sentinel `-1` z importu PDF) nie wchodzi do żadnego działania arytmetycznego; kończy się `DATA_INCOMPLETE`.
+* `batteryRemainingDays` ujemne (sentinel `-1` z importu PDF) lub `null` nie wchodzi do żadnego działania arytmetycznego; kończy się `DATA_INCOMPLETE`.
 * Czas misji liczony w `long` — `step4IntervalMinutes × step4SampleCount` przy pojemnościach rzędu 10⁶ przekracza zakres `int`.
 
 ---
@@ -400,14 +403,14 @@ Przyjęte założenia liczbowe: $f_{safety} = 1{,}5$; „misja 21 dni" to `Δt =
 | **ST-W4b-02** | $N_{req}$ = 20 160; testo 184 T3 (40 000 / 1 kanał) | Zaliczone (limit 40 000) |
 | **ST-W4b-03** | $N_{req}$ = 400 000; testo 175 T3 (1 000 000 / **3 kanały** → 333 333 na kanał) | `InsufficientRecorderMemoryException` — **regresja na dzielenie przez `channelCount`** |
 | **ST-W4b-04** | testo 174 T, $\Delta t$ = 1 min oraz 10 min | $T_{mem}$ = 15 999 min i 159 990 min — **zgodność co do minuty ze wskazaniem stacji Testo** (§2.3 U1); regresja na odjęcie jedynki |
-| **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, SoC = 60 %, misja 21 dni. $D_{avail} = 100 \cdot \tfrac{10}{15} \cdot 0{,}60 = 40{,}0$ dnia; próg $40{,}0/1{,}5 = 26{,}7$ dnia | Zaliczone |
-| **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, SoC = 25 %, misja 21 dni. $D_{avail} = 100 \cdot \tfrac{10}{15} \cdot 0{,}25 = 16{,}7$ dnia; próg $11{,}1$ dnia | `InsufficientBatteryLevelException` |
-| **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, SoC = 75 %. $D_{avail} = 500 \cdot \tfrac{1}{15} \cdot 0{,}75 = 25{,}0$ dnia; $T_{mem} = 27{,}8$ dnia | Wiąże **bateria**, nie pamięć — asercja na `HardwareBudget.binding()` |
-| **ST-W4c-04** | SoC = `-1` (odczyt z PDF bez informacji o baterii) oraz SoC = `null` (nigdy nieodczytany) | `HardwareDataIncompleteException`; $D_{avail}$ = `NaN`, **brak arytmetyki na wartości ujemnej** |
-| **ST-W4c-05** | 184 T1 (bateria niewymienna), 80 dni od `firstActivationDate`, misja 21 dni, limit 90 dni | `InsufficientBatteryLevelException` — obowiązuje `operatingDurationDays`; brak odczytu % **nie** jest tu brakiem danych |
+| **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, $D_{ref}$ = 60 dni z urządzenia, misja 21 dni. $D_{avail} = 60 \cdot \tfrac{10}{15} = 40{,}0$ dnia; próg $40{,}0/1{,}5 = 26{,}7$ dnia | Zaliczone |
+| **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, $D_{ref}$ = 25 dni, misja 21 dni. $D_{avail} = 25 \cdot \tfrac{10}{15} = 16{,}7$ dnia; próg $11{,}1$ dnia | `InsufficientBatteryLevelException` |
+| **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, $D_{ref}$ = 375 dni. $D_{avail} = 375 \cdot \tfrac{1}{15} = 25{,}0$ dnia; $T_{mem} = 27{,}8$ dnia | Wiąże **bateria**, nie pamięć — asercja na `HardwareBudget.binding()` |
+| **ST-W4c-04** | `batteryRemainingDays` = `-1` (sentinel z importu PDF) oraz `null` (nigdy nieodczytany) | `HardwareDataIncompleteException`; $D_{avail}$ = `NaN`, **brak arytmetyki na wartości ujemnej** |
+| **ST-W4c-05** | 184 T1 (bateria niewymienna), 80 dni od `firstActivationDate`, misja 21 dni, limit 90 dni | `InsufficientBatteryLevelException` — obowiązuje `operatingDurationDays`; brak odczytu z urządzenia **nie** jest tu brakiem danych |
 | **ST-W4c-06** | Δt = 15 min × 96 próbek; budżet 1,5 dnia mieści sam Krok 4 (1,0 dnia), ale nie pełną misję (1,51 dnia) | Odrzucenie — **regresja na pełny $T_{mission}$**, nie sam Krok 4 |
 
-Dodatkowo pokryte: przeterminowana bateria mimo wysokiego SoC (`batteryShelfLifeMonths`), **niezależność budżetu energii od temperatury komory** (ten sam rejestrator w chłodziarce i w zamrażarce −20 °C dostaje identyczny budżet — regresja na usunięty derating), **obecność pełnego wyprowadzenia w komunikacie odrzucenia** — osobno dla baterii wymiennej („stan ogniwa … % z … dni katalogowych … cykl … min”) i dla loggera jednorazowego („z limitu pracy urządzenia … dni zużyto …”), mapowanie każdego naruszenia na właściwy typ wyjątku w `require(...)`, oraz na poziomie `RecorderAllocationServiceTest` — odrzucenie całej puli na pamięci i na braku odczytu baterii.
+Dodatkowo pokryte: przeterminowana bateria mimo wysokiego stanu naładowania (`batteryShelfLifeMonths`), **niezależność budżetu energii od temperatury komory** (ten sam rejestrator w chłodziarce i w zamrażarce −20 °C dostaje identyczny budżet — regresja na usunięty derating), **obecność pełnego wyprowadzenia w komunikacie odrzucenia** — osobno dla baterii wymiennej („urządzenie raportuje … dni pozostałej pracy … cykl … min”) i dla loggera jednorazowego („z limitu pracy urządzenia … dni zużyto …”), mapowanie każdego naruszenia na właściwy typ wyjątku w `require(...)`, oraz na poziomie `RecorderAllocationServiceTest` — odrzucenie całej puli na pamięci i na braku odczytu baterii.
 
 > **Uwaga o locale**: komunikaty naruszeń formatują liczby przez `String.format`, więc separator dziesiętny zależy od locale JVM. Asercje tekstowe muszą budować oczekiwany fragment tym samym wywołaniem — inaczej test przechodzi lokalnie (`pl-PL`), a pada na CI (`en-US`).
 
@@ -424,7 +427,7 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
    * oba spadły o ~7 dni → licznik jest kalendarzowy, człon cyklu należy usunąć;
    * spadki różne → iloraz daje **zmierzony** współczynnik, lepszy od jakiegokolwiek założenia.
 
-   Zakres skutków: dla 174 T decyzja jest obojętna operacyjnie (poniżej 15 min oba człony są liniowe w $\Delta t$, więc pamięć wiąże wcześniej; powyżej — współczynnik wynosi 1). Realna różnica dotyczy **184 T4 w −80 °C**: przy $\Delta t$ = 5 min i SoC 80 % budżet dopuszczalny wynosi 17,8 dnia z członem cyklu wobec 53,3 dnia bez niego.
+   Zakres skutków: dla 174 T decyzja jest obojętna operacyjnie (poniżej 15 min oba człony są liniowe w $\Delta t$, więc pamięć wiąże wcześniej; powyżej — współczynnik wynosi 1). Realna różnica dotyczy **184 T4 w −80 °C**: przy $\Delta t$ = 5 min i wskazaniu 80 dni budżet dopuszczalny wynosi 17,8 dnia z członem cyklu wobec 53,3 dnia bez niego.
 3. **Zachowanie przy zapełnionej pamięci: zatrzymanie zapisu czy nadpisanie najstarszych odczytów (ring buffer).** Instrukcje wskazują na kryterium stopu „memory full", ale jeśli którykolwiek model nadpisuje dane, przekroczenie W4b oznacza **cichą utratę fragmentu serii pomiarowej**, a nie tylko jej skrócenie — co jest naruszeniem integralności danych wg 21 CFR Part 11 i wymaga podniesienia rangi alertu.
 4. **~~Rozdzielczość wskazania baterii z ramki `ab31`~~ — ZAMKNIĘTE 2026-08-05.** Kwestia okazała się źle postawiona: bajt w ogóle nie był stanem baterii (§2.3 U4). Stan baterii pochodzi z osobnej komendy `ab010a` i jest podawany w **dniach**, więc pytanie o rozdzielczość procentu przestaje mieć sens. Zaproponowany wcześniej parametr `app.planner.w4.soc-reading-tolerance-pp` **nie jest już potrzebny** i nie został wdrożony.
 
@@ -439,7 +442,7 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 |---|---|---|
 | **1** | Migracja `common/V34__Thermo_Recorder_Hardware_Limits.sql` wraz z tabelami `_aud`; aktualizacja encji `ThermoRecorder` i `ThermoRecorderModel` | ✅ zrobione |
 | **2** | `HardwareCapacityService` z kryteriami W4a/W4b/W4c i typem wynikowym `HardwareBudget` | ✅ zrobione |
-| **3** | Zapis `lastBatteryLevelPercent` przy imporcie USB i PDF (z filtrowaniem sentinela `-1`) | ✅ zrobione |
+| **3** | Zapis stanu baterii przy imporcie USB i PDF (z filtrowaniem sentinela `-1`) | ✅ zrobione — od kroku 16 zapisywane są **dni**, nie procent |
 | **4** | Wpięcie w pętlę filtrującą kandydatów w `RecorderAllocationService.allocateRecorders(...)` | ✅ zrobione |
 | **5** | Testy `HardwareCapacityServiceTest` (ST-W4a/b/c) + odblokowanie testu W4 w `RecorderAllocationServiceTest` | ✅ zrobione |
 | **6** | Aktualizacja BA v5.0: zmiana statusu W4 z *deferred* na *active*; rejestracja kwestii otwartych z §7 w dokumentacji walidacyjnej | ⬜ do zrobienia |
@@ -452,7 +455,7 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 | **13** | ~~Pomiar granulacji bajtu `ab31[20]`~~ | ❌ nieaktualne — bajt nie był baterią (§2.3 U4) |
 | **14** | Odkrycie komendy `ab010a` i korekta map protokołu (`TESTO_USB_ANALYSIS.md`, `ANALIZA_TESTO_174T_FINAL.md`) | ✅ zrobione 2026-08-05 |
 | **15** | Odczyt pozostałych dni i progów alarmowych w `testo_usb_reader.py`; sentinel `-1` zamiast fałszywego procentu | ✅ zrobione 2026-08-05 |
-| **16** | Model danych w **dniach** zamiast procentów (`ThermoRecorder`, `ThermoMeasurementSeries`, W4c, karta rejestratora) | ⬜ osobny PR |
+| **16** | Model danych w **dniach** zamiast procentów (`V36__Battery_Remaining_Days.sql`, `ThermoRecorder`, `ThermoMeasurementSeries`, W4c, karta rejestratora) | ✅ zrobione 2026-08-06 |
 
 ---
 

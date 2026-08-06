@@ -1,6 +1,8 @@
 package com.mac.bry.desktop.integration;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -165,6 +167,127 @@ class PlannerSchemaMigrationIntegrationTest {
         assertThat(matches)
                 .as("T1 ma 16 000 odczytów i 90 dni pracy, T4 pracuje do -80 °C — zgadywanie wstawiłoby złe dane")
                 .isFalse();
+    }
+
+    /**
+     * V36 przenosi stan baterii z procentów na dni. Test pilnuje obu stron tej
+     * zmiany: nowe kolumny mają istnieć wszędzie tam, gdzie Envers ich szuka,
+     * a stare {@code last_battery_level_percent} ma <b>zostać</b> — kolumna jest
+     * śladem audytowym tego, co system zapisywał przed korektą protokołu, więc
+     * jej usunięcie byłoby naruszeniem audit trailu, a nie porządkami.
+     */
+    @Test
+    @DisplayName("V36: kolumny battery_remaining_days w egzemplarzu, serii i obu _aud")
+    void v36_batteryRemainingDaysColumnsExist() {
+        Integer applied = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" " +
+                        "WHERE \"version\" = '36' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(applied).isEqualTo(1);
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT battery_remaining_days FROM thermo_recorders LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT battery_remaining_days FROM thermo_recorders_aud LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT battery_remaining_days FROM thermo_measurement_series LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT battery_remaining_days FROM thermo_measurement_series_aud LIMIT 1"
+        )).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("V36: stary procentowy wskaźnik zostaje w schemacie jako ślad audytowy")
+    void v36_keepsLegacyPercentColumns() {
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT last_battery_level_percent, last_battery_read_at FROM thermo_recorders LIMIT 1"
+        )).doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.queryForList(
+                "SELECT battery_level_percent FROM thermo_measurement_series LIMIT 1"
+        )).doesNotThrowAnyException();
+    }
+
+    /**
+     * Czyszczący {@code UPDATE} z V36 na pustej bazie przechodzi zawsze, więc
+     * asercja na wspólnym schemacie nie sprawdzałaby niczego. Ten test buduje
+     * osobną bazę, zatrzymuje Flyway na V35, wstawia rejestrator z wartością
+     * sprzed korekty protokołu (80 = młodszy bajt progu 8,0 °C) i dopiero wtedy
+     * domyka migrację.
+     * <p>
+     * Sedno: bieżący wskaźnik na egzemplarzu nie jest zapisem historycznym —
+     * planer liczy z niego budżet energii <i>teraz</i>. Zostawienie tam progu
+     * alarmowego oznaczałoby, że W4c dalej pracuje na fikcji mimo poprawionego
+     * parsera. Zapis w serii pomiarowej to sytuacja odwrotna: jest częścią
+     * audit trailu i migracja nie ma prawa go tknąć.
+     */
+    @Test
+    @DisplayName("V36: fałszywy procent na egzemplarzu jest czyszczony, zapis w serii zostaje")
+    void v36_clearsRecorderPercentButLeavesSeriesHistory() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName("org.h2.Driver");
+        dataSource.setUrl("jdbc:h2:mem:plannerV36legacy;DB_CLOSE_DELAY=-1;MODE=MySQL");
+        dataSource.setUsername("sa");
+        dataSource.setPassword("");
+
+        FluentConfiguration flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration/common", "classpath:db/migration/h2");
+
+        flyway.target(MigrationVersion.fromVersion("35")).load().migrate();
+
+        JdbcTemplate legacy = new JdbcTemplate(dataSource);
+        legacy.update("INSERT INTO departments (name, abbreviation) VALUES ('Pracownia HLA', 'HLA')");
+        Long departmentId = legacy.queryForObject(
+                "SELECT id FROM departments WHERE abbreviation = 'HLA'", Long.class);
+
+        // Rejestrator wisi na kartotece modelu, a seria pomiarowa na komorze chłodniczej,
+        // ta zaś na urządzeniu i pracowni — do sprawdzenia jednego UPDATE-a nie ma sensu
+        // budować całego drzewa encji.
+        legacy.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        legacy.update(
+                "INSERT INTO thermo_recorders (id, serial_number, model_id, status, department_id, "
+                        + "last_battery_level_percent, last_battery_read_at) "
+                        + "VALUES (1, 'SN-LEGACY', 1, 'ACTIVE', ?, 80, CURRENT_TIMESTAMP)",
+                departmentId);
+        legacy.update(
+                "INSERT INTO thermo_measurement_series (thermo_recorder_id, cooling_chamber_id, "
+                        + "battery_level_percent, logging_interval_minutes, measurements_count, "
+                        + "programming_time_utc, start_delay_minutes, first_measurement_time_utc, "
+                        + "first_measurement_time_local, imported_at, imported_by, raw_hex_dump) "
+                        + "VALUES (1, 1, 80, 15, 100, CURRENT_TIMESTAMP, 0, CURRENT_TIMESTAMP, "
+                        + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'test', 'ab31')");
+        legacy.execute("SET REFERENTIAL_INTEGRITY TRUE");
+
+        flyway.target(MigrationVersion.LATEST).load().migrate();
+
+        Map<String, Object> recorder = legacy.queryForMap(
+                "SELECT last_battery_level_percent, last_battery_read_at, battery_remaining_days "
+                        + "FROM thermo_recorders WHERE serial_number = 'SN-LEGACY'");
+
+        assertThat(recorder.get("LAST_BATTERY_LEVEL_PERCENT"))
+                .as("próg alarmowy udający stan baterii musi zniknąć — inaczej W4c dalej liczy z fikcji")
+                .isNull();
+        assertThat(recorder.get("LAST_BATTERY_READ_AT"))
+                .as("data odczytu bez wartości byłaby śladem pomiaru, którego nie było")
+                .isNull();
+        assertThat(recorder.get("BATTERY_REMAINING_DAYS"))
+                .as("do ponownego zczytania w stacji USB egzemplarz nie ma stanu baterii — brak danych jest uczciwy")
+                .isNull();
+
+        Integer archivedPercent = legacy.queryForObject(
+                "SELECT battery_level_percent FROM thermo_measurement_series WHERE thermo_recorder_id = 1",
+                Integer.class);
+
+        assertThat(archivedPercent)
+                .as("seria pomiarowa jest częścią audit trailu GxP — migracja nie modyfikuje jej zapisu")
+                .isEqualTo(80);
     }
 
     @Test
