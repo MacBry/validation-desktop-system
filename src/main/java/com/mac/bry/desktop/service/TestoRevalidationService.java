@@ -39,6 +39,7 @@ public class TestoRevalidationService {
     private final MetrologicalStatsService metrologicalStatsService;
     private final CoolingChamberRepository coolingChamberRepository;
     private final TestoSimulationService testoSimulationService;
+    private final RecorderBatteryService recorderBatteryService;
 
     /**
      * Inicjalizuje nową sesję rewalidacji w pamięci.
@@ -110,7 +111,7 @@ public class TestoRevalidationService {
         );
 
         // Import z PDF 184 nie niesie stanu baterii — obie wielkości zostają N/D.
-        recordBatteryDays(recorder, result.session.batteryRemainingDays);
+        recorderBatteryService.recordReading(recorder, result.session.batteryRemainingDays);
 
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
@@ -161,28 +162,6 @@ public class TestoRevalidationService {
                 .latestCalibration(latestCal)
                 .series(series)
                 .build();
-    }
-
-    /**
-     * Zapisuje na rejestratorze pozostały czas pracy baterii [dni] — dane wejściowe
-     * reguły W4c (budżet energii przy planowaniu kolejnych badań).
-     * <p>
-     * Wartość pochodzi z ramki {@code ab010a} i jest tą samą liczbą, którą pokazuje
-     * oryginalne oprogramowanie producenta. Sentinel {@code -1} („N/D", gdy źródło
-     * nie raportuje baterii — np. import z PDF 184) jest odrzucany: w kartotece ma
-     * zostać ostatni <b>rzeczywisty</b> odczyt, a nie znacznik braku danych.
-     */
-    private void recordBatteryDays(ThermoRecorder recorder, int batteryRemainingDays) {
-        if (batteryRemainingDays < 0) {
-            log.debug("Pomijam zapis stanu baterii dla {} — źródło nie podało pozostałych dni ({})",
-                    recorder.getSerialNumber(), batteryRemainingDays);
-            return;
-        }
-        recorder.setBatteryRemainingDays(batteryRemainingDays);
-        recorder.setLastBatteryReadAt(LocalDateTime.now());
-        thermoRecorderRepository.save(recorder);
-        log.info("Zaktualizowano stan baterii rejestratora {}: pozostało {} dni",
-                recorder.getSerialNumber(), batteryRemainingDays);
     }
 
     @Transactional
@@ -249,7 +228,7 @@ public class TestoRevalidationService {
                 : usbResult.session.firstMeasurementTimeLocal
         );
 
-        recordBatteryDays(recorder, usbResult.session.batteryRemainingDays);
+        recorderBatteryService.recordReading(recorder, usbResult.session.batteryRemainingDays);
 
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
@@ -383,7 +362,11 @@ public class TestoRevalidationService {
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
-                .batteryLevelPercent(96)
+                // Symulacja odtwarza przebieg temperatury, nie stan ogniwa — żadne
+                // urządzenie tu nie odpowiadało, więc bateria zostaje N/D. Wpisana
+                // wcześniej wartość „96 %" była podwójnie fikcyjna: zmyślona i w
+                // jednostce, której sprzęt nigdy nie raportował.
+                .batteryLevelPercent(-1)
                 .loggingIntervalMinutes(180) // 3 godziny
                 .measurementsCount(40)
                 .programmingTimeUtc(startTimeLocal.minusDays(10).minusHours(2))
