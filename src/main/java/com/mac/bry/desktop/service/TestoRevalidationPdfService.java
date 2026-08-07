@@ -4,7 +4,6 @@ import com.mac.bry.desktop.model.RevalidationSession;
 import com.mac.bry.desktop.model.Calibration;
 import com.mac.bry.desktop.repository.ValidationPlanNumberRepository;
 import com.mac.bry.desktop.service.pdf.RevalidationReportPdfRenderer;
-import com.mac.bry.desktop.service.pdf.IndividualChartPdfRenderer;
 import com.mac.bry.desktop.service.pdf.CalibrationCertificatePdfRenderer;
 import com.mac.bry.desktop.service.pdf.PdfStyleHelper;
 import com.mac.bry.desktop.service.stats.HypothesisTestingService;
@@ -59,13 +58,12 @@ public class TestoRevalidationPdfService {
         );
     }
 
-    /**
-     * Generuje indywidualny wykres przebiegu temperatury dla pojedynczej serii pomiarowej w formacie PDF.
-     */
-    public void generateIndividualSeriesChartPdf(RevalidationSession.GridPosition position, RevalidationSession.PositionData data, File outputFile) throws IOException {
-        log.info("Delegowanie generowania indywidualnego wykresu PDF dla pozycji: {}", position.getLabel());
-        new IndividualChartPdfRenderer().render(position, data, outputFile);
-    }
+    // Metoda generateIndividualSeriesChartPdf i klasa IndividualChartPdfRenderer
+    // zostały usunięte (2026-08-07). Rysowały czwarty, zupełnie inny wariant wykresu
+    // (krzywa wektorowa na PdfContentByte, własna siatka i skala Y), ale nie miały
+    // ani jednego wywołania w aplikacji — indywidualne wykresy w pakiecie powstają
+    // w RevalidationZipCompiler przez JavaFxChartRenderer + TestoPdfReportService.
+    // Martwy renderer w dokumentacji walidacyjnej wygląda na funkcję, której nie ma.
 
     /**
      * Generuje cyfrowy certyfikat wzorcowania dla podanego obiektu wzorcowania (Calibration) w formacie PDF.

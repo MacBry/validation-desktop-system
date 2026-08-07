@@ -191,6 +191,129 @@ public class RevalidationZipCompilerTest {
                 .doesNotContain("-1");
     }
 
+    /**
+     * Buduje minimalną sesję z jedną pozycją i przechwytuje metrykę, która trafia
+     * do indywidualnego wykresu PDF. Pozwala sprawdzić opis rejestratora i stanu
+     * baterii bez powtarzania całego rusztowania sesji w każdym teście.
+     */
+    private TestoPdfReportService.TestoReportData captureReportDataFor(
+            PositionData positionData, Path tempDir) throws Exception {
+        Department department = new Department();
+        department.setName("Dział Walidacji");
+
+        CoolingDevice device = CoolingDevice.builder()
+                .inventoryNumber("DEV-555").name("Liebherr Fridge").department(department).build();
+        CoolingChamber chamber = CoolingChamber.builder()
+                .chamberType(ChamberType.FRIDGE).minOperatingTemp(2.0).maxOperatingTemp(6.0).build();
+
+        Map<GridPosition, PositionData> assignedPositions = new HashMap<>();
+        assignedPositions.put(GridPosition.TOP_FRONT_LEFT, positionData);
+
+        RevalidationSession session = RevalidationSession.builder()
+                .coolingDevice(device).coolingChamber(chamber)
+                .assignedPositions(assignedPositions)
+                .procedureType(GxPProcedureType.PERIODIC_REVALIDATION)
+                .build();
+
+        File mainChartPng = tempDir.resolve("chart.png").toFile();
+        mainChartPng.createNewFile();
+        File indChartPng = tempDir.resolve("individual_chart.png").toFile();
+        indChartPng.createNewFile();
+
+        doNothing().when(pdfService).generateRevalidationReport(any(), any(), any());
+        when(pdfService.getShortCode(GridPosition.TOP_FRONT_LEFT)).thenReturn("GPL");
+        when(chartRenderer.renderSeriesToPng(any())).thenReturn(indChartPng);
+        doNothing().when(pdfReportService).generatePdfReport(any(), any(), any());
+
+        zipCompiler.compile(session, mainChartPng, tempDir.resolve("pkg.zip").toFile());
+
+        ArgumentCaptor<TestoPdfReportService.TestoReportData> captor =
+                ArgumentCaptor.forClass(TestoPdfReportService.TestoReportData.class);
+        verify(pdfReportService).generatePdfReport(captor.capture(), any(), any());
+        return captor.getValue();
+    }
+
+    private ThermoMeasurementSeries seriesWith(Integer remainingDays, Integer legacyPercent) {
+        return ThermoMeasurementSeries.builder()
+                .minTemperature(3.5).maxTemperature(4.5).avgTemperature(4.0)
+                .batteryRemainingDays(remainingDays)
+                .batteryLevelPercent(legacyPercent)
+                .loggingIntervalMinutes(15).measurementsCount(2).startDelayMinutes(0)
+                .firstMeasurementTimeLocal(LocalDateTime.of(2026, 5, 20, 10, 0))
+                .build();
+    }
+
+    @Test
+    @DisplayName("Stan baterii w pakiecie to dni, ta sama wielkość co w zakładce Odczyt Testo")
+    void shouldRenderBatteryAsRemainingDays(@TempDir Path tempDir) throws Exception {
+        PositionData position = PositionData.builder()
+                .serialNumber("SN-174").series(seriesWith(386, null)).build();
+
+        TestoPdfReportService.TestoReportData rd = captureReportDataFor(position, tempDir);
+
+        assertThat(rd.batteryLevel)
+                .as("procent był wielkością wyprowadzoną z progu alarmowego, nie ze stanu ogniwa")
+                .isEqualTo("386 dni pozostałej pracy")
+                .doesNotContain("%");
+    }
+
+    @Test
+    @DisplayName("Seria archiwalna z samym procentem drukuje go z adnotacją, żeby nie udawał dni")
+    void shouldMarkLegacyPercentReading(@TempDir Path tempDir) throws Exception {
+        PositionData position = PositionData.builder()
+                .serialNumber("SN-174").series(seriesWith(null, 80)).build();
+
+        TestoPdfReportService.TestoReportData rd = captureReportDataFor(position, tempDir);
+
+        assertThat(rd.batteryLevel)
+                .startsWith("80%")
+                .as("bez adnotacji ten sam wiersz raportu znaczyłby raz dni, raz procent")
+                .contains("archiwalny");
+    }
+
+    @Test
+    @DisplayName("Zero dni to wyczerpana bateria, nie brak odczytu")
+    void shouldTreatZeroDaysAsMeasuredValue(@TempDir Path tempDir) throws Exception {
+        PositionData position = PositionData.builder()
+                .serialNumber("SN-174").series(seriesWith(0, null)).build();
+
+        TestoPdfReportService.TestoReportData rd = captureReportDataFor(position, tempDir);
+
+        assertThat(rd.batteryLevel).isEqualTo("0 dni pozostałej pracy").isNotEqualTo("N/D");
+    }
+
+    @Test
+    @DisplayName("Rejestrator wielokanałowy niesie numer kanału w metryce wykresu")
+    void shouldQualifySerialNumberWithChannelForMultiChannelRecorders(@TempDir Path tempDir) throws Exception {
+        PositionData position = PositionData.builder()
+                .serialNumber("SN-175-T3")
+                .model(ThermoRecorderModel.builder().name("Testo 175 T3").channelCount(3).build())
+                .channelNumber(2)
+                .series(seriesWith(400, null))
+                .build();
+
+        TestoPdfReportService.TestoReportData rd = captureReportDataFor(position, tempDir);
+
+        assertThat(rd.serialNumber)
+                .as("bez kanału pakiet ma kilka wykresów opisanych tym samym S/N")
+                .isEqualTo("SN-175-T3 (Kanał 2)");
+    }
+
+    @Test
+    @DisplayName("Rejestrator jednokanałowy nie dostaje zbędnego dopisku o kanale")
+    void shouldLeaveSerialNumberIntactForSingleChannelRecorders(@TempDir Path tempDir) throws Exception {
+        PositionData position = PositionData.builder()
+                .serialNumber("SN-174-T")
+                .model(ThermoRecorderModel.builder().name("Testo 174 T").channelCount(1).build())
+                .channelNumber(1)
+                .series(seriesWith(400, null))
+                .build();
+
+        TestoPdfReportService.TestoReportData rd = captureReportDataFor(position, tempDir);
+
+        assertThat(rd.serialNumber).isEqualTo("SN-174-T").doesNotContain("Kanał");
+    }
+
     @Test
     @DisplayName("Powinien skompilować paczkę ZIP zawierającą Załącznik nr 7 zamiast Załącznika nr 3 dla sesji mapowania")
     void shouldCompileZipPackageWithAppendix7ForMappingSession(@TempDir Path tempDir) throws Exception {
