@@ -107,6 +107,23 @@ public class TestoPdfReportService {
             metaTable.addCell(createMetaCell("Liczba punktów:", labelFont, true));
             metaTable.addCell(createMetaCell(String.valueOf(data.measurements.size()), valueFont, false));
 
+            // Charakterystyka serii liczona z TEJ SAMEJ listy punktów, która zasila
+            // wykres w sekcji 2 i wykaz w sekcji 3 — nie z zapisanych agregatów serii.
+            // Dzięki temu metryka opisuje dokładnie tę serię, dla której wykonano
+            // wykres, także na ścieżce odczytu okazjonalnego, gdzie seria nie jest
+            // utrwalona i agregatów po prostu nie ma.
+            SeriesStats stats = SeriesStats.of(data.measurements);
+
+            metaTable.addCell(createMetaCell("Temperatura min.:", labelFont, true));
+            metaTable.addCell(createMetaCell(stats.minFormatted(), valueFont, false));
+            metaTable.addCell(createMetaCell("Temperatura maks.:", labelFont, true));
+            metaTable.addCell(createMetaCell(stats.maxFormatted(), valueFont, false));
+
+            metaTable.addCell(createMetaCell("Temperatura średnia:", labelFont, true));
+            metaTable.addCell(createMetaCell(stats.avgFormatted(), valueFont, false));
+            metaTable.addCell(createMetaCell("Pierwszy odczyt:", labelFont, true));
+            metaTable.addCell(createMetaCell(stats.firstReadingFormatted(), valueFont, false));
+
             document.add(metaTable);
 
             // 3. Suma kontrolna integralności danych (FDA 21 CFR Part 11)
@@ -199,6 +216,52 @@ public class TestoPdfReportService {
             log.error("Błąd podczas generowania raportu PDF", e);
             throw new IOException("Błąd podczas generowania raportu PDF: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Charakterystyka serii pomiarowej wyliczona wprost z punktów trafiających do
+     * raportu. Ta sama definicja co w {@code MetrologicalStatsService} (minimum,
+     * maksimum i średnia arytmetyczna po {@code rawCelsius}), tyle że liczona
+     * lokalnie — raport z odczytu okazjonalnego powstaje na liście punktów, zanim
+     * jakakolwiek seria zostanie utrwalona w bazie.
+     *
+     * @param first czas pierwszego odczytu; lista jest uporządkowana rosnąco po
+     *              {@code measurementIndex} ({@code @OrderBy} na encji serii), więc
+     *              element zerowy to ten sam punkt, od którego zaczyna się wykres
+     *              i wykaz punktów
+     */
+    record SeriesStats(double min, double max, double avg, LocalDateTime first, boolean empty) {
+
+        private static final String NOT_AVAILABLE = "N/D";
+
+        static SeriesStats of(List<ThermoMeasurementPoint> points) {
+            if (points == null || points.isEmpty()) {
+                return new SeriesStats(0, 0, 0, null, true);
+            }
+            double min = Double.MAX_VALUE;
+            double max = -Double.MAX_VALUE;
+            double sum = 0;
+            for (ThermoMeasurementPoint p : points) {
+                double t = p.getRawCelsius();
+                if (t < min) min = t;
+                if (t > max) max = t;
+                sum += t;
+            }
+            return new SeriesStats(min, max, sum / points.size(),
+                    points.get(0).getTimestampLocal(), false);
+        }
+
+        // Wartości zmierzone drukujemy w rozdzielczości rejestratora (0,1 °C),
+        // dokładnie tak jak wykaz punktów w sekcji 3 — dodatkowe miejsce po
+        // przecinku sugerowałoby precyzję, której pomiar nie ma. Średnia jest
+        // wielkością wyliczoną, więc dostaje jedno miejsce więcej.
+        String minFormatted() { return empty ? NOT_AVAILABLE : String.format("%.1f °C", min); }
+
+        String maxFormatted() { return empty ? NOT_AVAILABLE : String.format("%.1f °C", max); }
+
+        String avgFormatted() { return empty ? NOT_AVAILABLE : String.format("%.2f °C", avg); }
+
+        String firstReadingFormatted() { return empty ? NOT_AVAILABLE : first.format(DTF); }
     }
 
     private PdfPCell createMetaCell(String text, Font font, boolean isLabel) {

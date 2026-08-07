@@ -3,6 +3,8 @@ package com.mac.bry.desktop.service;
 import com.mac.bry.desktop.model.Calibration;
 import com.mac.bry.desktop.model.GxPProcedureType;
 import com.mac.bry.desktop.model.RevalidationSession;
+import com.mac.bry.desktop.model.ThermoMeasurementSeries;
+import com.mac.bry.desktop.model.ThermoRecorderModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -143,11 +145,8 @@ public class RevalidationZipCompiler {
             RevalidationSession.GridPosition pos, RevalidationSession.PositionData data) {
         TestoPdfReportService.TestoReportData rd = new TestoPdfReportService.TestoReportData();
         rd.model = data.getModel() != null ? data.getModel().getName() : "Nieznany";
-        rd.serialNumber = data.getSerialNumber();
-        // Sentinel -1 oznacza "N/D" (źródło nie podało stanu baterii). Bez tego
-        // filtra raport GxP drukował "-1%" jako zmierzoną wartość.
-        Integer battery = data.getSeries().getBatteryLevelPercent();
-        rd.batteryLevel = (battery != null && battery >= 0) ? battery + "%" : "N/D";
+        rd.serialNumber = describeRecorder(data);
+        rd.batteryLevel = describeBattery(data.getSeries());
         rd.interval = data.getSeries().getLoggingIntervalMinutes() + " minut";
         Integer startDelay = data.getSeries().getStartDelayMinutes();
         rd.startDelay = (startDelay != null && startDelay > 0)
@@ -156,6 +155,49 @@ public class RevalidationZipCompiler {
         rd.comments = "Pozycja w komorze: " + pos.getLabel();
         rd.measurements = data.getSeries().getMeasurements();
         return rd;
+    }
+
+    /**
+     * Numer seryjny uzupełniony o kanał dla rejestratorów wielokanałowych.
+     * Bez tego pakiet z 175 T3 (3 kanały) albo 176 T3/T4 (4 kanały) zawiera kilka
+     * wykresów opisanych <b>tym samym</b> numerem seryjnym i z samego dokumentu nie
+     * da się ustalić, którego czujnika dotyczy odczyt. Nazwa pliku niesie kod
+     * pozycji, ale dokument wyjęty z pakietu już nie.
+     */
+    private String describeRecorder(RevalidationSession.PositionData data) {
+        ThermoRecorderModel model = data.getModel();
+        boolean multiChannel = model != null
+                && model.getChannelCount() != null
+                && model.getChannelCount() > 1;
+
+        return (multiChannel && data.getChannelNumber() != null)
+                ? data.getSerialNumber() + " (Kanał " + data.getChannelNumber() + ")"
+                : data.getSerialNumber();
+    }
+
+    /**
+     * Stan baterii w <b>dniach</b> — tej samej wielkości, którą pokazuje zakładka
+     * Odczyt Testo i oprogramowanie producenta. Wcześniej pakiet drukował tu
+     * {@code batteryLevelPercent}, więc ten sam wiersz raportu znaczył dni w jednym
+     * dokumencie, a procent w drugim.
+     * <p>
+     * Serie sprzed migracji V36 mają wyłącznie dawny procent — wyliczony z bajtu,
+     * który okazał się progiem alarmowym temperatury. Drukujemy go z adnotacją
+     * zamiast ukrywać: seria archiwalna ma prawo pokazać to, co wtedy zapisano,
+     * ale czytelnik musi wiedzieć, że to inna wielkość i pochodzi sprzed korekty.
+     * <p>
+     * Sentinel {@code -1} w obu polach oznacza brak odczytu, nie wartość zmierzoną.
+     */
+    private String describeBattery(ThermoMeasurementSeries series) {
+        Integer days = series.getBatteryRemainingDays();
+        if (days != null && days >= 0) {
+            return days + " dni pozostałej pracy";
+        }
+
+        Integer legacyPercent = series.getBatteryLevelPercent();
+        return (legacyPercent != null && legacyPercent >= 0)
+                ? legacyPercent + "% (odczyt archiwalny sprzed korekty jednostki)"
+                : "N/D";
     }
 
     private File resolveCertificateFile(Calibration cal, String sn, List<File> tempFiles) throws Exception {
