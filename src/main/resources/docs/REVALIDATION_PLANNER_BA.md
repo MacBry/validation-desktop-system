@@ -2,6 +2,7 @@
 ## Moduł: Inteligentny Planer Rewalidacji Okresowych i Mapowań (Revalidation & Mapping Scheduler)
 **System**: `validation-desktop` (JavaFX / Spring Boot / GxP / ISO 17025)  
 **Data opracowania**: 2026-07-28  
+**Data korekty**: 2026-08-07 — reguła W4 przeniesiona ze statusu *deferred* do *active* (§5 pkt 4); szczegóły wdrożenia i kwestie otwarte w suplemencie W4 v1.5  
 **Lokalizacja**: `src/main/resources/docs/REVALIDATION_PLANNER_BA.md`  
 
 ---
@@ -87,7 +88,7 @@ $$\text{Testo\_Start\_Delay\_Minutes} = \text{Krok\_2\_Umieszczenie\_Minutes} + 
 1. **W1 (Calibration Expiry)**: Świadectwo wzorcowania ważne przez cały okres pomiaru $+ 7\text{ dni}$.
 2. **W2 (Capacity)**: Wystarczająca liczba wolnych rejestratorów w oknie czasowym.
 3. **W3 (Zero-Junk Data)**: Brak zapisu pomiarów podczas stabilizacji.
-4. **W4 (Hardware Limits)**: Nieprzekroczenie pamięci i baterii ($>50\%$). **Wymaga danych sprzętowych**: pola `batteryLevel` oraz `sampleCapacity` na encji `ThermoRecorder` (**do dodania**) lub odczyt ze stacji Testo/importu `.vi2`. Do czasu udostępnienia tych danych reguła jest oznaczona jako *deferred* (nie blokuje MVP planera).
+4. **W4 (Hardware Limits)**: Status *active* — reguła blokuje planowanie. Trzy kryteria: **W4a** zakres pracy urządzenia wobec temperatury komory (bramka twarda), **W4b** pojemność pamięci na kanał wobec liczby próbek GxP, **W4c** budżet energii na pełny czas misji z zapasem ×1,5. Budżet energii liczony jest **w dniach, nie w procentach** — próg „$>50\%$" z wcześniejszych wersji BA odpadł wraz z ustaleniem, że urządzenie raportuje pozostałe dni wprost (ramka `ab010a`), a bajt czytany wcześniej jako stan naładowania był progiem alarmowym temperatury. Dane sprzętowe: `ThermoRecorder.batteryRemainingDays` i `ThermoRecorderModel.sampleCapacity` (migracje V34–V36). Model matematyczny, scenariusze testowe i **kwestie otwarte wymagające decyzji przy zatwierdzaniu walidacyjnym**: `REVALIDATION_PLANNER_W4_SUPPLEMENT.md` (wersja 1.5) — §7 pkt 1 (brak deratingu temperaturowego) i §7 pkt 2a (przenoszalność zmierzonego kosztu odczytu na −80 °C).
 5. **W5 (No Double-Booking)**: Brak nakładania się zadań dla rejestratora z buforem logistycznym.
 6. **W6 (No-Gap Deadline)**: Wykonanie badania przed wygaśnięciem poprzedniej walidacji.
 7. **W7 (Readout Timeout Alert)**: Alert przy braku odczytu po przekroczeniu buforu z Kroku 5.

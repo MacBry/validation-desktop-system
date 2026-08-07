@@ -34,7 +34,11 @@ class HardwareCapacityServiceTest {
     private static final LocalDate MISSION_START = LocalDate.of(2026, 8, 3);
     private static final double SAFETY_FACTOR = 1.5;
 
-    private final HardwareCapacityService service = new HardwareCapacityService(SAFETY_FACTOR);
+    /** Koszt jednego odczytu w minutach pracy spoczynkowej — zmierzony 2026-08-07 (§2.5). */
+    private static final double MEASUREMENT_COST_MIN = 1.0;
+
+    private final HardwareCapacityService service =
+            new HardwareCapacityService(SAFETY_FACTOR, MEASUREMENT_COST_MIN);
 
     // --- budowniczowie danych katalogowych ---------------------------------
 
@@ -283,8 +287,8 @@ class HardwareCapacityServiceTest {
                     recorder(testo184T4(), 60), mission21Days(), chamber("Zamrażarka -80", -80.0, -60.0),
                     MISSION_START);
 
-            // 60 dni × min(1; 10/15) = 40,0 dnia; dopuszczalne 40/1,5 = 26,7 > 21
-            assertThat(budget.batteryLimitDays()).isCloseTo(40.0, org.assertj.core.data.Offset.offset(0.1));
+            // 60 dni × 10/(10+1) = 54,5 dnia; dopuszczalne 54,5/1,5 = 36,4 > 21
+            assertThat(budget.batteryLimitDays()).isCloseTo(54.5, org.assertj.core.data.Offset.offset(0.1));
             assertThat(budget.missionDays()).isCloseTo(21.0, org.assertj.core.data.Offset.offset(0.01));
             assertThat(budget.isAcceptable()).isTrue();
         }
@@ -300,21 +304,28 @@ class HardwareCapacityServiceTest {
                     .filter(v -> v.rule() == HardwareViolation.Rule.BATTERY)
                     .findFirst().orElseThrow();
 
-            assertThat(battery.available()).isCloseTo(16.7, org.assertj.core.data.Offset.offset(0.1));
+            // 25 dni × 10/(10+1) = 22,7 dnia; dopuszczalne 22,7/1,5 = 15,2 < 21
+            assertThat(battery.available()).isCloseTo(22.7, org.assertj.core.data.Offset.offset(0.1));
             assertThat(battery.required()).isCloseTo(21.0, org.assertj.core.data.Offset.offset(0.01));
         }
 
         @Test
         @DisplayName("ST-W4c-03: przy gęstym próbkowaniu wiąże bateria, nie pamięć")
         void st_w4c_03_bindingConstraintIsReported() {
-            // 184 T3, +4 °C, Δt = 1 min, urządzenie raportuje 375 dni:
-            //   pamięć  = 39 999 × 1 min  = 27,8 dnia
-            //   bateria = 375 × (1/15)    = 25,0 dnia → dopuszczalne 16,7
+            // 184 T3, +4 °C, Δt = 1 min, urządzenie raportuje 60 dni:
+            //   pamięć  = 39 999 × 1 min   = 27,8 dnia
+            //   bateria = 60 × 1/(1+1)     = 30,0 dnia → dopuszczalne 20,0
+            //
+            // Wskazanie wyjściowe obniżone z 375 do 60 dni wraz z korektą członu
+            // cyklu (§2.5): przy zmierzonym modelu 1 min zabiera połowę budżetu,
+            // a nie czternaście piętnastych, więc energia wiąże wcześniej niż
+            // pamięć dopiero przy ogniwie bliskim wyczerpania. Sama zmiana progu
+            // jest tu wynikiem pomiaru, nie dopasowaniem testu do kodu.
             HardwareBudget budget = service.evaluate(
-                    recorder(testo184T3(), 375), config(1, 20000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo184T3(), 60), config(1, 20000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             assertThat(budget.memoryLimitDays()).isCloseTo(27.8, org.assertj.core.data.Offset.offset(0.1));
-            assertThat(budget.batteryLimitDays()).isCloseTo(25.0, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(budget.batteryLimitDays()).isCloseTo(30.0, org.assertj.core.data.Offset.offset(0.1));
             assertThat(budget.binding()).isEqualTo(HardwareBudget.BindingConstraint.BATTERY);
         }
 
@@ -355,7 +366,7 @@ class HardwareCapacityServiceTest {
         @Test
         @DisplayName("ST-W4c-06: budżet liczy pełną misję, nie sam Krok 4")
         void st_w4c_06_missionIncludesStabilisationAndReadoutBuffer() {
-            // Budżet dobrany tak, by próg dopuszczenia (2 dni / 1,5 = 1,33) leżał
+            // Budżet dobrany tak, by próg dopuszczenia (1,875 / 1,5 = 1,25) leżał
             // między czasem samego Kroku 4 (1,0 dnia) a pełnym czasem misji
             // (1,51 dnia): gdyby reguła liczyła tylko pomiar, rejestrator
             // zostałby dopuszczony.
@@ -372,7 +383,9 @@ class HardwareCapacityServiceTest {
             assertThat(budget.missionDays())
                     .as("20 min + 6 h stabilizacji + 24 h pomiaru + 6 h na odczyt")
                     .isCloseTo(1.514, org.assertj.core.data.Offset.offset(0.01));
-            assertThat(budget.batteryLimitDays()).isEqualTo(2.0); // 2 dni z urządzenia × cykl 1,0
+            // 2 dni z urządzenia × 15/(15+1) = 1,875; próg 1,875/1,5 = 1,25 —
+            // powyżej samego Kroku 4 (1,0), poniżej pełnej misji (1,51)
+            assertThat(budget.batteryLimitDays()).isEqualTo(1.875);
             assertThat(budget.violations())
                     .extracting(HardwareViolation::rule)
                     .containsExactly(HardwareViolation.Rule.BATTERY);
@@ -421,9 +434,9 @@ class HardwareCapacityServiceTest {
             // 184 T3: 30 000 próbek mieści się w pamięci (40 000), więc
             // odrzucenie jest wyłącznie energetyczne.
             //   misja  = 20 min + 6 h + 1 min × 30 000 + 6 h = 21,35 dnia
-            //   budżet = 400 dni × (1/15) = 26,7 → dopuszczalne 17,8 dnia
+            //   budżet = 50 dni × 1/(1+1) = 25,0 → dopuszczalne 16,7 dnia
             HardwareBudget budget = service.evaluate(
-                    recorder(testo184T3(), 400), config(1, 30000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+                    recorder(testo184T3(), 50), config(1, 30000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
 
             HardwareViolation battery = budget.violations().stream()
                     .filter(v -> v.rule() == HardwareViolation.Rule.BATTERY)
@@ -432,8 +445,39 @@ class HardwareCapacityServiceTest {
             assertThat(battery.message())
                     .as("liczba z urządzenia musi być widoczna w komunikacie, "
                             + "żeby dała się zestawić ze stacją Testo")
-                    .contains("urządzenie raportuje 400 dni")
+                    .contains("urządzenie raportuje 50 dni")
                     .contains("cykl 1 min");
+        }
+
+        @Test
+        @DisplayName("ST-W4c-07: człon cyklu odtwarza tempo spadku wskazania zmierzone na sprzęcie")
+        void st_w4c_07_cycleFactorMatchesMeasuredDrainRate() {
+            // Pomiar 2026-08-07, trzy egzemplarze 174 T, bieg 5→7 sierpnia
+            // (suplement W4 §2.5). Wskazanie schodzi w tempie 1 + T_c/Δt dnia
+            // na dobę, więc budżet dla badania to D_ref podzielone przez to tempo.
+            //
+            //   Δt = 15 min → tempo 1,067 (zmierzone 1,02) → 480 × 15/16 = 450,0
+            //   Δt = 10 min → tempo 1,100                  → 480 × 10/11 = 436,4
+            //   Δt =  1 min → tempo 2,000 (zmierzone 2,05) → 480 ×  1/2  = 240,0
+            int referenceDays = 480;
+            var fridge = chamber("Chłodziarka", 2.0, 8.0);
+
+            assertThat(service.evaluate(recorder(testo184T3(), referenceDays), config(15, 100),
+                    fridge, MISSION_START).batteryLimitDays())
+                    .isCloseTo(450.0, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(service.evaluate(recorder(testo184T3(), referenceDays), config(10, 100),
+                    fridge, MISSION_START).batteryLimitDays())
+                    .isCloseTo(436.4, org.assertj.core.data.Offset.offset(0.1));
+
+            double atOneMinute = service.evaluate(recorder(testo184T3(), referenceDays), config(1, 100),
+                    fridge, MISSION_START).batteryLimitDays();
+            assertThat(atOneMinute)
+                    .as("gęste próbkowanie połowi budżet — tyle wynika z pomiaru")
+                    .isCloseTo(240.0, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(atOneMinute)
+                    .as("regresja na obalony człon min(1; Δt/Δt_ref), który dawał tu 32 dni "
+                            + "— 7,3× za mało wobec zmierzonego zużycia")
+                    .isNotCloseTo(referenceDays / 15.0, org.assertj.core.data.Offset.offset(1.0));
         }
 
         @Test

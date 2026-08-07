@@ -3,7 +3,7 @@
 **System**: `validation-desktop` (JavaFX / Spring Boot / GxP / ISO 17025)
 **Dokument nadrzędny**: `src/main/resources/docs/REVALIDATION_PLANNER_BA.md` (BA v5.0, reguła W4)
 **Data opracowania**: 2026-07-30
-**Data korekty**: 2026-08-06 (wersja 1.4)
+**Data korekty**: 2026-08-07 (wersja 1.5)
 **Status**: Reguła W4 wdrożona (Hardware Limits: zakres pracy, pamięć, budżet baterii)
 
 ---
@@ -14,6 +14,7 @@
 |---|---|---|
 | 1.0 | 2026-07-30 | Pierwsza wersja planu W4 (model `Battery_eff = Battery × k_temp`) |
 | 1.1 | 2026-07-31 | **Korekta modelu matematycznego.** Procentowy derating baterii zastąpiony budżetem czasu pracy w dniach, zgodnym z kartami katalogowymi Testo; dodana twarda bramka zakresu pracy urządzenia; poprawione pojemności pamięci (175 ≠ 176, 184 T1 ≠ T3); uwzględniona liczba kanałów i pełny czas misji; poprawiony punkt wpięcia w `RecorderAllocationService`; migracja rozbita na `h2`/`mysql` wraz z tabelami Envers. |
+| 1.5 | 2026-08-07 | **Człon cyklu zmierzony, nie założony (§2.5).** Bieg trzech egzemplarzy 174 T przy Δt = 1/10/15 min obalił obie dotychczasowe hipotezy: przy 1 min wskazanie schodzi 2,05 dnia na dobę, wobec 1,0 dla licznika czysto zegarowego i 15,0 dla zużycia proporcjonalnego do pomiarów. Człon $\min(1, \Delta t/\Delta t_{ref})$ zastąpiony zmierzonym $\Delta t/(\Delta t + T_c)$ przy $T_c$ = 1 min; $\Delta t_{ref}$ przestaje wchodzić do arytmetyki W4c. Przeliczone ST-W4c-01/02/03/06, nowy scenariusz ST-W4c-07 kotwiczący współczynnik w danych pomiarowych, przeliczone punkty przecięcia §3.4. Nowe ryzyko rezydualne: $T_c$ zmierzone na 174 T w temperaturze pokojowej, stosowane do 184 T4 w −80 °C (§7 pkt 2). |
 | 1.4 | 2026-08-06 | **Doba kontrolna na dwóch egzemplarzach (§2.4).** Rejestrator bezczynny i pracujący przy Δt = 10 min tracą tyle samo wskazania — obserwacja sprzeczna z hipotezą zużycia proporcjonalnego do liczby pomiarów, przemawiająca za licznikiem zegarowym. Poprawiony protokół §7 pkt 2: bieg przy Δt = 1 min zamiast 15 min, bo przy cyklu referencyjnym obie hipotezy przewidują ten sam spadek i taki pomiar nie mógłby niczego rozstrzygnąć. Odczyt i zapis stanu baterii zweryfikowane na sprzęcie wobec oprogramowania producenta (krok 17). |
 | 1.3 | 2026-08-06 | **Jednostką stanu baterii są dni.** $D_{ref}$ przestaje być wyprowadzane z $D_{spec} \cdot SoC/100$ i jest czytane wprost z urządzenia (ramka `ab010a`, §2.3 U5) — symbol $SoC$ znika z modelu, a $D_{spec}$ zostaje daną informacyjną, wiążącą już tylko dla baterii niewymiennych. Migracja jednostki `common/V36__Battery_Remaining_Days.sql` wraz z wyczyszczeniem fałszywego `last_battery_level_percent` na egzemplarzach; przeliczone scenariusze ST-W4c-01…04 i przykład wyprowadzenia w komunikacie odrzucenia. |
 | 1.2 | 2026-07-31 | **Synchronizacja z wdrożeniem.** Poprawiona arytmetyka ST-W4c-01/02 (pominięty współczynnik cyklu); migracja scalona do jednej przenośnej w `common/`; W4b dostaje własny wyjątek zamiast reużycia W2-owego; ocena zwraca `HardwareBudget` zamiast rzucać wyjątkiem wewnątrz filtra kandydatów; zastrzeżenie temperaturowe opisane jako ostrzeżenie, nie blokada. |
@@ -85,7 +86,7 @@ Liczba **interwałów** to 15 999 = 16 000 − 1; pierwszy odczyt zapada w chwil
 
 **U2 — zmiana zakresu alarmowego (2…8 °C) nie zmienia „Okresu”.** Producent nie wiąże progów alarmowych z czasem pracy. Nasza reguła też nie — zgodność potwierdzona.
 
-**U3 — wskazanie stanu baterii jest podawane w dniach i nie zależy od interwału.** Urządzenie pokazywało `Stan baterii: 388 dni` **identycznie przy 1 min i przy 10 min**. Przy katalogowych 500 dniach daje to $388/500 = 77{,}6\%$. Wskazanie producenta to zatem **stan naładowania wyrażony w dniach referencyjnych**, a nie prognoza czasu pracy dla ustawionego cyklu — Testo takiej prognozy w ogóle nie oferuje. Konsekwencja dla §3.3: producent **nie dostarcza żadnej zależności zużycia od interwału**, więc człon $\min(1, \Delta t/\Delta t_{ref})$ jest naszym własnym założeniem inżynierskim i musi być tak opisany.
+**U3 — wskazanie stanu baterii jest podawane w dniach i nie zależy od interwału.** Urządzenie pokazywało `Stan baterii: 388 dni` **identycznie przy 1 min i przy 10 min**. Przy katalogowych 500 dniach daje to $388/500 = 77{,}6\%$. Wskazanie producenta to zatem **stan naładowania wyrażony w dniach referencyjnych**, a nie prognoza czasu pracy dla ustawionego cyklu — Testo takiej prognozy w ogóle nie oferuje. Konsekwencja dla §3.3: producent **nie dostarcza żadnej zależności zużycia od interwału**, więc człon cyklu musi pochodzić od nas i być tak opisany. *(Do wersji 1.4 było to założenie inżynierskie $\min(1, \Delta t/\Delta t_{ref})$; od wersji 1.5 — wielkość zmierzona własnym biegiem, §2.5.)*
 
 **U4 — `payload_31[20]` NIE JEST STANEM BATERII.** *(Ustalenie skorygowane 2026-08-05 po zbadaniu kolejnych egzemplarzy — pierwotnie zapisano tu hipotezę „procent z granulacją 5 %", która okazała się błędna.)*
 
@@ -135,6 +136,28 @@ Pierwszy pomiar zestawiający **obciążenie pomiarowe** ze spadkiem wskazania. 
 
 > **Uwaga metodyczna.** Sam egzemplarz A niczego by nie dowiódł: model z członem cyklu przewiduje dla niego spadek 1,5 dnia, co po zaokrągleniu również mogło dać 387. Dowodową wartość ma dopiero **kontrast** z egzemplarzem B. To ta sama lekcja co przy §2.3 U4 — jedna zgodna obserwacja nie potwierdza hipotezy; potrzebny jest punkt, który może ją **obalić**.
 
+### 2.5. Pomiar zależności zużycia od cyklu — trzy egzemplarze 174 T, 2026-08-07
+
+Wykonanie protokołu z §7 pkt 2. Trzy egzemplarze pracowały równolegle od 5 do 7 sierpnia w temperaturze pokojowej, każdy przy innym interwale. Czas pracy nie był przyjmowany z kalendarza, lecz **wyliczony z danych zaimportowanych przez aplikację** jako `liczba odczytów × Δt` — wszystkie trzy dają ok. 2 doby, co jest zarazem kontrolą poprawności odczytu obu pól z urządzenia.
+
+| Egzemplarz | Δt | Odczytów | Czas pracy | Wskazanie 05.08 | Wskazanie 07.08 | Spadek | Tempo [dni/dobę] |
+|---|---|---|---|---|---|---|---|
+| A | 15 min | 188 | 1,96 doby | 388 dni | 386 dni | 2 dni | **1,02** |
+| B | 1 min | 2810 | 1,95 doby | 42 dni | 38 dni | 4 dni | **2,05** |
+| C | 10 min | 288 | 2,00 doby | — (nieodczytane) | 484 dni | — | — |
+
+**U7 — zużycie ma składową spoczynkową i pomiarową; obie hipotezy z §2.4 są obalone.** Dla egzemplarza B przy Δt = 1 min konkurencyjne modele przewidywały spadek: licznik czysto zegarowy **2 dni**, zużycie proporcjonalne do liczby pomiarów **29 dni**. Obserwacja — **4 dni** — nie mieści się w żadnym z nich. Dopasowanie modelu $D = Q/(I_q + q/\Delta t)$, zapowiedzianego w §7 pkt 2, daje tempo spadku wskazania:
+
+$$\rho(\Delta t) = 1 + \frac{T_c}{\Delta t} \quad [\text{dni/dobę}], \qquad T_c \approx 1{,}05\ \text{min}$$
+
+czyli: **jeden odczyt kosztuje mniej więcej tyle energii, co minuta pracy spoczynkowej.** Stąd przy Δt = 1 min wskazanie schodzi dokładnie dwa razy szybciej niż czas — i tak jest.
+
+**Niepewność.** Przy granulacji wskazania równej 1 dzień i oknie dwóch dób $T_c$ mieści się w przedziale ok. **0,8–1,6 min** (zależnie od reguły zaokrąglania w urządzeniu). Do modelu przyjęto $T_c$ = **1,0 min** — wartość najlepiej dopasowaną, o czytelnej interpretacji fizycznej. Parametr jest konfigurowalny (`app.planner.w4.measurement-cost-minutes`), żeby dłuższy bieg mógł zawęzić przedział bez zmiany kodu.
+
+**Egzemplarze A i C nie mają wartości dowodowej** — przy 15 i 10 min oba modele przewidują spadek nieodróżnialny od zegarowego w granulacji jednego dnia. Cały ciężar dowodu niesie bieg 1-minutowy, dokładnie tak, jak przewidywał poprawiony protokół. Egzemplarz C wszedł do biegu bez odczytanego stanu wyjściowego, więc dostarcza wyłącznie punktu odniesienia na przyszłość (484 dni na 07.08) i potwierdzenia, że świeże ogniwo 174 T startuje blisko katalogowych 500 dni.
+
+> **Uwaga metodyczna.** Dwa kolejne pomiary — §2.4 i §2.5 — obaliły po jednej hipotezie, w tym tę, którą sam §2.4 wskazywał jako prawdopodobną. Doba kontrolna nie była błędem: przy Δt = 10 min składowa pomiarowa wynosi 0,1 dnia na dobę i **musiała** zginąć w zaokrągleniu. Wniosek do stosowania szerzej: obserwacja zgodna z hipotezą przy niewystarczającej rozdzielczości pomiaru nie jest jej potwierdzeniem, tylko brakiem informacji.
+
 ---
 
 ## 3. Model Matematyczny Reguły W4
@@ -150,8 +173,9 @@ Oznaczenia:
 | $T_{mission}$ | pełny czas pracy rejestratora [min] | patrz §3.3 |
 | $T_{chamber}$ | temperatura pracy komory [°C] | `chamber.getEffectiveMinTempLimit()` |
 | $D_{spec}$ | katalogowa żywotność baterii [dni] | `model.batteryLifeDays` — **dana informacyjna**, do W4c nie wchodzi |
-| $\Delta t_{ref}$, $T_{ref}$ | warunki referencyjne specyfikacji | `model.batteryLifeRefCycleMin` (15 min), `model.batteryLifeRefTempC` |
+| $\Delta t_{ref}$, $T_{ref}$ | warunki referencyjne specyfikacji | `model.batteryLifeRefCycleMin` (15 min), `model.batteryLifeRefTempC` — **dane informacyjne**, od wersji 1.5 do W4c nie wchodzą |
 | $D_{ref}$ | pozostały czas pracy odczytany z urządzenia [dni] | `recorder.batteryRemainingDays` (ramka `ab010a`) |
+| $T_c$ | koszt jednego odczytu w minutach pracy spoczynkowej | **zmierzony** (§2.5): 1,0 min; `app.planner.w4.measurement-cost-minutes` |
 
 ### 3.1. Kryterium W4a — Zakres pracy (bramka twarda)
 
@@ -203,9 +227,14 @@ $$D_{ref}[\text{dni}] = \text{recorder.batteryRemainingDays}$$
 
 Do sierpnia 2026 wielkość ta była wyprowadzana jako $D_{spec} \cdot SoC/100$, gdzie „$SoC$” pochodził z bajtu okazującego się **młodszym bajtem górnego progu alarmowego** (§2.3 U4) — rejestrator z 42 dniami życia wyceniano wtedy na 400 dni. Wraz z odczytem wprost znika z modelu zarówno $SoC$, jak i zależność od poprawności `battery_life_days` w kartotece modelu. Migracja jednostki: `V36__Battery_Remaining_Days.sql`.
 
-**Krok 2 — budżet dla tego konkretnego badania**, po zachowawczym przeliczeniu na cykl pomiarowy:
+**Krok 2 — budżet dla tego konkretnego badania**, po przeliczeniu na cykl pomiarowy. Wskazanie urządzenia schodzi w tempie $\rho(\Delta t) = 1 + T_c/\Delta t$ dnia na dobę (§2.5), więc realny czas pracy przy tym interwale to $D_{ref}$ podzielone przez to tempo:
 
-$$D_{avail}[\text{dni}] = D_{ref} \cdot \min\!\left(1,\ \frac{\Delta t}{\Delta t_{ref}}\right)$$
+$$D_{avail}[\text{dni}] = \frac{D_{ref}}{1 + T_c/\Delta t} = D_{ref} \cdot \frac{\Delta t}{\Delta t + T_c}$$
+
+| $\Delta t$ | 1 min | 5 min | 10 min | 15 min | 60 min |
+|---|---|---|---|---|---|
+| **współczynnik cyklu, wersja 1.5** | 0,500 | 0,833 | 0,909 | 0,938 | 0,984 |
+| ~~wersja 1.4, $\min(1, \Delta t/\Delta t_{ref})$~~ | ~~0,067~~ | ~~0,333~~ | ~~0,667~~ | ~~1,000~~ | ~~1,000~~ |
 
 **Warunek dopuszczenia:**
 
@@ -213,9 +242,10 @@ $$\frac{T_{mission}}{1440} \le \frac{D_{avail}}{f_{safety}}, \qquad f_{safety} =
 
 * **Błąd walidacji**: `InsufficientBatteryLevelException`.
 * **$D_{spec}$ nie wchodzi już do W4c dla baterii wymiennych.** Kwestia doboru wartości katalogowej „dla warunków najbliższych misji” dotyczyła modelu wyprowadzanego z procentu i wraz z nim odpada: urządzenie raportuje pozostałe dni bez odnoszenia ich do pojemności katalogowej. `battery_life_days` pozostaje daną informacyjną karty rejestratora. Wartość katalogowa nadal wiąże wyłącznie przy **bateriach niewymiennych** (`operating_duration_days`, patrz niżej), bo tam urządzenie nie podaje nic.
-* **$\min(1, \Delta t/\Delta t_{ref})$ jest założeniem własnym, nie daną producenta.** Rozstrzygnięte pomiarem: wskazanie stanu baterii w oryginalnym oprogramowaniu jest **identyczne przy 1 min i przy 10 min** (§2.3 U3), więc producent nie publikuje ani nie implikuje żadnej zależności czasu pracy od interwału. Człon przyjmujemy jako zachowawczy w obie strony: przy gęstszym cyklu zakładamy zużycie proporcjonalne do liczby odczytów, przy rzadszym nie zakładamy zysku (pobór spoczynkowy — LCD, zegar, NFC — płynie niezależnie od pomiarów). **Ta wartość czeka na pomiar empiryczny** — §7 pkt 2.
+* **Człon cyklu pochodzi z pomiaru własnego, nie z danych producenta.** Że producent go nie publikuje, wiadomo z §2.3 U3: wskazanie stanu baterii jest **identyczne przy 1 min i przy 10 min**, więc nie jest prognozą dla ustawionego interwału i samo z siebie nie mówi nic o zużyciu. Zależność zmierzono własnym biegiem (§2.5) i to ona stoi za wzorem powyżej. Do wersji 1.4 obowiązywał tu **zachowawczy domysł** $\min(1, \Delta t/\Delta t_{ref})$, zakładający zużycie wprost proporcjonalne do liczby odczytów; pomiar pokazał, że przy Δt = 1 min był **7,3× za pesymistyczny**, a przy Δt = 15 min o ok. 6 % za optymistyczny. Regresja: **ST-W4c-07**.
+* **$\Delta t_{ref}$ wypada z arytmetyki W4c.** Koszt odczytu $T_c$ jest wielkością fizyczną ogniwa i elektroniki, a nie odniesieniem do cyklu z karty katalogowej — nowy wzór nie potrzebuje warunku referencyjnego. `battery_life_ref_cycle_min` zostaje daną informacyjną karty rejestratora (pokazywaną przy szacowanym czasie pracy), tak samo jak `battery_life_ref_temp_c`. **Skutek dla kartotek modeli**: błędna wartość w tym polu nie fałszuje już budżetu energii.
 * **Deratingu temperaturowego świadomie nie modelujemy.** Wcześniejsza wersja wystawiała ostrzeżenie „praca poniżej temperatury referencyjnej” do `HardwareBudget.warnings()`. Mechanizm został **usunięty**, bo dotyczył każdej chłodziarki i każdej zamrażarki bez wyjątku, nie zmieniał wyniku oceny i nie miał odbiorcy — w dokumentacji walidacyjnej wyglądał na zabezpieczenie, którego faktycznie nie było. Temperatura wchodzi do W4 wyłącznie jako bramka W4a. `batteryLifeRefTempC` pozostaje daną informacyjną karty rejestratora. **To jest świadomie przyjęte ryzyko rezydualne** — §7 pkt 1.
-* **Rozbieżność wobec stacji Testo musi być czytelna dla operatora.** Operator widzi w oryginalnym oprogramowaniu „388 dni”, a w planerze budżet po przeliczeniu na cykl i po zapasie — dla $\Delta t$ = 1 min różnica jest ponad dwudziestokrotna. Dlatego komunikat `InsufficientBatteryLevelException` niesie **całe wyprowadzenie**, nie samą liczbę końcową: *„urządzenie raportuje 388 dni pozostałej pracy, po zachowawczym przeliczeniu na cykl 1 min → 25,9 dnia; dopuszczalne 17,2 dnia przy zapasie ×1,5, a badanie w komorze X trwa 21,4 dnia”*. Bez tego rozbieżność wygląda na błąd aplikacji. Teraz pierwszy człon komunikatu jest **dokładnie tą liczbą, którą operator ma na ekranie stacji** — wcześniej trzeba było w nim tłumaczyć również przeliczenie z procentu.
+* **Rozbieżność wobec stacji Testo musi być czytelna dla operatora.** Operator widzi w oryginalnym oprogramowaniu liczbę dni, a w planerze budżet po przeliczeniu na cykl i po zapasie — przy $\Delta t$ = 1 min i zapasie ×1,5 jest to jedna trzecia wskazania ze stacji. Dlatego komunikat `InsufficientBatteryLevelException` niesie **całe wyprowadzenie**, nie samą liczbę końcową: *„urządzenie raportuje 50 dni pozostałej pracy, po przeliczeniu na cykl 1 min → 25,0 dnia; dopuszczalne 16,7 dnia przy zapasie ×1,5, a badanie w komorze X trwa 21,4 dnia”*. Bez tego rozbieżność wygląda na błąd aplikacji. Teraz pierwszy człon komunikatu jest **dokładnie tą liczbą, którą operator ma na ekranie stacji** — wcześniej trzeba było w nim tłumaczyć również przeliczenie z procentu.
 * **Brak odczytu**: jeżeli `batteryRemainingDays` jest `null` albo ujemne, reguła W4c **nie liczy nic** — zwraca status `UNKNOWN` i blokuje zadanie z komunikatem o konieczności zczytania rejestratora w stacji USB. Arytmetyka na wartości zastępczej jest niedopuszczalna. Dotyczy to również **każdego rejestratora zastanego w bazie przed migracją V36**: fałszywe `last_battery_level_percent` zostało wyczyszczone, więc do ponownego odczytu sprzęt jest dla planera bez stanu baterii. To zachowanie zamierzone — brak danych jest uczciwy, fikcyjna liczba nie.
 * **Bateria niewymienna (184 T1/T2)**: zamiast $D_{avail}$ obowiązuje pozostały limit `operatingDurationDays`, liczony od `firstActivationDate`.
 
@@ -223,11 +253,13 @@ $$\frac{T_{mission}}{1440} \le \frac{D_{avail}}{f_{safety}}, \qquad f_{safety} =
 
 Punkt przecięcia $T_{mem} = D_{avail}$ (przy świeżym ogniwie, tj. $D_{ref} = D_{spec}$, oraz $f_{safety} = 1$):
 
-| Model | Przecięcie | Interpretacja |
-|---|---|---|
-| 174 T @ +25 °C | Δt ≈ 45 min | poniżej 45 min ogranicza **pamięć** |
-| 184 T3 @ +25 °C | Δt ≈ 18 min | poniżej 18 min ogranicza **pamięć** |
-| **184 T4 @ −80 °C** | **Δt ≈ 3,6 min** | przy typowym mapowaniu (Δt ≥ 5 min) ogranicza **bateria** |
+| Model | Przecięcie (wersja 1.5) | ~~wersja 1.4~~ | Interpretacja |
+|---|---|---|---|
+| 174 T @ +25 °C | Δt ≈ 44 min | ~~45 min~~ | poniżej 44 min ogranicza **pamięć** |
+| 184 T3 @ +25 °C | Δt ≈ 17 min | ~~18 min~~ | poniżej 17 min ogranicza **pamięć** |
+| **184 T4 @ −80 °C** | **Δt ≈ 2,6 min** | ~~3,6 min~~ | przy typowym mapowaniu (Δt ≥ 5 min) ogranicza **bateria** |
+
+Korekta członu cyklu przesuwa każde przecięcie dokładnie o $T_c$ = 1 min w dół (nowy warunek to $\Delta t + T_c$ tam, gdzie stary miał $\Delta t$), więc **żaden wniosek jakościowy z wersji 1.4 się nie zmienia** — zmieniają się natomiast same budżety, i to wielokrotnie (§3.3).
 
 Wniosek projektowy: w komorach ultra‑niskotemperaturowych realnym ograniczeniem planowania jest **energia**, a nie pamięć — i żaden model oparty wyłącznie na progu procentowym tego nie wychwyci.
 
@@ -419,12 +451,13 @@ Przyjęte założenia liczbowe: $f_{safety} = 1{,}5$; „misja 21 dni" to `Δt =
 | **ST-W4b-02** | $N_{req}$ = 20 160; testo 184 T3 (40 000 / 1 kanał) | Zaliczone (limit 40 000) |
 | **ST-W4b-03** | $N_{req}$ = 400 000; testo 175 T3 (1 000 000 / **3 kanały** → 333 333 na kanał) | `InsufficientRecorderMemoryException` — **regresja na dzielenie przez `channelCount`** |
 | **ST-W4b-04** | testo 174 T, $\Delta t$ = 1 min oraz 10 min | $T_{mem}$ = 15 999 min i 159 990 min — **zgodność co do minuty ze wskazaniem stacji Testo** (§2.3 U1); regresja na odjęcie jedynki |
-| **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, $D_{ref}$ = 60 dni z urządzenia, misja 21 dni. $D_{avail} = 60 \cdot \tfrac{10}{15} = 40{,}0$ dnia; próg $40{,}0/1{,}5 = 26{,}7$ dnia | Zaliczone |
-| **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, $D_{ref}$ = 25 dni, misja 21 dni. $D_{avail} = 25 \cdot \tfrac{10}{15} = 16{,}7$ dnia; próg $11{,}1$ dnia | `InsufficientBatteryLevelException` |
-| **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, $D_{ref}$ = 375 dni. $D_{avail} = 375 \cdot \tfrac{1}{15} = 25{,}0$ dnia; $T_{mem} = 27{,}8$ dnia | Wiąże **bateria**, nie pamięć — asercja na `HardwareBudget.binding()` |
+| **ST-W4c-01** | 184 T4, −80 °C, Δt = 10 min, $D_{ref}$ = 60 dni z urządzenia, misja 21 dni. $D_{avail} = 60 \cdot \tfrac{10}{11} = 54{,}5$ dnia; próg $54{,}5/1{,}5 = 36{,}4$ dnia | Zaliczone |
+| **ST-W4c-02** | 184 T4, −80 °C, Δt = 10 min, $D_{ref}$ = 25 dni, misja 21 dni. $D_{avail} = 25 \cdot \tfrac{10}{11} = 22{,}7$ dnia; próg $15{,}2$ dnia | `InsufficientBatteryLevelException` |
+| **ST-W4c-03** | 184 T3, +4 °C, Δt = 1 min, $D_{ref}$ = 60 dni. $D_{avail} = 60 \cdot \tfrac{1}{2} = 30{,}0$ dnia; $T_{mem} = 27{,}8$ dnia | Wiąże **bateria**, nie pamięć — asercja na `HardwareBudget.binding()`. Wskazanie wyjściowe obniżone z 375 do 60 dni wraz z korektą §2.5: przy zmierzonym zużyciu energia wiąże wcześniej niż pamięć dopiero blisko wyczerpania ogniwa |
 | **ST-W4c-04** | `batteryRemainingDays` = `-1` (sentinel z importu PDF) oraz `null` (nigdy nieodczytany) | `HardwareDataIncompleteException`; $D_{avail}$ = `NaN`, **brak arytmetyki na wartości ujemnej** |
 | **ST-W4c-05** | 184 T1 (bateria niewymienna), 80 dni od `firstActivationDate`, misja 21 dni, limit 90 dni | `InsufficientBatteryLevelException` — obowiązuje `operatingDurationDays`; brak odczytu z urządzenia **nie** jest tu brakiem danych |
-| **ST-W4c-06** | Δt = 15 min × 96 próbek; budżet 1,5 dnia mieści sam Krok 4 (1,0 dnia), ale nie pełną misję (1,51 dnia) | Odrzucenie — **regresja na pełny $T_{mission}$**, nie sam Krok 4 |
+| **ST-W4c-06** | Δt = 15 min × 96 próbek; $D_{ref}$ = 2 dni → $D_{avail} = 1{,}875$, próg $1{,}25$ dnia mieści sam Krok 4 (1,0 dnia), ale nie pełną misję (1,51 dnia) | Odrzucenie — **regresja na pełny $T_{mission}$**, nie sam Krok 4 |
+| **ST-W4c-07** | $D_{ref}$ = 480 dni przy Δt = 15 / 10 / 1 min → $D_{avail}$ = 450,0 / 436,4 / 240,0 dnia | **Kotwica pomiarowa §2.5**: współczynnik cyklu odtwarza zmierzone tempo spadku wskazania. Osobna asercja wyklucza powrót do obalonego $\min(1, \Delta t/\Delta t_{ref})$, który przy Δt = 1 min dawał 32 dni |
 
 Dodatkowo pokryte: przeterminowana bateria mimo wysokiego stanu naładowania (`batteryShelfLifeMonths`), **niezależność budżetu energii od temperatury komory** (ten sam rejestrator w chłodziarce i w zamrażarce −20 °C dostaje identyczny budżet — regresja na usunięty derating), **obecność pełnego wyprowadzenia w komunikacie odrzucenia** — osobno dla baterii wymiennej („urządzenie raportuje … dni pozostałej pracy … cykl … min”) i dla loggera jednorazowego („z limitu pracy urządzenia … dni zużyto …”), mapowanie każdego naruszenia na właściwy typ wyjątku w `require(...)`, oraz na poziomie `RecorderAllocationServiceTest` — odrzucenie całej puli na pamięci i na braku odczytu baterii.
 
@@ -437,21 +470,19 @@ Dodatkowo pokryte: przeterminowana bateria mimo wysokiego stanu naładowania (`b
 Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla dokumentacji GxP wymagane jest oświadczenie producenta lub pomiar własny udokumentowany protokołem:
 
 1. **Żywotność baterii poza warunkami referencyjnymi.** Testo publikuje jeden punkt (15 min, +25 °C lub −80 °C). Dla 174 T / 184 T3 pracujących w −20 °C brak danych. Deratingu **nie modelujemy w ogóle** — decyzja z 2026-08-05, uzasadnienie w §3.3. Wcześniejsze ostrzeżenie zostało usunięte jako pozorne zabezpieczenie (powstawało dla każdej komory chłodniczej i nie miało odbiorcy). **To jest świadomie przyjęte ryzyko rezydualne, wymagające decyzji przy zatwierdzaniu walidacyjnym.** Gdyby Kierownik Walidacji uznał je za nieakceptowalne, właściwą reakcją jest pełna ścieżka zatwierdzania (§8 krok 7), a nie przywrócenie ostrzeżenia bez odbiorcy.
-2. **Kształt zależności zużycia od cyklu pomiarowego.** Przyjęty człon $\min(1, \Delta t/\Delta t_{ref})$ jest **założeniem własnym** — pomiar z 2026-08-05 wykluczył istnienie danych producenta na ten temat (§2.3 U3). Rzeczywisty pobór to suma składowej spoczynkowej i pomiarowej; docelowo model $D = Q/(I_q + q/\Delta t)$.
+2. **Kształt zależności zużycia od cyklu pomiarowego — ZMIERZONE 2026-08-07, §2.5.** Pytanie do producenta jest **zamknięte pomiarem własnym**: $\rho(\Delta t) = 1 + T_c/\Delta t$ przy $T_c \approx 1$ min, czyli zapowiadany model $D = Q/(I_q + q/\Delta t)$ z wyznaczonym $q/I_q$. Człon $\min(1, \Delta t/\Delta t_{ref})$ — założenie własne z wersji 1.1 — został zastąpiony i **nie wolno go przywracać**; pilnuje tego ST-W4c-07.
 
-   **Stan po dobie kontrolnej (2026-08-06, §2.4):** egzemplarz bezczynny i egzemplarz pracujący przy Δt = 10 min straciły **tyle samo** — po 1 dniu wskazania. Wynik przemawia za licznikiem zegarowym, ale przy granulacji jednego dnia nie wyklucza jeszcze małej składowej pomiarowej.
+   **Co pozostaje otwarte — dwa punkty, oba do decyzji przy zatwierdzaniu walidacyjnym:**
 
-   **Protokół pomiaru własnego — wariant poprawiony 2026-08-06** (rozstrzyga bez udziału producenta): egzemplarz o znanym stanie wyjściowym zaprogramować na $\Delta t$ = **1 min** i zczytywać codziennie, zestawiając z egzemplarzem bezczynnym.
-   * spadek ~1 dzień na dobę → licznik czysto zegarowy, człon cyklu **należy usunąć**;
-   * spadek wyraźnie szybszy → różnica wobec egzemplarza bezczynnego daje **zmierzoną** składową pomiarową, lepszą od jakiegokolwiek założenia.
+   a) **Przenoszalność $T_c$ na 184 T4 w −80 °C.** $T_c$ zmierzono na **174 T w temperaturze pokojowej**, a stosujemy je do wszystkich modeli z baterią wymienną — w tym do 184 T4 pracującego przy −80 °C na ogniwie ER2450T. W niskiej temperaturze rośnie rezystancja wewnętrzna ogniwa, co uderza przede wszystkim w **impulsowy** pobór pomiarowy, a nie w spoczynkowy. Ekstrapolacja **nie jest więc z definicji zachowawcza**: prawdziwe $T_c$ w −80 °C może być większe niż 1 min, a wtedy budżet wychodzi zawyżony. Skala: przy $\Delta t$ = 5 min i wskazaniu 80 dni $D_{avail}$ wynosi **66,7 dnia**, czyli po zapasie ×1,5 dopuszczalne **44,4 dnia** — wobec 26,7 i 17,8 dnia w wersji 1.4. To **świadomie przyjęte ryzyko rezydualne** — tego samego rodzaju co §7 pkt 1 i wymagające tej samej decyzji. Domknięcie wymaga biegu 184 T4 w komorze −80 °C przy $\Delta t$ = 1 min, wobec egzemplarza tego samego modelu w temperaturze pokojowej.
 
-   > **Dlaczego nie 15 min, jak w pierwotnym protokole.** Przy $\Delta t = \Delta t_{ref}$ człon cyklu wynosi 1, więc obie hipotezy przewidują **ten sam** spadek — taki bieg nie mógłby niczego rozstrzygnąć, niezależnie od czasu trwania. Rozdzielczość daje dopiero kontrast gęstości próbkowania: przy 1 min hipoteza cyklu przewiduje spadek 15 dni na dobę wobec 1 dnia dla hipotezy zegarowej, co przekracza granulację **po pierwszej dobie** i daje odpowiedź w 2–3 dni zamiast w tydzień.
+   b) **Zawężenie przedziału $T_c$ (0,8–1,6 min).** Granulacja wskazania to 1 dzień, więc dwie doby biegu nie wystarczą na więcej. Protokół: **ten sam egzemplarz przy Δt = 1 min przez ok. 8–10 dni**, odczyt co dobę. Przy $T_c$ = 1,0 min łączny spadek wyniesie ok. 16–20 dni, przy $T_c$ = 0,3 min — ok. 5; przedział zwęża się proporcjonalnie do długości biegu. Wynik wpisać w `app.planner.w4.measurement-cost-minutes`, bez zmiany kodu. **Ograniczenie operacyjne:** egzemplarz użyty w §2.5 ma 38 dni wskazania, co przy 1 min oznacza ok. 18 dni realnej pracy, a pamięć 174 T (16 000 odczytów) zwiąże jeszcze wcześniej — po ok. 9 dobach trzeba zczytać i przeprogramować.
 
-   Zakres skutków: dla 174 T decyzja jest obojętna operacyjnie (poniżej 15 min oba człony są liniowe w $\Delta t$, więc pamięć wiąże wcześniej; powyżej — współczynnik wynosi 1). Realna różnica dotyczy **184 T4 w −80 °C**: przy $\Delta t$ = 5 min i wskazaniu 80 dni budżet dopuszczalny wynosi 17,8 dnia z członem cyklu wobec 53,3 dnia bez niego.
+   > **Dlaczego protokół wymagał Δt = 1 min.** Przy $\Delta t = \Delta t_{ref}$ obie konkurencyjne hipotezy przewidują **ten sam** spadek, więc bieg przy 15 min nie mógłby niczego rozstrzygnąć niezależnie od czasu trwania — to była pierwotna wersja protokołu i była bezużyteczna. Potwierdziło się to w danych: egzemplarze A (15 min) i C (10 min) z §2.5 nie mają wartości dowodowej, cały wynik pochodzi z egzemplarza B.
 3. **Zachowanie przy zapełnionej pamięci: zatrzymanie zapisu czy nadpisanie najstarszych odczytów (ring buffer).** Instrukcje wskazują na kryterium stopu „memory full", ale jeśli którykolwiek model nadpisuje dane, przekroczenie W4b oznacza **cichą utratę fragmentu serii pomiarowej**, a nie tylko jej skrócenie — co jest naruszeniem integralności danych wg 21 CFR Part 11 i wymaga podniesienia rangi alertu.
 4. **~~Rozdzielczość wskazania baterii z ramki `ab31`~~ — ZAMKNIĘTE 2026-08-05.** Kwestia okazała się źle postawiona: bajt w ogóle nie był stanem baterii (§2.3 U4). Stan baterii pochodzi z osobnej komendy `ab010a` i jest podawany w **dniach**, więc pytanie o rozdzielczość procentu przestaje mieć sens. Zaproponowany wcześniej parametr `app.planner.w4.soc-reading-tolerance-pp` **nie jest już potrzebny** i nie został wdrożony.
 
-   Pozostaje jedno pytanie pochodne: **przy jakim cyklu pomiarowym urządzenie wyznacza te dni**. Obserwacja z §2.3 U3 (wskazanie niezmienne przy 1 min i 10 min) wskazuje na dni referencyjne, nie prognozę dla ustawionego interwału. Doba kontrolna z §2.4 idzie krok dalej i podważa sam **człon cyklu**: skoro egzemplarz bezczynny traci tyle samo co pracujący, wskazanie odlicza czas, a nie zużycie. Rozstrzygnięcie: bieg przy 1 min wg §7 pkt 2.
+   Pytanie pochodne — **przy jakim cyklu pomiarowym urządzenie wyznacza te dni** — też jest już zamknięte. Wskazanie nie zmienia się przy zmianie interwału (§2.3 U3), a schodzi w tempie zależnym od interwału (§2.5), więc jest **stanem ogniwa wyrażonym w dniach odniesienia**, a nie prognozą dla ustawionej konfiguracji. Gdyby było prognozą, spadałoby o 1 dzień na dobę niezależnie od Δt — egzemplarz B gubił 2,05.
 5. **Źródło danych katalogowych.** Zasilanie tabeli modeli przez `LIKE` na nazwie jest kruche (§4.2). Docelowo: plik referencyjny `testo_models.yml` wersjonowany w repozytorium, z odnośnikiem do karty katalogowej przy każdej wartości.
 
 ---
@@ -465,13 +496,16 @@ Poniższe punkty **nie mogą zostać rozstrzygnięte oszacowaniem** — dla doku
 | **3** | Zapis stanu baterii przy imporcie USB i PDF (z filtrowaniem sentinela `-1`) | ✅ zrobione — od kroku 16 zapisywane są **dni**, nie procent |
 | **4** | Wpięcie w pętlę filtrującą kandydatów w `RecorderAllocationService.allocateRecorders(...)` | ✅ zrobione |
 | **5** | Testy `HardwareCapacityServiceTest` (ST-W4a/b/c) + odblokowanie testu W4 w `RecorderAllocationServiceTest` | ✅ zrobione |
-| **6** | Aktualizacja BA v5.0: zmiana statusu W4 z *deferred* na *active*; rejestracja kwestii otwartych z §7 w dokumentacji walidacyjnej | ⬜ do zrobienia |
+| **6** | Aktualizacja BA v5.0: zmiana statusu W4 z *deferred* na *active*; rejestracja kwestii otwartych z §7 w dokumentacji walidacyjnej | ✅ zrobione 2026-08-07 — BA §5 pkt 4 opisuje trzy kryteria, budżet w dniach zamiast progu „>50 %" i odsyła do §7 pkt 1 oraz 2a |
 | **7** | Ścieżka zatwierdzania przez Kierownika Walidacji dla pracy poniżej temperatury referencyjnej (§7 pkt 1) | ⬜ do zrobienia — `HardwareBudget.warnings()` usunięte, ścieżkę trzeba zbudować od zera, gdy zapadnie decyzja |
 | **8** | Zastąpienie dopasowania `LIKE` plikiem referencyjnym `testo_models.yml` (§7 pkt 5) | ⬜ do zrobienia |
 | **9** | Weryfikacja na sprzęcie: „Okres”, niezmienność wskazania baterii wobec interwału, wykluczenie skali 0–255 (§2.3) | ✅ zrobione 2026-08-05 |
 | **10** | Korekta $T_{mem}$ o jeden interwał + zgodność co do minuty ze stacją Testo (ST-W4b-04) | ✅ zrobione |
 | **11** | Wyprowadzenie budżetu energii w komunikacie odrzucenia (rozbieżność wobec wskazania stacji Testo) | ✅ zrobione |
-| **12** | Pomiar zależności zużycia od cyklu — protokół w §7 pkt 2 | 🔄 w toku — doba kontrolna zrobiona (§2.4, wskazuje na licznik zegarowy), został bieg przy Δt = 1 min |
+| **12** | Pomiar zależności zużycia od cyklu — protokół w §7 pkt 2 | ✅ zrobione 2026-08-07 — trzy egzemplarze, Δt = 1/10/15 min (§2.5); $T_c \approx 1$ min |
+| **18** | Zastąpienie założonego członu cyklu zmierzonym: `HardwareCapacityService`, parametr `app.planner.w4.measurement-cost-minutes`, przeliczone ST-W4c-01/02/03/06 i nowy ST-W4c-07 | ✅ zrobione 2026-08-07 |
+| **19** | Bieg 8–10 dni przy Δt = 1 min zawężający przedział $T_c$ (§7 pkt 2b) | ⬜ do zrobienia — parametr konfigurowalny, korekta nie wymaga zmiany kodu |
+| **20** | Bieg 184 T4 w −80 °C weryfikujący przenoszalność $T_c$ na niską temperaturę (§7 pkt 2a) | ⬜ do zrobienia — ryzyko rezydualne do decyzji Kierownika Walidacji |
 | **17** | Weryfikacja odczytu i zapisu stanu baterii na sprzęcie (zgodność ze stacją producenta, karta szczegółów) | ✅ zrobione 2026-08-06 — 387 dni w obu aplikacjach |
 | **13** | ~~Pomiar granulacji bajtu `ab31[20]`~~ | ❌ nieaktualne — bajt nie był baterią (§2.3 U4) |
 | **14** | Odkrycie komendy `ab010a` i korekta map protokołu (`TESTO_USB_ANALYSIS.md`, `ANALIZA_TESTO_174T_FINAL.md`) | ✅ zrobione 2026-08-05 |

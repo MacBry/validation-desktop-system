@@ -55,7 +55,7 @@ class RecorderAllocationServiceTest {
     void setUp() {
         service = new RecorderAllocationService(
                 recorderRepository, assignmentRepository, new MetrologicalQualificationService(),
-                new HardwareCapacityService(1.5), 24);
+                new HardwareCapacityService(1.5, 1.0), 24);
 
         when(assignmentRepository.findBusyRecorderIds(any(), any())).thenReturn(List.of());
         when(assignmentRepository.findEarliestRelease(any(), any())).thenReturn(null);
