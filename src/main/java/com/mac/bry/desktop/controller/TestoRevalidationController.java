@@ -950,8 +950,10 @@ public class TestoRevalidationController {
 
         File tempChartPng = null;
         try {
-            // 1. Zrzut wielokanałowego wykresu z UI
-            tempChartPng = facade.snapshotExistingChart(multiChannelChart);
+            // 1. Wykres wielokanałowy renderowany off-screen o stałych wymiarach.
+            // Nie zrzut z ekranu: proporcje dokumentu nie mogą zależeć od tego,
+            // jak duże było okno aplikacji w chwili generowania pakietu.
+            tempChartPng = facade.renderSessionChart(session);
 
             // 2. Zapis sesji w bazie danych
             facade.saveSession(session);
