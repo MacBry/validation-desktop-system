@@ -52,14 +52,26 @@ import java.util.List;
  * {@code battery_life_days} w kartotece modelu. Ta wartość pozostaje daną
  * informacyjną karty rejestratora.
  *
- * <h2>Czego producent nie dostarcza</h2>
+ * <h2>Czego producent nie dostarcza — i co zmierzyliśmy sami</h2>
  * Potwierdzone na sprzęcie (174 T, sierpień 2026): wskazanie stanu baterii
  * <b>nie zmienia się</b>
  * po zmianie interwału. Producent nie publikuje więc żadnej zależności czasu
- * pracy od cyklu pomiarowego; człon {@code cycleFactor} w
- * {@code replaceableBatteryBudget} jest <b>naszym własnym, zachowawczym
- * założeniem</b>, a nie daną katalogową. Zakres alarmowy komory (np. 2…8 °C) nie
- * wpływa na czas pracy ani u producenta, ani u nas.
+ * pracy od cyklu pomiarowego — człon {@code cycleFactor} w
+ * {@code replaceableBatteryBudget} pochodzi z <b>pomiaru własnego</b>, nie
+ * z karty katalogowej. Zakres alarmowy komory (np. 2…8 °C) nie wpływa na czas
+ * pracy ani u producenta, ani u nas.
+ * <p>
+ * Pomiar z 2026-08-07 (trzy egzemplarze 174 T, bieg 5→7 sierpnia) obalił obie
+ * wcześniejsze hipotezy: przy Δt = 1 min wskazanie spada <b>2,05 dnia na dobę</b>,
+ * podczas gdy licznik czysto zegarowy dawałby 1,0, a zużycie proporcjonalne do
+ * liczby pomiarów — 15,0. Zużycie jest sumą składowej spoczynkowej i pomiarowej,
+ * a jeden pomiar kosztuje mniej więcej tyle, co <b>minuta pracy spoczynkowej</b>
+ * ({@code measurementCostMinutes}). Szczegóły i tabela pomiarowa: suplement W4 §2.5.
+ * <p>
+ * Skutek uboczny tej postaci wzoru: {@code batteryLifeRefCycleMin} przestaje
+ * wchodzić do arytmetyki W4c — koszt odczytu jest wielkością fizyczną ogniwa
+ * i elektroniki, nie odniesieniem do cyklu z karty katalogowej. Pole zostaje
+ * daną informacyjną karty rejestratora, tak samo jak {@code batteryLifeRefTempC}.
  * <p>
  * Z tego samego powodu <b>nie modelujemy deratingu temperaturowego</b>. Wcześniej
  * powstawało tu zastrzeżenie „praca poniżej temperatury referencyjnej”, ale
@@ -76,9 +88,20 @@ public class HardwareCapacityService {
 
     private final double batterySafetyFactor;
 
+    /**
+     * Koszt energetyczny jednego odczytu, wyrażony w minutach pracy spoczynkowej.
+     * Wartość <b>zmierzona</b> (2026-08-07, 174 T): 1,05 min przy przedziale
+     * ok. 0,8–1,6 min wynikającym z granulacji wskazania (1 dzień) na oknie
+     * dwóch dób. Konfigurowalna, bo dłuższy bieg przy Δt = 1 min ma ten przedział
+     * zawęzić — patrz suplement W4 §7 pkt 2.
+     */
+    private final double measurementCostMinutes;
+
     public HardwareCapacityService(
-            @Value("${app.planner.w4.battery-safety-factor:1.5}") double batterySafetyFactor) {
+            @Value("${app.planner.w4.battery-safety-factor:1.5}") double batterySafetyFactor,
+            @Value("${app.planner.w4.measurement-cost-minutes:1.0}") double measurementCostMinutes) {
         this.batterySafetyFactor = batterySafetyFactor;
+        this.measurementCostMinutes = measurementCostMinutes;
     }
 
     /**
@@ -294,21 +317,24 @@ public class HardwareCapacityService {
 
         checkBatteryAge(recorder, model, missionStart, violations);
 
-        // ZAŁOŻENIE WŁASNE, nie dana producenta. Urządzenie podaje dni przy cyklu
-        // referencyjnym (15 min) — wskazanie nie zmienia się przy przejściu z 1 min
-        // na 10 min, więc nie jest prognozą dla ustawionego interwału. Skracamy
-        // budżet przy gęstszym próbkowaniu, bo każdy pomiar kosztuje energię;
-        // przy rzadszym nie zakładamy zysku, bo pobór spoczynkowy (LCD, zegar, NFC)
-        // płynie niezależnie od pomiarów. Współczynnik jest zachowawczy w obie
-        // strony i czeka na pomiar empiryczny — patrz suplement W4 §7 pkt 2.
-        int refCycle = model.getBatteryLifeRefCycleMin() != null && model.getBatteryLifeRefCycleMin() > 0
-                ? model.getBatteryLifeRefCycleMin()
-                : 15;
-        double cycleFactor = Math.min(1.0, (double) config.getStep4IntervalMinutes() / refCycle);
+        // POMIAR WŁASNY, nie dana producenta. Urządzenie podaje dni przy cyklu
+        // referencyjnym — wskazanie nie zmienia się przy przejściu z 1 min na
+        // 10 min, więc nie jest prognozą dla ustawionego interwału i trzeba je
+        // przeliczyć. Wskazanie schodzi w tempie (1 + T_c/Δt) dnia na dobę:
+        // składowa spoczynkowa (LCD, zegar, NFC) płynie niezależnie od pomiarów,
+        // a każdy odczyt dokłada tyle, co T_c ≈ 1 min pracy spoczynkowej.
+        // Stąd budżet dla tego badania to D_ref podzielone przez to tempo.
+        //
+        // Poprzednia postać, min(1, Δt/Δt_ref), zakładała zużycie wprost
+        // proporcjonalne do liczby pomiarów — pomiar z 2026-08-07 pokazał, że
+        // przy Δt = 1 min jest ona 7,3× za pesymistyczna (obserwacja: budżet
+        // maleje o połowę, nie piętnastokrotnie). Suplement W4 §2.5.
+        double intervalMinutes = config.getStep4IntervalMinutes();
+        double cycleFactor = intervalMinutes / (intervalMinutes + measurementCostMinutes);
         double availableDays = referenceRuntimeDays * cycleFactor;
 
         return new BatteryBasis(availableDays, String.format(
-                "urządzenie raportuje %d dni pozostałej pracy, po zachowawczym przeliczeniu "
+                "urządzenie raportuje %d dni pozostałej pracy, po przeliczeniu "
                         + "na cykl %d min → %.1f dnia",
                 referenceRuntimeDays, config.getStep4IntervalMinutes(), availableDays));
     }
