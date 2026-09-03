@@ -304,6 +304,10 @@ a nie `LWT/2014[°C]`.
 Wniosek praktyczny: **nazwa, która ma się pojawić w raporcie, musi być na
 pierwszej pozycji.** Znaczenie drugiego łańcucha pozostaje nieustalone.
 
+Potwierdzone przeciwtestem 2026-09-03: po przeniesieniu nazwy na pierwszą
+pozycję eksport CSV z ComSoftu dał nagłówki `LWT/2014[°C]` i `LWT/2017[°C]`,
+podczas gdy poprzedni układ dawał `1[°C]` i `2[°C]`.
+
 > Każdy kanał musi dostać niepustą nazwę. Puste pole ComSoft renderuje jako
 > 32 znaki `?` w nagłówku kolumny.
 
