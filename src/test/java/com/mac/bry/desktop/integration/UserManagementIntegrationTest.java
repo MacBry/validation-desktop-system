@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -42,7 +42,7 @@ public class UserManagementIntegrationTest {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
     @Test
@@ -138,7 +138,11 @@ public class UserManagementIntegrationTest {
         );
         SecurityContextHolder.getContext().setAuthentication(auth);
         
-        assertThat(auth.getAuthorities()).isEmpty();
+        // Security 7 dokłada FactorGrantedAuthority (FACTOR_PASSWORD) po logowaniu
+        // hasłem - użytkownik bez ról nie ma już pustej listy autorytetów.
+        assertThat(auth.getAuthorities())
+                .extracting(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .noneMatch(a -> a.startsWith("ROLE_"));
     }
 
     @Test
