@@ -87,6 +87,9 @@ public class DashboardController {
 
             String roles = auth.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
+                    // Security 7 dokłada FactorGrantedAuthority (FACTOR_PASSWORD)
+                    // obok ról - do etykiety bierzemy tylko role.
+                    .filter(r -> r.startsWith("ROLE_"))
                     .map(r -> r.replace("ROLE_", ""))
                     .collect(Collectors.joining(", "));
             roleLabel.setText(I18n.t("dashboard.header.roles",
