@@ -44,9 +44,13 @@ public class GxpNotificationService {
     @Value("${app.notifications.advance-days:30}")
     private int advanceDays;
 
-    /** Długość cyklu rewalidacji komory [miesiące]. */
+    /** Długość cyklu rewalidacji okresowej komory [miesiące]. */
     @Value("${app.notifications.revalidation-cycle-months:12}")
     private int revalidationCycleMonths;
+
+    /** Długość cyklu pełnego mapowania GxP [lata]. */
+    @Value("${app.notifications.mapping-cycle-years:5}")
+    private int mappingCycleYears;
 
     @Value("${app.notifications.enabled:true}")
     private boolean enabled;
@@ -90,9 +94,11 @@ public class GxpNotificationService {
         LocalDate threshold = today.plusDays(advanceDays);
 
         List<Calibration> expiring = calibrationRepository.findLatestExpiringUntil(threshold);
-        List<CoolingChamber> dueChambers = findChambersDueForRevalidation(today, threshold);
+        List<CoolingChamber> allChambers = coolingChamberRepository.findAll();
+        List<CoolingChamber> dueChambers = findChambersDueForRevalidation(allChambers, threshold);
+        List<CoolingChamber> dueMappings = findChambersDueForMapping(allChambers, threshold);
 
-        if (expiring.isEmpty() && dueChambers.isEmpty()) {
+        if (expiring.isEmpty() && dueChambers.isEmpty() && dueMappings.isEmpty()) {
             return Optional.empty();
         }
 
@@ -117,26 +123,37 @@ public class GxpNotificationService {
         }
 
         if (!dueChambers.isEmpty()) {
-            sb.append("== KOMORY DO REWALIDACJI (").append(dueChambers.size()).append(") ==\n");
+            sb.append("== KOMORY DO REWALIDACJI OKRESOWEJ (").append(dueChambers.size()).append(") ==\n");
             for (CoolingChamber ch : dueChambers) {
-                String device = ch.getCoolingDevice() != null
-                        ? ch.getCoolingDevice().getName() + " (nr inw. "
-                          + ch.getCoolingDevice().getInventoryNumber() + ")"
-                        : "?";
+                if (ch.getLastPeriodicRevalidationDate() == null) {
+                    sb.append(String.format("- %s / komora \"%s\" | BRAK REWALIDACJI OKRESOWEJ — wymagana kwalifikacja%n",
+                            describeDevice(ch), ch.getChamberName()));
+                } else {
+                    LocalDate due = ch.getLastPeriodicRevalidationDate().plusMonths(revalidationCycleMonths);
+                    sb.append(String.format(
+                            "- %s / komora \"%s\" | ostatnia rewalidacja %s | termin %s | %s%n",
+                            describeDevice(ch), ch.getChamberName(),
+                            ch.getLastPeriodicRevalidationDate().format(DATE_FMT),
+                            due.format(DATE_FMT), describeDeadline(today, due)));
+                }
+            }
+            sb.append("\n");
+        }
+
+        if (!dueMappings.isEmpty()) {
+            sb.append("== KOMORY DO MAPOWANIA ").append(mappingCycleYears)
+              .append("-LETNIEGO (").append(dueMappings.size()).append(") ==\n");
+            for (CoolingChamber ch : dueMappings) {
                 if (ch.getLastMappingDate() == null) {
                     sb.append(String.format("- %s / komora \"%s\" | BRAK MAPOWANIA — wymagana kwalifikacja%n",
-                            device, ch.getChamberName()));
+                            describeDevice(ch), ch.getChamberName()));
                 } else {
-                    LocalDate due = ch.getLastMappingDate().plusMonths(revalidationCycleMonths);
-                    long days = ChronoUnit.DAYS.between(today, due);
-                    String status = days < 0
-                            ? "ZALEGŁA od " + Math.abs(days) + " dni"
-                            : "termin za " + days + " dni";
+                    LocalDate due = ch.getLastMappingDate().plusYears(mappingCycleYears);
                     sb.append(String.format(
-                            "- %s / komora \"%s\" | ostatnie mapowanie %s | rewalidacja do %s | %s%n",
-                            device, ch.getChamberName(),
+                            "- %s / komora \"%s\" | ostatnie mapowanie %s | termin %s | %s%n",
+                            describeDevice(ch), ch.getChamberName(),
                             ch.getLastMappingDate().format(DATE_FMT),
-                            due.format(DATE_FMT), status));
+                            due.format(DATE_FMT), describeDeadline(today, due)));
                 }
             }
             sb.append("\n");
@@ -147,14 +164,45 @@ public class GxpNotificationService {
     }
 
     /**
-     * Komory z wymaganym mapowaniem, których termin rewalidacji
-     * (ostatnie mapowanie + cykl) mija do daty progu — lub bez żadnego mapowania.
+     * Komory, których termin corocznej rewalidacji mija do daty progu — lub
+     * nigdy nierewalidowane.
+     * <p>
+     * Obowiązek dotyczy <b>wszystkich</b> komór, także tych z odczynnikami:
+     * {@code requiresMapping = FALSE} zwalnia wyłącznie z mapowania 5-letniego,
+     * nie z rewalidacji okresowej (BA R2).
      */
-    private List<CoolingChamber> findChambersDueForRevalidation(LocalDate today, LocalDate threshold) {
-        return coolingChamberRepository.findAll().stream()
+    private List<CoolingChamber> findChambersDueForRevalidation(List<CoolingChamber> chambers, LocalDate threshold) {
+        return chambers.stream()
+                .filter(ch -> ch.getLastPeriodicRevalidationDate() == null
+                        || !ch.getLastPeriodicRevalidationDate()
+                                .plusMonths(revalidationCycleMonths).isAfter(threshold))
+                .toList();
+    }
+
+    /**
+     * Komory z wymaganym mapowaniem, których termin 5-letniego mapowania mija
+     * do daty progu — lub bez żadnego mapowania.
+     * <p>
+     * Liczone wyłącznie z {@code lastMappingDate}; zegar rewalidacji okresowej
+     * jest niezależny i mieszanie ich resetowałoby 5-letni cykl (BA R2).
+     */
+    private List<CoolingChamber> findChambersDueForMapping(List<CoolingChamber> chambers, LocalDate threshold) {
+        return chambers.stream()
                 .filter(CoolingChamber::isMappingRequired)
                 .filter(ch -> ch.getLastMappingDate() == null
-                        || !ch.getLastMappingDate().plusMonths(revalidationCycleMonths).isAfter(threshold))
+                        || !ch.getLastMappingDate().plusYears(mappingCycleYears).isAfter(threshold))
                 .toList();
+    }
+
+    private String describeDevice(CoolingChamber chamber) {
+        return chamber.getCoolingDevice() != null
+                ? chamber.getCoolingDevice().getName() + " (nr inw. "
+                  + chamber.getCoolingDevice().getInventoryNumber() + ")"
+                : "?";
+    }
+
+    private String describeDeadline(LocalDate today, LocalDate due) {
+        long days = ChronoUnit.DAYS.between(today, due);
+        return days < 0 ? "ZALEGŁA od " + Math.abs(days) + " dni" : "termin za " + days + " dni";
     }
 }

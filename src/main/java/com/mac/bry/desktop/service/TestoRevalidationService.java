@@ -39,6 +39,7 @@ public class TestoRevalidationService {
     private final MetrologicalStatsService metrologicalStatsService;
     private final CoolingChamberRepository coolingChamberRepository;
     private final TestoSimulationService testoSimulationService;
+    private final RecorderBatteryService recorderBatteryService;
 
     /**
      * Inicjalizuje nową sesję rewalidacji w pamięci.
@@ -109,12 +110,15 @@ public class TestoRevalidationService {
                         : result.session.firstMeasurementTimeLocal
         );
 
-        // batteryLevelPercent = -1 oznacza "N/D" (PDF nie zawiera tej informacji)
+        // Import z PDF 184 nie niesie stanu baterii — obie wielkości zostają N/D.
+        recorderBatteryService.recordReading(recorder, result.session.batteryRemainingDays);
+
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
-                .batteryLevelPercent(result.session.batteryLevelPercent >= 0
-                        ? result.session.batteryLevelPercent : -1)
+                .batteryRemainingDays(result.session.batteryRemainingDays >= 0
+                        ? result.session.batteryRemainingDays : null)
+                .batteryLevelPercent(-1)
                 .loggingIntervalMinutes(result.session.intervalMinutes)
                 .measurementsCount(result.measurements.size())
                 .programmingTimeUtc(LocalDateTime.parse(
@@ -162,8 +166,8 @@ public class TestoRevalidationService {
 
     @Transactional
     public RevalidationSession.PositionData readPositionData(
-            RevalidationSession session, 
-            RevalidationSession.GridPosition position, 
+            RevalidationSession session,
+            RevalidationSession.GridPosition position,
             boolean simulationMode) {
         return readPositionData(session, position, simulationMode, SimulationProfile.STABLE);
     }
@@ -224,9 +228,13 @@ public class TestoRevalidationService {
                 : usbResult.session.firstMeasurementTimeLocal
         );
 
+        recorderBatteryService.recordReading(recorder, usbResult.session.batteryRemainingDays);
+
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
+                .batteryRemainingDays(usbResult.session.batteryRemainingDays >= 0
+                        ? usbResult.session.batteryRemainingDays : null)
                 .batteryLevelPercent(usbResult.session.batteryLevelPercent)
                 .loggingIntervalMinutes(usbResult.session.intervalMinutes)
                 .measurementsCount(usbResult.measurements.size())
@@ -354,7 +362,11 @@ public class TestoRevalidationService {
         ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
                 .thermoRecorder(recorder)
                 .coolingChamber(session.getCoolingChamber())
-                .batteryLevelPercent(96)
+                // Symulacja odtwarza przebieg temperatury, nie stan ogniwa — żadne
+                // urządzenie tu nie odpowiadało, więc bateria zostaje N/D. Wpisana
+                // wcześniej wartość „96 %" była podwójnie fikcyjna: zmyślona i w
+                // jednostce, której sprzęt nigdy nie raportował.
+                .batteryLevelPercent(-1)
                 .loggingIntervalMinutes(180) // 3 godziny
                 .measurementsCount(40)
                 .programmingTimeUtc(startTimeLocal.minusDays(10).minusHours(2))

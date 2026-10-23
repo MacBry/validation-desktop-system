@@ -41,8 +41,24 @@ public class ThermoMeasurementSeries {
     private CoolingChamber coolingChamber;
 
     // Parametry odczytane z ramki statusu (ab 31)
+
+    /**
+     * Pozostały czas pracy baterii [dni] w chwili odczytu, z ramki {@code ab010a}.
+     * {@code null} dla serii sprzed korekty protokołu (2026-08-05) oraz dla źródeł
+     * nieraportujących baterii — patrz {@code V36__Battery_Remaining_Days.sql}.
+     */
+    @Column(name = "battery_remaining_days")
+    private Integer batteryRemainingDays;
+
+    /**
+     * @deprecated Nigdy nie był stanem baterii — do 2026-08-05 trafiał tu młodszy
+     * bajt górnego progu alarmowego. Serie archiwalne zachowują dawne wartości
+     * jako część audit trailu; nowe zapisują {@code -1} (N/D) i wypełniają
+     * {@link #batteryRemainingDays}.
+     */
+    @Deprecated(since = "2026-08-05", forRemoval = false)
     @Column(name = "battery_level_percent", nullable = false)
-    private Integer batteryLevelPercent; // Stan baterii przy odczycie (%)
+    private Integer batteryLevelPercent;
 
     @Column(name = "logging_interval_minutes", nullable = false)
     private Integer loggingIntervalMinutes; // Interwał zapisu w minutach

@@ -1,0 +1,536 @@
+package com.mac.bry.desktop.service.planner;
+
+import com.mac.bry.desktop.model.CoolingChamber;
+import com.mac.bry.desktop.model.MaterialType;
+import com.mac.bry.desktop.model.ProcedureClassConfig;
+import com.mac.bry.desktop.model.RecorderStatus;
+import com.mac.bry.desktop.model.ThermoRecorder;
+import com.mac.bry.desktop.model.ThermoRecorderModel;
+import com.mac.bry.desktop.service.planner.dto.HardwareBudget;
+import com.mac.bry.desktop.service.planner.dto.HardwareViolation;
+import com.mac.bry.desktop.service.planner.exception.HardwareDataIncompleteException;
+import com.mac.bry.desktop.service.planner.exception.InsufficientBatteryLevelException;
+import com.mac.bry.desktop.service.planner.exception.InsufficientRecorderMemoryException;
+import com.mac.bry.desktop.service.planner.exception.RecorderOutOfOperatingRangeException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/**
+ * ST-W4a/b/c — limity sprzętowe rejestratora.
+ * <p>
+ * Dane modeli odpowiadają kartom katalogowym Testo (patrz
+ * {@code REVALIDATION_PLANNER_W4_SUPPLEMENT.md} §2), bo od nich zależy, czy
+ * asercje mają jakikolwiek sens walidacyjny.
+ */
+class HardwareCapacityServiceTest {
+
+    private static final LocalDate MISSION_START = LocalDate.of(2026, 8, 3);
+    private static final double SAFETY_FACTOR = 1.5;
+
+    /** Koszt jednego odczytu w minutach pracy spoczynkowej — zmierzony 2026-08-07 (§2.5). */
+    private static final double MEASUREMENT_COST_MIN = 1.0;
+
+    private final HardwareCapacityService service =
+            new HardwareCapacityService(SAFETY_FACTOR, MEASUREMENT_COST_MIN);
+
+    // --- budowniczowie danych katalogowych ---------------------------------
+
+    /** testo 174 T: 16 000 odczytów, 1 kanał, -30…+70 °C, CR2032, 500 dni @ 15 min / +25 °C. */
+    private ThermoRecorderModel testo174T() {
+        return ThermoRecorderModel.builder()
+                .name("testo 174 T").channelCount(1).sampleCapacity(16000)
+                .minOperatingTempC(-30.0).maxOperatingTempC(70.0)
+                .batteryType("CR2032").batteryReplaceable(true)
+                .batteryLifeDays(500).batteryLifeRefCycleMin(15).batteryLifeRefTempC(25.0)
+                .build();
+    }
+
+    /** testo 184 T3: 40 000 odczytów, CR2450, 500 dni @ 15 min / +25 °C. */
+    private ThermoRecorderModel testo184T3() {
+        return ThermoRecorderModel.builder()
+                .name("testo 184 T3").channelCount(1).sampleCapacity(40000)
+                .minOperatingTempC(-35.0).maxOperatingTempC(70.0)
+                .batteryType("CR2450").batteryReplaceable(true)
+                .batteryLifeDays(500).batteryLifeRefCycleMin(15).batteryLifeRefTempC(25.0)
+                .build();
+    }
+
+    /** testo 184 T4: jedyny model do -80 °C; ER2450T, 100 dni @ 15 min / -80 °C. */
+    private ThermoRecorderModel testo184T4() {
+        return ThermoRecorderModel.builder()
+                .name("testo 184 T4").channelCount(1).sampleCapacity(40000)
+                .minOperatingTempC(-80.0).maxOperatingTempC(70.0)
+                .batteryType("ER2450T").batteryReplaceable(true)
+                .batteryLifeDays(100).batteryLifeRefCycleMin(15).batteryLifeRefTempC(-80.0)
+                .build();
+    }
+
+    /** testo 184 T1: bateria niewymienna, sztywny limit pracy 90 dni. */
+    private ThermoRecorderModel testo184T1() {
+        return ThermoRecorderModel.builder()
+                .name("testo 184 T1").channelCount(1).sampleCapacity(16000)
+                .minOperatingTempC(-35.0).maxOperatingTempC(70.0)
+                .batteryReplaceable(false).operatingDurationDays(90)
+                .build();
+    }
+
+    /** testo 175 T3: 1 000 000 odczytów dzielone na 3 kanały. */
+    private ThermoRecorderModel testo175T3() {
+        return ThermoRecorderModel.builder()
+                .name("testo 175 T3").channelCount(3).sampleCapacity(1000000)
+                .minOperatingTempC(-35.0).maxOperatingTempC(70.0)
+                .batteryType("3xAAA AlMn").batteryReplaceable(true)
+                .batteryLifeDays(1095).batteryLifeRefCycleMin(15).batteryLifeRefTempC(25.0)
+                .build();
+    }
+
+    /**
+     * @param batteryRemainingDays pozostałe dni pracy z ramki {@code ab010a} —
+     *                             wielkość czytana wprost z urządzenia, nie
+     *                             wyprowadzana z żywotności katalogowej
+     */
+    private ThermoRecorder recorder(ThermoRecorderModel model, Integer batteryRemainingDays) {
+        return ThermoRecorder.builder()
+                .id(1L).serialNumber("SN-001").status(RecorderStatus.ACTIVE)
+                .model(model)
+                .batteryRemainingDays(batteryRemainingDays)
+                .build();
+    }
+
+    private CoolingChamber chamber(String name, double minTemp, double maxTemp) {
+        return CoolingChamber.builder()
+                .id(1L).chamberName(name)
+                .materialType(MaterialType.builder()
+                        .name("Materiał testowy")
+                        .minStorageTemp(minTemp).maxStorageTemp(maxTemp)
+                        .requiresMapping(true)
+                        .build())
+                .build();
+    }
+
+    /**
+     * Konfiguracja procedury. Czas misji to {@code 20 min + 6 h + interval*count + 6 h},
+     * a nie sam Krok 4 — stabilizacja i bufor odczytu też zużywają energię.
+     */
+    private ProcedureClassConfig config(int intervalMinutes, int sampleCount) {
+        return ProcedureClassConfig.builder()
+                .step1ProgMinutes(10)
+                .step2PlacementMinutes(20)
+                .step3StabHours(6)
+                .step4IntervalMinutes(intervalMinutes)
+                .step4SampleCount(sampleCount)
+                .step5ReadoutBufferHours(6)
+                .build();
+    }
+
+    // --- W4a: zakres pracy urządzenia --------------------------------------
+
+    @Nested
+    @DisplayName("W4a — zakres pracy urządzenia")
+    class OperatingRange {
+
+        @Test
+        @DisplayName("ST-W4a-01: testo 174 T w -80 °C odpada na zakresie pracy, nie na baterii")
+        void st_w4a_01_recorderOutsideOperatingRangeIsRejectedRegardlessOfBattery() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo174T(), 400), config(10, 100), chamber("Zamrażarka -80", -80.0, -60.0),
+                    MISSION_START);
+
+            assertThat(budget.isAcceptable()).isFalse();
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .as("pełna bateria nie ratuje urządzenia użytego poza specyfikacją")
+                    .contains(HardwareViolation.Rule.OPERATING_RANGE);
+            // Separator dziesiętny zależy od locale JVM (pl: przecinek, en: kropka),
+            // więc oczekiwany fragment formatujemy tak samo jak komunikat.
+            assertThat(budget.firstViolation().message())
+                    .contains("testo 174 T")
+                    .contains(String.format("%.1f…%.1f°C", -30.0, 70.0))
+                    .contains("Zamrażarka -80");
+        }
+
+        @Test
+        @DisplayName("ST-W4a-02: testo 184 T4 w -80 °C mieści się w zakresie")
+        void st_w4a_02_t4CoversUltraLowTemperature() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T4(), 90), config(15, 100), chamber("Zamrażarka -80", -80.0, -60.0),
+                    MISSION_START);
+
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .doesNotContain(HardwareViolation.Rule.OPERATING_RANGE);
+        }
+
+        @Test
+        @DisplayName("Model bez danych katalogowych blokuje, zamiast przechodzić po cichu")
+        void modelWithoutSpecificationBlocks() {
+            ThermoRecorderModel unknown = ThermoRecorderModel.builder()
+                    .name("Nieznany model").channelCount(1).build();
+
+            HardwareBudget budget = service.evaluate(
+                    recorder(unknown, 100), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .contains(HardwareViolation.Rule.DATA_INCOMPLETE);
+        }
+
+        @Test
+        @DisplayName("Komora bez limitów temperatury blokuje ocenę W4")
+        void chamberWithoutLimitsBlocks() {
+            CoolingChamber noLimits = CoolingChamber.builder().id(2L).chamberName("Komora bez limitów").build();
+
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo174T(), 400), config(15, 100), noLimits, MISSION_START);
+
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .contains(HardwareViolation.Rule.DATA_INCOMPLETE);
+        }
+    }
+
+    // --- W4b: budżet pamięci ------------------------------------------------
+
+    @Nested
+    @DisplayName("W4b — budżet pamięci")
+    class MemoryBudget {
+
+        @Test
+        @DisplayName("ST-W4b-01: 14 dni co 1 min = 20 160 próbek > 16 000 w testo 174 T")
+        void st_w4b_01_memoryOverflowIsRejected() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo174T(), 400), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            HardwareViolation memory = budget.violations().stream()
+                    .filter(v -> v.rule() == HardwareViolation.Rule.MEMORY)
+                    .findFirst().orElseThrow();
+
+            assertThat(memory.required()).isEqualTo(20160);
+            assertThat(memory.available()).isEqualTo(16000);
+            assertThat(budget.memoryLimitDays()).isCloseTo(11.1, org.assertj.core.data.Offset.offset(0.1));
+        }
+
+        @Test
+        @DisplayName("ST-W4b-04: limit pamięci zgadza się co do minuty ze wskazaniem stacji Testo")
+        void st_w4b_04_memoryLimitMatchesManufacturerSoftware() {
+            // Odczytane z oryginalnego oprogramowania dla testo 174 T (16 000 próbek):
+            //   Δt =  1 min → "Okres  11d 2h 39m" = 15 999 min
+            //   Δt = 10 min → "Okres 111d 2h 30m" = 159 990 min
+            // Liczba interwałów to 15 999, nie 16 000 — pierwszy odczyt zapada
+            // w chwili startu.
+            double atOneMinute = service.evaluate(
+                    recorder(testo174T(), 400), config(1, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
+                    .memoryLimitDays();
+            double atTenMinutes = service.evaluate(
+                    recorder(testo174T(), 400), config(10, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START)
+                    .memoryLimitDays();
+
+            assertThat(atOneMinute * 1440.0)
+                    .as("11d 2h 39m")
+                    .isCloseTo(15_999.0, org.assertj.core.data.Offset.offset(0.001));
+            assertThat(atTenMinutes * 1440.0)
+                    .as("111d 2h 30m")
+                    .isCloseTo(159_990.0, org.assertj.core.data.Offset.offset(0.001));
+        }
+
+        @Test
+        @DisplayName("ST-W4b-02: te same 20 160 próbek mieści się w testo 184 T3 (40 000)")
+        void st_w4b_02_largerMemoryAccepts() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T3(), 400), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .doesNotContain(HardwareViolation.Rule.MEMORY);
+        }
+
+        @Test
+        @DisplayName("ST-W4b-03: testo 175 T3 dzieli 1 mln odczytów na 3 kanały → 333 333 na kanał")
+        void st_w4b_03_memoryIsSharedBetweenChannels() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo175T3(), 400), config(1, 400000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            HardwareViolation memory = budget.violations().stream()
+                    .filter(v -> v.rule() == HardwareViolation.Rule.MEMORY)
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError(
+                            "pojemność katalogowa 1 mln nie jest liczbą próbek dostępną dla kanału"));
+
+            assertThat(memory.available())
+                    .as("1 000 000 / 3 kanały")
+                    .isEqualTo(333333);
+        }
+    }
+
+    // --- W4c: budżet energii ------------------------------------------------
+
+    @Nested
+    @DisplayName("W4c — budżet energii")
+    class BatteryBudget {
+
+        /** 20 min + 6 h + 10 min × 2950 + 6 h = 30 240 min = dokładnie 21 dni. */
+        private ProcedureClassConfig mission21Days() {
+            return config(10, 2950);
+        }
+
+        @Test
+        @DisplayName("ST-W4c-01: 184 T4 w -80 °C, urządzenie raportuje 60 dni, misja 21 dni → dopuszczony")
+        void st_w4c_01_sufficientBudgetPasses() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T4(), 60), mission21Days(), chamber("Zamrażarka -80", -80.0, -60.0),
+                    MISSION_START);
+
+            // 60 dni × 10/(10+1) = 54,5 dnia; dopuszczalne 54,5/1,5 = 36,4 > 21
+            assertThat(budget.batteryLimitDays()).isCloseTo(54.5, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(budget.missionDays()).isCloseTo(21.0, org.assertj.core.data.Offset.offset(0.01));
+            assertThat(budget.isAcceptable()).isTrue();
+        }
+
+        @Test
+        @DisplayName("ST-W4c-02: ten sam scenariusz przy 25 dniach → odrzucony")
+        void st_w4c_02_insufficientBudgetIsRejected() {
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T4(), 25), mission21Days(), chamber("Zamrażarka -80", -80.0, -60.0),
+                    MISSION_START);
+
+            HardwareViolation battery = budget.violations().stream()
+                    .filter(v -> v.rule() == HardwareViolation.Rule.BATTERY)
+                    .findFirst().orElseThrow();
+
+            // 25 dni × 10/(10+1) = 22,7 dnia; dopuszczalne 22,7/1,5 = 15,2 < 21
+            assertThat(battery.available()).isCloseTo(22.7, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(battery.required()).isCloseTo(21.0, org.assertj.core.data.Offset.offset(0.01));
+        }
+
+        @Test
+        @DisplayName("ST-W4c-03: przy gęstym próbkowaniu wiąże bateria, nie pamięć")
+        void st_w4c_03_bindingConstraintIsReported() {
+            // 184 T3, +4 °C, Δt = 1 min, urządzenie raportuje 60 dni:
+            //   pamięć  = 39 999 × 1 min   = 27,8 dnia
+            //   bateria = 60 × 1/(1+1)     = 30,0 dnia → dopuszczalne 20,0
+            //
+            // Wskazanie wyjściowe obniżone z 375 do 60 dni wraz z korektą członu
+            // cyklu (§2.5): przy zmierzonym modelu 1 min zabiera połowę budżetu,
+            // a nie czternaście piętnastych, więc energia wiąże wcześniej niż
+            // pamięć dopiero przy ogniwie bliskim wyczerpania. Sama zmiana progu
+            // jest tu wynikiem pomiaru, nie dopasowaniem testu do kodu.
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T3(), 60), config(1, 20000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.memoryLimitDays()).isCloseTo(27.8, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(budget.batteryLimitDays()).isCloseTo(30.0, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(budget.binding()).isEqualTo(HardwareBudget.BindingConstraint.BATTERY);
+        }
+
+        @Test
+        @DisplayName("ST-W4c-04: sentinel -1 (brak odczytu) nie wchodzi do arytmetyki")
+        void st_w4c_04_unknownBatteryBlocksInsteadOfComputing() {
+            HardwareBudget fromPdf = service.evaluate(
+                    recorder(testo184T3(), -1), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+            HardwareBudget neverRead = service.evaluate(
+                    recorder(testo184T3(), null), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            for (HardwareBudget budget : List.of(fromPdf, neverRead)) {
+                assertThat(budget.violations())
+                        .extracting(HardwareViolation::rule)
+                        .containsExactly(HardwareViolation.Rule.DATA_INCOMPLETE);
+                assertThat(budget.batteryLimitDays()).isNaN();
+                assertThat(budget.binding()).isEqualTo(HardwareBudget.BindingConstraint.UNKNOWN);
+            }
+        }
+
+        @Test
+        @DisplayName("ST-W4c-05: logger jednorazowy 184 T1 rozlicza się z limitu pracy, nie z procentu")
+        void st_w4c_05_disposableLoggerUsesOperatingDurationBudget() {
+            ThermoRecorder used = recorder(testo184T1(), null);
+            used.setFirstActivationDate(MISSION_START.minusDays(80));
+
+            HardwareBudget budget = service.evaluate(
+                    used, mission21Days(), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            // 90 dni limitu - 80 zużytych = 10 dni; dopuszczalne 6,7 < 21 dni misji
+            assertThat(budget.batteryLimitDays()).isEqualTo(10.0);
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .as("brak odczytu % nie jest tu brakiem danych — model nie ma wymiennej baterii")
+                    .containsExactly(HardwareViolation.Rule.BATTERY);
+        }
+
+        @Test
+        @DisplayName("ST-W4c-06: budżet liczy pełną misję, nie sam Krok 4")
+        void st_w4c_06_missionIncludesStabilisationAndReadoutBuffer() {
+            // Budżet dobrany tak, by próg dopuszczenia (1,875 / 1,5 = 1,25) leżał
+            // między czasem samego Kroku 4 (1,0 dnia) a pełnym czasem misji
+            // (1,51 dnia): gdyby reguła liczyła tylko pomiar, rejestrator
+            // zostałby dopuszczony.
+            ThermoRecorderModel shortLived = ThermoRecorderModel.builder()
+                    .name("TEST-SHORT").channelCount(1).sampleCapacity(40000)
+                    .minOperatingTempC(-35.0).maxOperatingTempC(70.0)
+                    .batteryReplaceable(true)
+                    .batteryLifeDays(3).batteryLifeRefCycleMin(15).batteryLifeRefTempC(25.0)
+                    .build();
+
+            HardwareBudget budget = service.evaluate(
+                    recorder(shortLived, 2), config(15, 96), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.missionDays())
+                    .as("20 min + 6 h stabilizacji + 24 h pomiaru + 6 h na odczyt")
+                    .isCloseTo(1.514, org.assertj.core.data.Offset.offset(0.01));
+            // 2 dni z urządzenia × 15/(15+1) = 1,875; próg 1,875/1,5 = 1,25 —
+            // powyżej samego Kroku 4 (1,0), poniżej pełnej misji (1,51)
+            assertThat(budget.batteryLimitDays()).isEqualTo(1.875);
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .containsExactly(HardwareViolation.Rule.BATTERY);
+        }
+
+        @Test
+        @DisplayName("Przeterminowana bateria blokuje mimo dużego zapasu dni")
+        void expiredBatteryIsRejected() {
+            ThermoRecorderModel model = testo184T3();
+            model.setBatteryShelfLifeMonths(24);
+            ThermoRecorder old = recorder(model, 475);
+            old.setBatteryReplacementDate(MISSION_START.minusMonths(30));
+
+            HardwareBudget budget = service.evaluate(
+                    old, config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.violations())
+                    .extracting(HardwareViolation::rule)
+                    .contains(HardwareViolation.Rule.BATTERY);
+            assertThat(budget.firstViolation().message()).contains("wymagana wymiana");
+        }
+
+        @Test
+        @DisplayName("Praca poniżej temperatury referencyjnej nie zmienia budżetu energii")
+        void referenceTemperatureDoesNotDerateBudget() {
+            // 174 T ma żywotność podaną dla +25 °C. Producent nie publikuje
+            // współczynnika deratingu, więc go nie modelujemy: ten sam rejestrator
+            // w chłodziarce i w zamrażarce dostaje identyczny budżet, a temperatura
+            // decyduje wyłącznie przez bramkę W4a.
+            HardwareBudget inFridge = service.evaluate(
+                    recorder(testo174T(), 450), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+            HardwareBudget inFreezer = service.evaluate(
+                    recorder(testo174T(), 450), config(15, 100), chamber("Zamrażarka -20", -20.0, -15.0),
+                    MISSION_START);
+
+            assertThat(inFridge.isAcceptable()).isTrue();
+            assertThat(inFreezer.isAcceptable()).isTrue();
+            assertThat(inFreezer.batteryLimitDays()).isEqualTo(inFridge.batteryLimitDays());
+        }
+
+        @Test
+        @DisplayName("Komunikat odrzucenia niesie wyprowadzenie, nie samą liczbę końcową")
+        void rejectionMessageExplainsWhereTheNumberComesFrom() {
+            // Operator widzi w stacji Testo liczbę dni i musi móc powiązać ją
+            // z naszym budżetem, inaczej różnica wygląda na błąd aplikacji.
+            // 184 T3: 30 000 próbek mieści się w pamięci (40 000), więc
+            // odrzucenie jest wyłącznie energetyczne.
+            //   misja  = 20 min + 6 h + 1 min × 30 000 + 6 h = 21,35 dnia
+            //   budżet = 50 dni × 1/(1+1) = 25,0 → dopuszczalne 16,7 dnia
+            HardwareBudget budget = service.evaluate(
+                    recorder(testo184T3(), 50), config(1, 30000), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            HardwareViolation battery = budget.violations().stream()
+                    .filter(v -> v.rule() == HardwareViolation.Rule.BATTERY)
+                    .findFirst().orElseThrow();
+
+            assertThat(battery.message())
+                    .as("liczba z urządzenia musi być widoczna w komunikacie, "
+                            + "żeby dała się zestawić ze stacją Testo")
+                    .contains("urządzenie raportuje 50 dni")
+                    .contains("cykl 1 min");
+        }
+
+        @Test
+        @DisplayName("ST-W4c-07: człon cyklu odtwarza tempo spadku wskazania zmierzone na sprzęcie")
+        void st_w4c_07_cycleFactorMatchesMeasuredDrainRate() {
+            // Pomiar 2026-08-07, trzy egzemplarze 174 T, bieg 5→7 sierpnia
+            // (suplement W4 §2.5). Wskazanie schodzi w tempie 1 + T_c/Δt dnia
+            // na dobę, więc budżet dla badania to D_ref podzielone przez to tempo.
+            //
+            //   Δt = 15 min → tempo 1,067 (zmierzone 1,02) → 480 × 15/16 = 450,0
+            //   Δt = 10 min → tempo 1,100                  → 480 × 10/11 = 436,4
+            //   Δt =  1 min → tempo 2,000 (zmierzone 2,05) → 480 ×  1/2  = 240,0
+            int referenceDays = 480;
+            var fridge = chamber("Chłodziarka", 2.0, 8.0);
+
+            assertThat(service.evaluate(recorder(testo184T3(), referenceDays), config(15, 100),
+                    fridge, MISSION_START).batteryLimitDays())
+                    .isCloseTo(450.0, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(service.evaluate(recorder(testo184T3(), referenceDays), config(10, 100),
+                    fridge, MISSION_START).batteryLimitDays())
+                    .isCloseTo(436.4, org.assertj.core.data.Offset.offset(0.1));
+
+            double atOneMinute = service.evaluate(recorder(testo184T3(), referenceDays), config(1, 100),
+                    fridge, MISSION_START).batteryLimitDays();
+            assertThat(atOneMinute)
+                    .as("gęste próbkowanie połowi budżet — tyle wynika z pomiaru")
+                    .isCloseTo(240.0, org.assertj.core.data.Offset.offset(0.1));
+            assertThat(atOneMinute)
+                    .as("regresja na obalony człon min(1; Δt/Δt_ref), który dawał tu 32 dni "
+                            + "— 7,3× za mało wobec zmierzonego zużycia")
+                    .isNotCloseTo(referenceDays / 15.0, org.assertj.core.data.Offset.offset(1.0));
+        }
+
+        @Test
+        @DisplayName("Logger jednorazowy tłumaczy odrzucenie limitem pracy, nie stanem ogniwa")
+        void disposableRejectionMessageUsesOperatingLimit() {
+            ThermoRecorder used = recorder(testo184T1(), null);
+            used.setFirstActivationDate(MISSION_START.minusDays(80));
+
+            HardwareBudget budget = service.evaluate(
+                    used, mission21Days(), chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+
+            assertThat(budget.firstViolation().message())
+                    .contains("limitu pracy urządzenia 90 dni")
+                    .contains("zużyto 80")
+                    .doesNotContain("stan ogniwa");
+        }
+    }
+
+    // --- wariant rzucający (ręczna podmiana sprzętu) ------------------------
+
+    @Nested
+    @DisplayName("require(...) — ręczna podmiana rejestratora")
+    class RequireVariant {
+
+        @Test
+        @DisplayName("Każde kryterium ma własny typ wyjątku")
+        void violationsMapToDedicatedExceptions() {
+            assertThatThrownBy(() -> service.require(
+                    recorder(testo174T(), 400), config(15, 100), chamber("Zamrażarka -80", -80.0, -60.0),
+                    MISSION_START))
+                    .isInstanceOf(RecorderOutOfOperatingRangeException.class);
+
+            assertThatThrownBy(() -> service.require(
+                    recorder(testo174T(), 400), config(1, 20160), chamber("Chłodziarka", 2.0, 8.0), MISSION_START))
+                    .isInstanceOf(InsufficientRecorderMemoryException.class)
+                    .satisfies(e -> assertThat(((InsufficientRecorderMemoryException) e).getAvailableSamples())
+                            .isEqualTo(16000));
+
+            assertThatThrownBy(() -> service.require(
+                    recorder(testo184T4(), 25), config(10, 2950), chamber("Zamrażarka -80", -80.0, -60.0),
+                    MISSION_START))
+                    .isInstanceOf(InsufficientBatteryLevelException.class);
+
+            assertThatThrownBy(() -> service.require(
+                    recorder(testo184T3(), -1), config(15, 100), chamber("Chłodziarka", 2.0, 8.0), MISSION_START))
+                    .isInstanceOf(HardwareDataIncompleteException.class);
+        }
+
+        @Test
+        @DisplayName("Sprzęt spełniający wszystkie kryteria przechodzi bez wyjątku")
+        void acceptableHardwarePasses() {
+            service.require(recorder(testo184T3(), 450), config(15, 100),
+                    chamber("Chłodziarka", 2.0, 8.0), MISSION_START);
+        }
+    }
+}

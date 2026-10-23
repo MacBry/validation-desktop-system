@@ -80,6 +80,10 @@ public final class I18n {
      * Tłumaczenie klucza z opcjonalnymi parametrami {@link MessageFormat}.
      * Brakujący klucz zwraca "!klucz!" zamiast wyjątku — brak tłumaczenia
      * nie może wywracać UI, a marker jest łatwy do wychwycenia w testach.
+     * <p>
+     * Formatowanie liczb i dat idzie po locale aplikacji, NIE po domyślnym
+     * locale JVM — inaczej separator dziesiętny zależałby od maszyny
+     * (pl na stacji, en na CI) i angielskie UI pokazywałoby "2,345".
      */
     public static String t(String key, Object... args) {
         String pattern;
@@ -88,6 +92,6 @@ public final class I18n {
         } catch (MissingResourceException e) {
             return "!" + key + "!";
         }
-        return args.length == 0 ? pattern : MessageFormat.format(pattern, args);
+        return args.length == 0 ? pattern : new MessageFormat(pattern, locale).format(args);
     }
 }

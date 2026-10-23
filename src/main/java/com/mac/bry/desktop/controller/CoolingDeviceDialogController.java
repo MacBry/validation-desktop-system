@@ -23,14 +23,28 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Dialog urządzenia chłodniczego wraz z listą jego komór.
+ * <p>
+ * <b>Prototyp, nie singleton.</b> Kontroler trzyma stan otwartego formularza
+ * ({@code coolingDevice}, {@code chambersList}), a FXMLLoader pobiera go przez
+ * {@code applicationContext::getBean}. Jako singleton oddawał ten sam obiekt
+ * przy każdym otwarciu okna: lista komór zapisanego już urządzenia przechodziła
+ * do formularza nowego urządzenia, a że te komory miały już identyfikatory,
+ * kaskada PERSIST z nowej (transient) encji kończyła się błędem
+ * „detached entity passed to persist: CoolingChamber".
+ */
 @Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @RequiredArgsConstructor
 @Slf4j
 public class CoolingDeviceDialogController {
@@ -79,6 +93,10 @@ public class CoolingDeviceDialogController {
         this.coolingDevice = device;
         this.isEdit = isEdit;
         this.readOnly = readOnly;
+        this.saved = false;
+        // Formularz zawsze startuje od stanu przekazanego urządzenia — nigdy od
+        // pozostałości po poprzednim oknie (patrz uwaga o zakresie beana).
+        chambersList.clear();
 
         populateCombos();
 

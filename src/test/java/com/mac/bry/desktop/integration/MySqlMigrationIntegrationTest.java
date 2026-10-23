@@ -12,6 +12,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,6 +29,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Testcontainers(disabledWithoutDocker = true)
 class MySqlMigrationIntegrationTest {
+
+    /** Tabele planera z V32 — każda ma mieć odpowiednik {@code _aud}. */
+    private static final List<String> PLANNER_TABLES = List.of(
+            "procedure_class_configs",
+            "operator_shift_configs",
+            "user_vacations",
+            "planned_validation_tasks",
+            "planned_task_recorder_assignments");
 
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
@@ -67,5 +78,92 @@ class MySqlMigrationIntegrationTest {
                 assertThat(rs).isNotNull();
             }
         }
+    }
+
+    @Test
+    void plannerSchemaIsUsableOnRealMysql() throws Exception {
+        flyway().migrate();
+
+        try (Connection conn = DriverManager.getConnection(
+                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
+             Statement st = conn.createStatement()) {
+
+            for (String table : PLANNER_TABLES) {
+                try (ResultSet rs = st.executeQuery("SELECT id FROM " + table + " LIMIT 1")) {
+                    assertThat(rs).as("tabela %s", table).isNotNull();
+                }
+                try (ResultSet rs = st.executeQuery("SELECT id, rev, revtype FROM " + table + "_aud LIMIT 1")) {
+                    assertThat(rs).as("tabela audytowa %s_aud", table).isNotNull();
+                }
+            }
+
+            // Rozdział zegarów (BA R2) wraz z kolumną w tabeli audytowej.
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT last_mapping_date, last_periodic_revalidation_date FROM cooling_chambers LIMIT 1")) {
+                assertThat(rs).isNotNull();
+            }
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT last_periodic_revalidation_date FROM cooling_chambers_aud LIMIT 1")) {
+                assertThat(rs).isNotNull();
+            }
+
+            // Dane startowe muszą przetrwać migrację na MySQL, nie tylko na H2.
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT COUNT(*) FROM operator_shift_configs WHERE user_id IS NULL AND active = TRUE")) {
+                rs.next();
+                assertThat(rs.getInt(1)).isEqualTo(1);
+            }
+            try (ResultSet rs = st.executeQuery(
+                    "SELECT COUNT(*) FROM procedure_class_configs WHERE active = TRUE")) {
+                rs.next();
+                assertThat(rs.getInt(1)).isEqualTo(2);
+            }
+        }
+    }
+
+    /**
+     * Każda kolumna tabeli bazowej musi mieć odpowiednik w tabeli {@code _aud}.
+     * <p>
+     * Przy {@code ddl-auto=none} Envers nie utworzy ani nie uzupełni tabel
+     * audytowych — pominięta kolumna ujawniłaby się dopiero przy pierwszym
+     * zapisie encji na produkcji, jako błąd SQL w trakcie zapisu audytu.
+     */
+    @Test
+    void auditTablesMirrorEveryColumnOfTheirBaseTable() throws Exception {
+        flyway().migrate();
+
+        try (Connection conn = DriverManager.getConnection(
+                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())) {
+
+            for (String table : PLANNER_TABLES) {
+                Set<String> base = columnsOf(conn, table);
+                Set<String> audit = columnsOf(conn, table + "_aud");
+
+                assertThat(audit)
+                        .as("tabela %s_aud musi zawierać kolumny rewizji", table)
+                        .contains("rev", "revtype");
+
+                assertThat(audit)
+                        .as("kolumny brakujące w %s_aud", table)
+                        .containsAll(base);
+            }
+        }
+    }
+
+    private Set<String> columnsOf(Connection conn, String table) throws Exception {
+        Set<String> columns = new HashSet<>();
+        try (var ps = conn.prepareStatement(
+                "SELECT LOWER(column_name) FROM information_schema.columns " +
+                        "WHERE table_schema = ? AND table_name = ?")) {
+            ps.setString(1, MYSQL.getDatabaseName());
+            ps.setString(2, table);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    columns.add(rs.getString(1));
+                }
+            }
+        }
+        assertThat(columns).as("tabela %s nie istnieje albo nie ma kolumn", table).isNotEmpty();
+        return columns;
     }
 }
