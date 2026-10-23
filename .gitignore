@@ -47,3 +47,7 @@ data/
 
 # Archive folder for heavy local files
 docs/archive/
+
+# Bajtkod Pythona mostow Testo (reguly ponizej negacji !src/main/resources/**)
+src/main/resources/**/__pycache__/
+*.pyc

@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(mvn test *)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\macie\\\\Desktop\\\\VCC Desktop APP\\\\validation-desktop\" -Name -Force | Where-Object { $_ -match '\\\\.env$|\\\\.env\\\\.local$|secrets|credentials' })"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\macie\\\\Desktop\\\\VCC Desktop APP\\\\validation-desktop\" -Name -Force | Where-Object { $_ -match '\\\\.env$|\\\\.env\\\\.local$|secrets|credentials' })",
+      "Bash(awk -F, 'NR>1{im+=$4; ic+=$5; bm+=$6; bc+=$7; lm+=$8; lc+=$9} *)",
+      "Bash(awk -F, 'NR>1{ *)",
+      "Bash(sort -t'\\(' -k1)"
     ]
   }
 }
