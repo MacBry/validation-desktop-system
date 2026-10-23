@@ -35,6 +35,18 @@
 
         <Label text="%common.pracownia2" GridPane.rowIndex="5" />
         <ComboBox fx:id="labComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+
+        <!-- Dane wejściowe reguły W4: bez nich kontrola wieku ogniwa nigdy się nie
+             uruchamia, a loggery jednorazowe wyglądają na fabrycznie nowe. -->
+        <Label text="%thermorecorderdialog.data_wymiany_baterii" GridPane.rowIndex="6" />
+        <DatePicker fx:id="batteryReplacementDatePicker" maxWidth="Infinity"
+                    promptText="%thermorecorderdialog.opcjonalne"
+                    GridPane.columnIndex="1" GridPane.rowIndex="6" />
+
+        <Label text="%thermorecorderdialog.pierwsze_uruchomienie" GridPane.rowIndex="7" />
+        <DatePicker fx:id="firstActivationDatePicker" maxWidth="Infinity"
+                    promptText="%thermorecorderdialog.opcjonalne"
+                    GridPane.columnIndex="1" GridPane.rowIndex="7" />
     </GridPane>
 
     <Separator />

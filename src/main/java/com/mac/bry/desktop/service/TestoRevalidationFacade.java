@@ -9,7 +9,6 @@ import com.mac.bry.desktop.service.stats.HypothesisTestingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import javafx.scene.chart.LineChart;
 import java.io.File;
 import java.util.List;
 
@@ -58,8 +57,14 @@ public class TestoRevalidationFacade {
     }
 
     // --- WYKRESY I RAPORTY ---
-    public File snapshotExistingChart(LineChart<Number, Number> chart) throws Exception {
-        return chartRenderer.snapshotExistingChart(chart);
+
+    /**
+     * Wykres wielokanałowy do raportu zbiorczego, renderowany off-screen o stałych
+     * wymiarach. Zastąpił zrzut wykresu z ekranu, którego proporcje zależały od
+     * rozmiaru okna — szczegóły w {@link JavaFxChartRenderer#renderSessionChartToPng}.
+     */
+    public File renderSessionChart(RevalidationSession session) throws Exception {
+        return chartRenderer.renderSessionChartToPng(session);
     }
 
     public void compileZip(RevalidationSession session, File chartPng, File outputZip) throws Exception {

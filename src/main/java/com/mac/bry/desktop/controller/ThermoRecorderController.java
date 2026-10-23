@@ -57,7 +57,9 @@ public class ThermoRecorderController {
         com.mac.bry.desktop.controller.helper.ThermoRecorderTableHelper.setupTable(snColumn, modelColumn, deptColumn);
         com.mac.bry.desktop.controller.helper.ThermoRecorderCellFactoryHelper.setupStatusColumn(statusColumn);
         com.mac.bry.desktop.controller.helper.ThermoRecorderCellFactoryHelper.setupCalibrationColumn(calibrationColumn, recorderService::getCalibrationStatus);
-        com.mac.bry.desktop.controller.helper.ThermoRecorderCellFactoryHelper.setupActionsColumn(actionsColumn, this::handleEditRecorder, this::handleShowCalibrationHistory, this::handleShowAudit);
+        com.mac.bry.desktop.controller.helper.ThermoRecorderCellFactoryHelper.setupActionsColumn(actionsColumn,
+                this::handleEditRecorder, this::handleShowCalibrationHistory, this::handleShowAudit,
+                this::handleShowDetails);
     }
 
     private void setupFilters() {
@@ -111,6 +113,26 @@ public class ThermoRecorderController {
             handleRefresh();
         } catch (IOException e) {
             log.error("Błąd podczas otwierania historii wzorcowań", e);
+        }
+    }
+
+    private void handleShowDetails(ThermoRecorder recorder) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/thermo_recorder_details.fxml"),
+                    com.mac.bry.desktop.config.I18n.getBundle());
+            loader.setControllerFactory(applicationContext::getBean);
+            Parent root = loader.load();
+
+            ThermoRecorderDetailsController controller = loader.getController();
+            controller.setRecorder(recorder);
+
+            Stage stage = new Stage();
+            stage.setTitle(com.mac.bry.desktop.config.I18n.t("recorderdetails.title") + ": " + recorder.getSerialNumber());
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.showAndWait();
+        } catch (IOException e) {
+            log.error("Błąd podczas otwierania szczegółów rejestratora", e);
         }
     }
 

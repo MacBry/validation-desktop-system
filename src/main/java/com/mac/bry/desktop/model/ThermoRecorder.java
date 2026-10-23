@@ -10,6 +10,8 @@ import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +55,47 @@ public class ThermoRecorder {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "laboratory_id", nullable = true)
     private Laboratory laboratory;
+
+    // --- Stan sprzętowy egzemplarza (reguła W4, V34) ------------------------
+
+    /**
+     * Pozostały czas pracy baterii [dni] z ostatniego odczytu w stacji Testo USB
+     * (ramka {@code ab010a}) — ta sama liczba, którą pokazuje oryginalne
+     * oprogramowanie producenta („Stan baterii: 388 dni").
+     * <p>
+     * {@code null} oznacza brak wiarygodnego odczytu i <b>blokuje</b> regułę W4c:
+     * budżetu energii nie da się wtedy wyznaczyć, a zgadywanie go jest gorsze niż
+     * odmowa zaplanowania badania. Sentinel {@code -1} ze źródeł nieraportujących
+     * baterii (import PDF 184) nie jest tu zapisywany.
+     * <p>
+     * Jednostką są <b>dni</b>, nie procenty — urządzenie nie mierzy stanu
+     * naładowania, a reguła W4c i tak porównuje czas z czasem. Historia zmiany:
+     * {@code V36__Battery_Remaining_Days.sql}.
+     */
+    @Column(name = "battery_remaining_days")
+    private Integer batteryRemainingDays;
+
+    /**
+     * @deprecated Wielkość nigdy nie była mierzona — do 2026-08-05 zapisywano tu
+     * młodszy bajt górnego progu alarmowego odczytany jako „procent baterii".
+     * Kolumna i historia w {@code _aud} zostają jako ślad audytowy, ale pole
+     * <b>nie jest już zapisywane ani używane przez regułę W4c</b>. Aktualny stan:
+     * {@link #batteryRemainingDays}.
+     */
+    @Deprecated(since = "2026-08-05", forRemoval = false)
+    @Column(name = "last_battery_level_percent")
+    private Integer lastBatteryLevelPercent;
+
+    @Column(name = "last_battery_read_at")
+    private LocalDateTime lastBatteryReadAt;
+
+    /** Data ostatniej wymiany baterii — podstawa kontroli wieku ogniwa. */
+    @Column(name = "battery_replacement_date")
+    private LocalDate batteryReplacementDate;
+
+    /** Pierwsze uruchomienie — punkt odniesienia limitu pracy loggerów jednorazowych. */
+    @Column(name = "first_activation_date")
+    private LocalDate firstActivationDate;
 
     @NotAudited
     @OneToMany(mappedBy = "thermoRecorder", cascade = CascadeType.ALL, orphanRemoval = true)

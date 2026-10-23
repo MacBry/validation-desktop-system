@@ -10,6 +10,7 @@ import com.mac.bry.desktop.service.ThermoRecorderService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -41,6 +42,8 @@ public class ThermoRecorderDialogController {
     @FXML private TextField resolutionField;
     @FXML private ComboBox<Department> deptComboBox;
     @FXML private ComboBox<Laboratory> labComboBox;
+    @FXML private DatePicker batteryReplacementDatePicker;
+    @FXML private DatePicker firstActivationDatePicker;
 
     private ThermoRecorder recorder;
     private boolean saved = false;
@@ -92,6 +95,8 @@ public class ThermoRecorderDialogController {
             resolutionField.setText(recorder.getResolution().toString());
             deptComboBox.getSelectionModel().select(recorder.getDepartment());
             labComboBox.getSelectionModel().select(recorder.getLaboratory());
+            batteryReplacementDatePicker.setValue(recorder.getBatteryReplacementDate());
+            firstActivationDatePicker.setValue(recorder.getFirstActivationDate());
         } else {
             statusComboBox.getSelectionModel().select(RecorderStatus.ACTIVE);
             resolutionField.setText("0.1");
@@ -107,6 +112,10 @@ public class ThermoRecorderDialogController {
             recorder.setResolution(new BigDecimal(resolutionField.getText()));
             recorder.setDepartment(deptComboBox.getValue());
             recorder.setLaboratory(labComboBox.getValue());
+            // Obie daty są opcjonalne — pusty DatePicker ma czyścić wartość,
+            // a nie zostawiać poprzedniej, bo operator poprawia właśnie pomyłkę.
+            recorder.setBatteryReplacementDate(batteryReplacementDatePicker.getValue());
+            recorder.setFirstActivationDate(firstActivationDatePicker.getValue());
 
             if (recorder.getDepartment() == null) {
                 log.error("Dział jest wymagany");

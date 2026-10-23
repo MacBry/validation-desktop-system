@@ -51,6 +51,7 @@ class GxpNotificationServiceTest {
     void configureDefaults() {
         ReflectionTestUtils.setField(service, "advanceDays", 30);
         ReflectionTestUtils.setField(service, "revalidationCycleMonths", 12);
+        ReflectionTestUtils.setField(service, "mappingCycleYears", 5);
         ReflectionTestUtils.setField(service, "enabled", true);
     }
 
@@ -99,12 +100,12 @@ class GxpNotificationServiceTest {
     void tc_notif_004_overdueChamberListed() {
         when(calibrationRepository.findLatestExpiringUntil(any())).thenReturn(List.of());
         when(coolingChamberRepository.findAll()).thenReturn(List.of(
-                chamber("Komora Górna", TODAY.minusMonths(13), true)));
+                chamber("Komora Górna", TODAY.minusYears(2), TODAY.minusMonths(13), true)));
 
         String digest = service.buildDigest(TODAY).orElseThrow();
 
         assertThat(digest)
-                .contains("KOMORY DO REWALIDACJI (1)")
+                .contains("KOMORY DO REWALIDACJI OKRESOWEJ (1)")
                 .contains("Komora Górna")
                 .contains("ZALEGŁA");
     }
@@ -114,22 +115,72 @@ class GxpNotificationServiceTest {
     void tc_notif_005_neverMappedChamberListed() {
         when(calibrationRepository.findLatestExpiringUntil(any())).thenReturn(List.of());
         when(coolingChamberRepository.findAll()).thenReturn(List.of(
-                chamber("Komora Nowa", null, true)));
+                chamber("Komora Nowa", TODAY.minusMonths(1), null, true)));
 
         String digest = service.buildDigest(TODAY).orElseThrow();
 
-        assertThat(digest).contains("BRAK MAPOWANIA");
+        assertThat(digest)
+                .contains("KOMORY DO MAPOWANIA 5-LETNIEGO (1)")
+                .contains("BRAK MAPOWANIA");
     }
 
     @Test
-    @DisplayName("TC-NOTIF-006: Komora bez wymogu mapowania i świeżo mapowana — pomijane")
+    @DisplayName("TC-NOTIF-006: Komory z aktualnymi obiema procedurami — pomijane")
     void tc_notif_006_notDueChambersSkipped() {
         when(calibrationRepository.findLatestExpiringUntil(any())).thenReturn(List.of());
         when(coolingChamberRepository.findAll()).thenReturn(List.of(
-                chamber("Bez wymogu", null, false),
-                chamber("Świeża", TODAY.minusMonths(2), true)));
+                chamber("Odczynniki świeże", TODAY.minusMonths(2), null, false),
+                chamber("KKCZ świeża", TODAY.minusMonths(2), TODAY.minusMonths(2), true)));
 
         assertThat(service.buildDigest(TODAY)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Rewalidacja liczona z własnego zegara, nie z daty mapowania")
+    void revalidationUsesItsOwnClock() {
+        when(calibrationRepository.findLatestExpiringUntil(any())).thenReturn(List.of());
+        // Mapowanie sprzed 13 miesięcy, ale rewalidacja miesiąc temu — nic nie zalega.
+        when(coolingChamberRepository.findAll()).thenReturn(List.of(
+                chamber("Komora KKCZ", TODAY.minusMonths(1), TODAY.minusMonths(13), true)));
+
+        assertThat(service.buildDigest(TODAY))
+                .as("stara data mapowania nie może udawać zaległej rewalidacji rocznej")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("Komora z odczynnikami też podlega corocznej rewalidacji")
+    void reagentChamberStillNeedsPeriodicRevalidation() {
+        when(calibrationRepository.findLatestExpiringUntil(any())).thenReturn(List.of());
+        when(coolingChamberRepository.findAll()).thenReturn(List.of(
+                chamber("Komora odczynników", TODAY.minusMonths(13), null, false)));
+
+        String digest = service.buildDigest(TODAY).orElseThrow();
+
+        assertThat(digest)
+                .as("requiresMapping=false zwalnia z mapowania, nie z rewalidacji okresowej")
+                .contains("KOMORY DO REWALIDACJI OKRESOWEJ (1)")
+                .contains("Komora odczynników")
+                .contains("ZALEGŁA");
+        assertThat(digest)
+                .as("ale mapowania od niej nie wymagamy")
+                .doesNotContain("KOMORY DO MAPOWANIA");
+    }
+
+    @Test
+    @DisplayName("Mapowanie liczone w cyklu 5-letnim, nie rocznym")
+    void mappingUsesFiveYearCycle() {
+        when(calibrationRepository.findLatestExpiringUntil(any())).thenReturn(List.of());
+        when(coolingChamberRepository.findAll()).thenReturn(List.of(
+                chamber("Zmapowana 3 lata temu", TODAY.minusMonths(1), TODAY.minusYears(3), true),
+                chamber("Zmapowana 6 lat temu", TODAY.minusMonths(1), TODAY.minusYears(6), true)));
+
+        String digest = service.buildDigest(TODAY).orElseThrow();
+
+        assertThat(digest)
+                .contains("KOMORY DO MAPOWANIA 5-LETNIEGO (1)")
+                .contains("Zmapowana 6 lat temu")
+                .doesNotContain("Zmapowana 3 lata temu");
     }
 
     @Test
@@ -174,9 +225,11 @@ class GxpNotificationServiceTest {
                 .build();
     }
 
-    private CoolingChamber chamber(String name, LocalDate lastMapping, boolean mappingRequired) {
+    private CoolingChamber chamber(String name, LocalDate lastPeriodicRevalidation,
+                                   LocalDate lastMapping, boolean mappingRequired) {
         return CoolingChamber.builder()
                 .chamberName(name)
+                .lastPeriodicRevalidationDate(lastPeriodicRevalidation)
                 .lastMappingDate(lastMapping)
                 .materialType(MaterialType.builder().requiresMapping(mappingRequired).build())
                 .coolingDevice(CoolingDevice.builder()

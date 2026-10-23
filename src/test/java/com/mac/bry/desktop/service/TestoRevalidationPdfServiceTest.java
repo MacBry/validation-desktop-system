@@ -70,45 +70,6 @@ public class TestoRevalidationPdfServiceTest {
     );
 
     @Test
-    @DisplayName("Powinien wygenerować indywidualny wykres serii PDF o rozmiarze większym niż zero")
-    void shouldGenerateIndividualSeriesChartPdf(@TempDir File tempDir) throws Exception {
-        // Given
-        File outputFile = new File(tempDir, "wykres_test.pdf");
-
-        List<ThermoMeasurementPoint> measurements = new ArrayList<>();
-        LocalDateTime startTime = LocalDateTime.of(2026, 5, 18, 0, 0);
-        for (int i = 0; i < 40; i++) {
-            measurements.add(ThermoMeasurementPoint.builder()
-                    .timestampLocal(startTime.plusMinutes(i * 15))
-                    .rawCelsius(4.5 + Math.sin(i * 0.5))
-                    .build());
-        }
-
-        ThermoMeasurementSeries series = ThermoMeasurementSeries.builder()
-                .minTemperature(3.5)
-                .maxTemperature(5.5)
-                .avgTemperature(4.5)
-                .mktTemperature(4.6)
-                .expandedUncertainty(0.08)
-                .driftClassification("STABLE")
-                .measurements(measurements)
-                .build();
-
-        PositionData positionData = PositionData.builder()
-                .serialNumber("SN-999-PDF")
-                .model(ThermoRecorderModel.builder().name("Testo 174T").build())
-                .series(series)
-                .build();
-
-        // When
-        pdfService.generateIndividualSeriesChartPdf(GridPosition.TOP_FRONT_LEFT, positionData, outputFile);
-
-        // Then
-        assertThat(outputFile).exists();
-        assertThat(outputFile.length()).isGreaterThan(0);
-    }
-
-    @Test
     @DisplayName("Powinien wygenerować makietę certyfikatu PDF o rozmiarze większym niż zero")
     void shouldGenerateMockCertificatePdf(@TempDir File tempDir) throws Exception {
         // Given

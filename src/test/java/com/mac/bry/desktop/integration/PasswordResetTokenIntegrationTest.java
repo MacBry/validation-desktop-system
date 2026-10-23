@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +50,7 @@ class PasswordResetTokenIntegrationTest {
     @Autowired
     private com.mac.bry.desktop.security.repository.UserPasswordHistoryRepository historyRepository;
 
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
     private User persistUser() {

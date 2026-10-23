@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.repository;
 
+import com.mac.bry.desktop.model.RecorderStatus;
 import com.mac.bry.desktop.model.ThermoRecorder;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,4 +19,8 @@ public interface ThermoRecorderRepository extends JpaRepository<ThermoRecorder, 
 
     @EntityGraph(attributePaths = {"calibrations", "department", "laboratory", "model"})
     List<ThermoRecorder> findBySerialNumberContainingIgnoreCaseOrModelNameContainingIgnoreCase(String serialNumber, String modelName);
+
+    /** Pula kandydatów dla planera — kolejność stała, żeby plan był odtwarzalny. */
+    @EntityGraph(attributePaths = {"calibrations", "model"})
+    List<ThermoRecorder> findByStatusOrderBySerialNumberAsc(RecorderStatus status);
 }

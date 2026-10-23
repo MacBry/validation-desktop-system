@@ -1,5 +1,6 @@
 package com.mac.bry.desktop.service;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.dto.CalibrationStatistics;
 import com.mac.bry.desktop.dto.ChartSeries;
 import com.mac.bry.desktop.dto.RecorderStatistics;
@@ -18,30 +19,38 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+/**
+ * Buduje dane wykresów dashboardu.
+ * <p>
+ * Etykiety są tekstem UI, nie treścią raportu GxP — JavaFX bierze je z modelu
+ * danych ({@code PieChart.Data}, {@code XYChart.Series#setName}), a nie z FXML,
+ * więc nie da się ich przetłumaczyć kluczem {@code %...}. Stąd {@link I18n#t}
+ * tutaj, mimo że to warstwa serwisowa.
+ */
 public class DashboardChartService {
 
     public Map<String, Number> getRecordersPieChartData(RecorderStatistics stats) {
         Map<String, Number> data = new LinkedHashMap<>();
-        data.put("Aktywne (" + stats.getActive() + ")", stats.getActive());
-        data.put("W kalibracji (" + stats.getUnderCalibration() + ")", stats.getUnderCalibration());
-        data.put("Nieaktywne (" + stats.getInactive() + ")", stats.getInactive());
+        data.put(I18n.t("dashboard.chart.recorders.active", stats.getActive()), stats.getActive());
+        data.put(I18n.t("dashboard.chart.recorders.inCalibration", stats.getUnderCalibration()), stats.getUnderCalibration());
+        data.put(I18n.t("dashboard.chart.recorders.inactive", stats.getInactive()), stats.getInactive());
         log.debug("Generated recorders pie chart data");
         return data;
     }
 
     public Map<String, Number> getCalibrationsPieChartData(CalibrationStatistics stats) {
         Map<String, Number> data = new LinkedHashMap<>();
-        data.put("Ważne (" + stats.getValid() + ")", stats.getValid());
-        data.put("Wygasające wkrótce (" + stats.getExpiringSoon() + ")", stats.getExpiringSoon());
-        data.put("Przeterminowane (" + stats.getExpired() + ")", stats.getExpired());
+        data.put(I18n.t("dashboard.chart.calibrations.valid", stats.getValid()), stats.getValid());
+        data.put(I18n.t("dashboard.chart.calibrations.expiringSoon", stats.getExpiringSoon()), stats.getExpiringSoon());
+        data.put(I18n.t("dashboard.chart.calibrations.expired", stats.getExpired()), stats.getExpired());
         log.debug("Generated calibrations pie chart data");
         return data;
     }
 
     public Map<String, Number> getUsersPieChartData(UserStatistics stats) {
         Map<String, Number> data = new LinkedHashMap<>();
-        data.put("Aktywne (" + stats.getEnabled() + ")", stats.getEnabled());
-        data.put("Zablokowane (" + stats.getLocked() + ")", stats.getLocked());
+        data.put(I18n.t("dashboard.chart.users.enabled", stats.getEnabled()), stats.getEnabled());
+        data.put(I18n.t("dashboard.chart.users.locked", stats.getLocked()), stats.getLocked());
         log.debug("Generated users pie chart data");
         return data;
     }
@@ -73,8 +82,8 @@ public class DashboardChartService {
 
         log.debug("Generated USB activity chart data");
         return List.of(
-            new ChartSeries("Pobrane Odczyty", readPoints),
-            new ChartSeries("Zaprogramowane", progPoints)
+            new ChartSeries(I18n.t("dashboard.chart.usb.reads"), readPoints),
+            new ChartSeries(I18n.t("dashboard.chart.usb.programs"), progPoints)
         );
     }
 }

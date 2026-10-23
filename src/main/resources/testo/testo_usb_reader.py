@@ -239,6 +239,17 @@ class TestoD2XXReader:
         self.send_cmd(b'\xf0', wait_ms=cmd_delay)
         res_status = self.send_cmd(b'\xab\x31\x00\x42\x1b\x66', wait_ms=cmd_delay)
         
+        # 4b. Pozostały czas pracy baterii (ab010a)
+        #
+        # Urządzenie podaje POZOSTAŁE DNI wprost jako uint16 BE — to ta sama
+        # liczba, którą pokazuje oryginalne oprogramowanie Testo ("Stan baterii:
+        # 388 dni"). Zweryfikowane zrzutami USB dwóch egzemplarzy 174 T
+        # (2026-08-05): 0x002A = 42 dni i 0x0184 = 388 dni.
+        #
+        # Suma kontrolna komend rodziny ab01: crc = 0x0F - cmd.
+        self.send_cmd(b'\xf0', wait_ms=cmd_delay)
+        res_battery = self.send_cmd(b'\xab\x01\x0a\x00\x00\x05', wait_ms=cmd_delay)
+
         # 5. Odczyt metadanych (ab33)
         self.send_cmd(b'\xf0', wait_ms=cmd_delay)
         res_meta = bytearray()
@@ -271,8 +282,8 @@ class TestoD2XXReader:
             time.sleep(0.05)
             
         self.send_cmd(b'\xf0', wait_ms=cmd_delay)
-        
-        return bytes(res_info + res_status + bytes(res_meta) + stream)
+
+        return bytes(res_info + res_status + res_battery + bytes(res_meta) + stream)
 
     def close(self):
         if self.handle and self.handle.value:
@@ -380,6 +391,38 @@ def print_ascii_chart(measurements):
     print("="*60)
 
 
+def decode_battery_days(raw_stream: bytes):
+    """
+    Pozostały czas pracy baterii [dni] z ramki `ab 01 0a`.
+
+    Urządzenie podaje dni wprost jako uint16 BE — bez przeliczania z napięcia
+    i bez odnoszenia do pojemności katalogowej. Zwraca None, gdy ramki nie ma
+    w strumieniu (starszy firmware albo nieudany odczyt).
+    """
+    pos = raw_stream.find(b'\xab\x01\x0a')
+    if pos == -1 or pos + 5 > len(raw_stream):
+        return None
+    return (raw_stream[pos + 3] << 8) | raw_stream[pos + 4]
+
+
+def decode_alarm_limits(payload_31: bytes):
+    """
+    Progi alarmowe temperatury (górny, dolny) w °C z payloadu ramki ab31.
+
+    Ta sama struktura co payload konfiguracyjny komendy AB 61 — patrz
+    TESTO_USB_PROGRAMMING_TECHNICAL_SPEC.md §3. Wartości są signed int16 BE
+    w dziesiątych stopnia, więc zamrażarka daje liczby ujemne.
+    """
+    if len(payload_31) < 23:
+        return None, None
+
+    def s16(i):
+        v = (payload_31[i] << 8) | payload_31[i + 1]
+        return v - 0x10000 if v & 0x8000 else v
+
+    return s16(19) / 10.0, s16(21) / 10.0
+
+
 def parse_results_json(raw_stream: bytes) -> str:
     """Dekoduje surowy strumień pomiarów i zwraca go jako czysty obiekt JSON."""
     try:
@@ -420,8 +463,13 @@ def parse_results_json(raw_stream: bytes) -> str:
         
         start_date_utc = prog_date_utc + timedelta(minutes=start_delay)
         start_date_local = get_polish_local_time(start_date_utc)
-        battery = payload_31[20]
-        
+
+        # UWAGA: payload_31[20] NIE jest stanem baterii — to młodszy bajt
+        # górnego progu alarmowego (2026-08-05, zrzuty USB). Stan baterii ma
+        # własną ramkę ab010a, patrz decode_battery_days().
+        battery_days = decode_battery_days(raw_stream)
+        alarm_upper_c, alarm_lower_c = decode_alarm_limits(payload_31)
+
         # 3. Zbieranie temperatur (ab32)
         data_blocks = {}
         offset = 0
@@ -474,7 +522,13 @@ def parse_results_json(raw_stream: bytes) -> str:
                 "manufacturingDate": m_date
             },
             "session": {
-                "batteryLevelPercent": battery,
+                # -1 = N/D: urządzenie nie raportuje stanu naładowania w procentach.
+                # Miarą, którą podaje sprzęt (i oryginalne oprogramowanie Testo),
+                # jest batteryRemainingDays.
+                "batteryLevelPercent": -1,
+                "batteryRemainingDays": battery_days if battery_days is not None else -1,
+                "alarmLimitUpperC": alarm_upper_c,
+                "alarmLimitLowerC": alarm_lower_c,
                 "intervalMinutes": interval,
                 "measurementsCount": len(measurements),
                 "programmingTimeUtc": prog_date_utc.isoformat(),
@@ -531,10 +585,15 @@ def parse_and_print_results(raw_stream: bytes, config: dict):
     
     start_date_utc = prog_date_utc + timedelta(minutes=start_delay)
     start_date_local = get_polish_local_time(start_date_utc)
-    battery = payload_31[20]
-    
+
+    battery_days = decode_battery_days(raw_stream)
+    alarm_upper_c, alarm_lower_c = decode_alarm_limits(payload_31)
+
     print(f"\nParametry Sesji:")
-    print(f"  Stan Baterii:     {battery}%")
+    print(f"  Stan Baterii:     "
+          f"{f'{battery_days} dni pozostało' if battery_days is not None else 'N/D'}")
+    print(f"  Progi Alarmowe:   "
+          f"{f'{alarm_lower_c:.1f}…{alarm_upper_c:.1f} °C' if alarm_upper_c is not None else 'N/D'}")
     print(f"  Interwał Zapisu:  {interval} minut")
     print(f"  Liczba Pomiarów:  {count}")
     

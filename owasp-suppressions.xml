@@ -26,4 +26,20 @@
         <cve>CVE-2026-49844</cve>
     </suppress>
 
+    <!-- mysql-connector-j: CPE `oracle:mysql_connectors` jest WSPÓLNE dla wszystkich
+         konektorów MySQL (J, Net, Python, ODBC...), więc Dependency-Check przypisuje
+         sterownikowi Java także CVE z komponentu Connector/NET. Poniższe trzy z CPU
+         Oracle lipiec 2026 mają w opisie NVD wprost "component: Connector/Net" -
+         nie dotyczą kodu Javy. CVE z komponentu Connector/J (60586, 60623, 60624,
+         61082) NIE są supresowane - załatane podbiciem sterownika do 26.7.0.
+         Przy każdym kolejnym CPU Oracle'a trzeba przejrzeć nowe CVE tak samo:
+         sprawdzić w opisie NVD, którego konektora dotyczą. -->
+    <suppress>
+        <notes>FP: CVE komponentu Connector/NET, dopasowane przez wspólne CPE oracle:mysql_connectors. Projekt używa wyłącznie Connector/J.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.mysql/mysql-connector-j@.*$</packageUrl>
+        <cve>CVE-2026-60193</cve>
+        <cve>CVE-2026-60192</cve>
+        <cve>CVE-2026-60317</cve>
+    </suppress>
+
 </suppressions>

@@ -1,10 +1,13 @@
 package com.mac.bry.desktop.service;
 
+import com.mac.bry.desktop.config.I18n;
 import com.mac.bry.desktop.dto.CalibrationStatistics;
 import com.mac.bry.desktop.dto.ChartSeries;
 import com.mac.bry.desktop.dto.RecorderStatistics;
 import com.mac.bry.desktop.dto.UserStatistics;
 import com.mac.bry.desktop.security.model.AccessLog;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DashboardChartServiceTest {
 
     private final DashboardChartService chartService = new DashboardChartService();
+
+    /** Etykiety wykresów są tłumaczone — testy bazowe zakładają locale domyślne (PL). */
+    @BeforeEach
+    void setPolishLocale() {
+        I18n.init("pl");
+    }
+
+    @AfterEach
+    void resetLocale() {
+        I18n.init("pl");
+    }
 
     @Nested
     @DisplayName("Recorders Pie Chart Data Tests")
@@ -132,6 +146,40 @@ class DashboardChartServiceTest {
                     .containsEntry(todayLabel, 0L)
                     .containsEntry(yesterdayLabel, 1L)
                     .containsEntry(twoDaysAgoLabel, 1L);
+        }
+    }
+
+    /**
+     * Regres: etykiety wycinków i nazwy serii są ustawiane w modelu danych JavaFX,
+     * a nie przez %klucz w FXML — przed poprawką zostawały polskie także po
+     * przełączeniu aplikacji na angielski.
+     */
+    @Nested
+    @DisplayName("Chart Label Localization Tests")
+    class LocalizationTests {
+
+        @Test
+        @DisplayName("Should translate pie chart labels when locale is English")
+        void shouldTranslatePieChartLabels() {
+            I18n.init("en");
+
+            assertThat(chartService.getRecordersPieChartData(new RecorderStatistics(10, 5, 3, 2)))
+                    .containsOnlyKeys("Active (5)", "In calibration (3)", "Inactive (2)");
+            assertThat(chartService.getCalibrationsPieChartData(new CalibrationStatistics(8, 4, 2)))
+                    .containsOnlyKeys("Valid (8)", "Expiring soon (4)", "Expired (2)");
+            assertThat(chartService.getUsersPieChartData(new UserStatistics(12, 3)))
+                    .containsOnlyKeys("Active (12)", "Locked (3)");
+        }
+
+        @Test
+        @DisplayName("Should translate bar chart series names when locale is English")
+        void shouldTranslateSeriesNames() {
+            I18n.init("en");
+
+            List<ChartSeries> chartData = chartService.getUsbActivityChartData(List.of());
+
+            assertThat(chartData).extracting(ChartSeries::name)
+                    .containsExactly("Readings retrieved", "Programmed");
         }
     }
 }

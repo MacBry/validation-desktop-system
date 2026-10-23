@@ -1,31 +1,13 @@
 package com.mac.bry.desktop.controller;
 
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.fail;
 
+@ExtendWith(JavaFxToolkitExtension.class)
 class DashboardFxmlTest {
-
-    @BeforeAll
-    static void initJavaFX() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        // Inicjalizacja toolkitu JavaFX
-        Platform.startup(latch::countDown);
-        latch.await();
-    }
-
-    @AfterAll
-    static void shutdownJavaFX() {
-        // Bez tego wątek JavaFX (non-daemon) blokuje zamknięcie forka Surefire,
-        // co na Linuksie kończy się błędem "The forked VM terminated"
-        Platform.exit();
-    }
 
     @Test
     void testLoadDashboardFxml() {
