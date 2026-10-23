@@ -95,6 +95,9 @@ public class MainController {
 
             String roles = auth.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
+                    // Security 7 dokłada FactorGrantedAuthority (FACTOR_PASSWORD)
+                    // obok ról - do etykiety bierzemy tylko role.
+                    .filter(r -> r.startsWith("ROLE_"))
                     .map(r -> r.replace("ROLE_", ""))
                     .collect(java.util.stream.Collectors.joining(", "));
             if (roles.isEmpty()) roles = "–";
